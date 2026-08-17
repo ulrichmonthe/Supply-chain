@@ -146,8 +146,8 @@ function LeverEditor({
           value={weights.cost ?? 1}
           min={0}
           max={2}
-          step={0.1}
-          format={(v) => v.toFixed(1)}
+          step={0.05}
+          format={(v) => v.toFixed(2)}
           onChange={(v) => setWeight({ cost: v })}
         />
         <Slider
@@ -155,8 +155,8 @@ function LeverEditor({
           value={weights.service ?? 1}
           min={0}
           max={2}
-          step={0.1}
-          format={(v) => v.toFixed(1)}
+          step={0.05}
+          format={(v) => v.toFixed(2)}
           onChange={(v) => setWeight({ service: v })}
         />
         <Slider
@@ -164,8 +164,8 @@ function LeverEditor({
           value={weights.equity ?? 0}
           min={0}
           max={1}
-          step={0.1}
-          format={(v) => v.toFixed(1)}
+          step={0.05}
+          format={(v) => v.toFixed(2)}
           note="Raises the cost of failing to reach a vulnerable facility, so the solver protects it before it protects a cheap one."
           onChange={(v) => setWeight({ equity: v })}
         />

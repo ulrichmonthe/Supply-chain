@@ -284,7 +284,6 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
         )
         session.add(result)
         session.commit()
-        session.refresh(result)
         return result
 
     # --- per-facility detail --------------------------------------------------------
@@ -459,5 +458,8 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
     )
     session.add(result)
     session.commit()
-    session.refresh(result)
+    # No refresh: sessions are configured expire_on_commit=False, so the instance is
+    # already fully populated. Refreshing would re-read the row, which under the
+    # parallel scenario-set run means a second connection racing the first one's
+    # write -- the source of an intermittent 500 on run-set.
     return result

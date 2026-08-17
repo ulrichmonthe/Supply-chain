@@ -181,3 +181,35 @@ def test_runs_are_fast_enough_to_be_interactive(session):
     """The season slider re-solves on every move, so a run has to feel instant."""
     result = _run(session, "Baseline")
     assert result.runtime_ms < 3000
+
+
+def test_scenarios_can_be_solved_concurrently(seeded_session_factory):
+    """The scenario-set run is the demo's parallel moment, so it must not race.
+
+    Regression test: ``run_scenario`` used to call ``session.refresh`` after its
+    commit. Under the thread pool that backs the run-set endpoint, that re-read the
+    row on a second connection racing the first one's write, and intermittently
+    raised 'Could not refresh instance' as a 500 mid-demo. The sessions are
+    configured ``expire_on_commit=False``, so the refresh was never needed.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    def solve_one(scenario_id: int) -> tuple[str, str | None]:
+        session = seeded_session_factory()
+        try:
+            scenario = session.get(Scenario, scenario_id)
+            result = run_scenario(session, scenario)
+            return result.status, result.error
+        finally:
+            session.close()
+
+    lookup = seeded_session_factory()
+    try:
+        ids = [s.id for s in lookup.scalars(select(Scenario))]
+    finally:
+        lookup.close()
+
+    for _ in range(3):
+        with ThreadPoolExecutor(max_workers=len(ids)) as pool:
+            outcomes = list(pool.map(solve_one, ids))
+        assert all(status == "ok" for status, _ in outcomes), outcomes
