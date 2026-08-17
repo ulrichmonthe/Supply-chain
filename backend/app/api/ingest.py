@@ -15,10 +15,10 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..db import get_session
 from ..engine import seasonality
-from ..engine.distance import resolve_distance
 from ..io import excel_in, excel_out
+from ..io.apply import apply_payload
 from ..io.validation import validate_dataset
-from ..models import AuditEntry, Country, Demand, Edge, ImportBatch, Node, Product
+from ..models import Country, Demand, Edge, ImportBatch, Node, Product
 
 router = APIRouter(tags=["data"])
 
@@ -111,8 +111,9 @@ def commit_import(batch_id: int, replace: bool = True, session: Session = Depend
     """Apply a validated import.
 
     ``replace`` wipes the country's network first. That is the honest default for a
-    master-list refresh: a merge that silently keeps orphaned facilities from last
-    year's list is how a model drifts away from reality.
+    master-list refresh from a workbook: a merge that silently keeps orphaned
+    facilities from last year's list is how a model drifts away from reality. A
+    connector sync uses merge instead, and applies through the same function.
     """
     batch = session.get(ImportBatch, batch_id)
     if not batch:
@@ -128,154 +129,34 @@ def commit_import(batch_id: int, replace: bool = True, session: Session = Depend
 
     country = _country_or_404(session, batch.country_id)
     parsed = batch.report.get("parsed") or {}
+    mode = "replace" if replace else "merge"
 
-    if replace:
-        for model in (Demand, Edge, Node, Product):
-            for row in session.scalars(select(model).where(model.country_id == country.id)):
-                session.delete(row)
-        session.flush()
-
-    nodes: dict[str, Node] = {}
-    for record in parsed.get("nodes", []):
-        node = Node(
-            country_id=country.id,
-            code=record["code"],
-            name=record["name"],
-            level=record["level"],
-            type=record["type"],
-            lat=record["lat"],
-            lon=record["lon"],
-            geocode_confidence=record["geocode_confidence"],
-            geocode_source=record["geocode_source"],
-            admin1=record["admin1"],
-            admin2=record["admin2"],
-            terrain_class=record["terrain_class"],
-            catchment_population=record["catchment_population"],
-            operating_status=record["operating_status"],
-            capacity=record["capacity"],
-            hub_capable=record["hub_capable"],
-            hub_fixed_cost=record["hub_fixed_cost"],
-            hub_open_capex=record["hub_open_capex"],
-            hub_throughput_m3=record["hub_throughput_m3"],
-            external_ids=record["external_ids"],
-        )
-        session.add(node)
-        nodes[record["code"]] = node
-
-    products: dict[str, Product] = {}
-    for record in parsed.get("products", []):
-        product = Product(
-            country_id=country.id,
-            sku=record["sku"],
-            name=record["name"],
-            temperature_band=record["temperature_band"],
-            volume_per_unit_cm3=record["volume_per_unit_cm3"],
-            unit_cost=record["unit_cost"],
-            shelf_life_days=record["shelf_life_days"],
-        )
-        session.add(product)
-        products[record["sku"]] = product
-    session.flush()
-
-    computed_distances = 0
-    for record in parsed.get("edges", []):
-        origin = nodes.get(record["from_node"])
-        destination = nodes.get(record["to_node"])
-        if not origin or not destination:
-            continue
-
-        manual_km = record["distance_km"] if record["distance_method"] == "manual" else None
-        if record["distance_km"] and not record["distance_method"]:
-            manual_km = record["distance_km"]
-
-        resolved = resolve_distance(
-            origin.lat,
-            origin.lon,
-            destination.lat,
-            destination.lon,
-            mode=record["mode"],
-            terrain_class=destination.terrain_class,
-            manual_km=manual_km,
-            manual_hours=record["base_travel_time_hr"] or None,
-            manual_note=record["distance_note"] or "",
-        )
-        if resolved.method != "manual":
-            computed_distances += 1
-
-        session.add(
-            Edge(
-                country_id=country.id,
-                code=record["code"] or f"{record['from_node']}-{record['to_node']}",
-                from_node_id=origin.id,
-                to_node_id=destination.id,
-                mode=record["mode"],
-                service_name=record["service_name"],
-                service_frequency=record["service_frequency"],
-                service_days=record["service_days"],
-                capacity_per_trip_m3=record["capacity_per_trip_m3"],
-                cold_capacity_per_trip_m3=record["cold_capacity_per_trip_m3"],
-                fixed_cost_per_trip=record["fixed_cost_per_trip"],
-                variable_cost_per_km=record["variable_cost_per_km"],
-                cost_per_m3=record["cost_per_m3"],
-                monthly_access=record["monthly_access"] or [1.0] * 12,
-                monthly_cost_multiplier=record["monthly_cost_multiplier"] or [1.0] * 12,
-                reliability=record["reliability"],
-                lead_time_sd_days=record["lead_time_sd_days"],
-                active=record["active"],
-                **resolved.as_edge_fields(),
-            )
-        )
-
-    for record in parsed.get("demand", []):
-        node = nodes.get(record["node"])
-        product = products.get(record["product"])
-        if not node or not product:
-            continue
-        session.add(
-            Demand(
-                country_id=country.id,
-                node_id=node.id,
-                product_id=product.id,
-                period=record["period"],
-                quantity=record["quantity"] or 0.0,
-                source=record["source"],
-                confidence=record["confidence"],
-            )
-        )
+    counts = apply_payload(
+        session,
+        country,
+        parsed,
+        mode=mode,
+        source=batch.source or "excel",
+        reference=batch.filename,
+    )
 
     batch.committed = True
     batch.status = "committed"
-    session.add(
-        AuditEntry(
-            country_id=country.id,
-            entity_type="global",
-            entity_ref=batch.filename,
-            field="import",
-            new_value=(
-                f"{len(parsed.get('nodes', []))} nodes, {len(parsed.get('edges', []))} lanes, "
-                f"{len(parsed.get('demand', []))} demand rows"
-            ),
-            provenance="import",
-            confidence_marker="S",
-            rationale=(
-                f"Workbook '{batch.filename}' committed with replace={replace}. "
-                f"{computed_distances} lane distances were produced by the cascade rather than "
-                f"supplied."
-            ),
-            actor="analyst",
-        )
-    )
+    batch.mode = mode
     session.commit()
 
     return {
         "committed": True,
+        "mode": mode,
         "counts": {
-            "nodes": len(parsed.get("nodes", [])),
-            "edges": len(parsed.get("edges", [])),
-            "products": len(parsed.get("products", [])),
-            "demand": len(parsed.get("demand", [])),
+            "nodes": counts["nodes_created"] + counts["nodes_updated"],
+            "nodes_created": counts["nodes_created"],
+            "nodes_updated": counts["nodes_updated"],
+            "edges": counts["edges"],
+            "products": counts["products_created"],
+            "demand": counts["demand_rows"],
         },
-        "distances_computed_by_cascade": computed_distances,
+        "distances_computed_by_cascade": counts["distances_computed"],
         "note": (
             "Existing scenarios were kept. Re-run them: their results refer to the previous "
             "network until you do."

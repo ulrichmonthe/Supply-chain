@@ -1,5 +1,9 @@
 import type {
   AuditRow,
+  Connection,
+  ConnectionTest,
+  ConnectorSpec,
+  SyncPreview,
   EdgeRow,
   NodeRow,
   Overview,
@@ -73,4 +77,25 @@ export const api = {
   templateUrl: () => `${BASE}/template.xlsx`,
   networkExportUrl: (countryId: number) => `${BASE}/countries/${countryId}/export/network.xlsx`,
   resultsExportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/export/results.xlsx`,
+}
+
+export const connectorApi = {
+  systems: () =>
+    request<{ systems: ConnectorSpec[]; note: string }>('/connectors'),
+  list: (countryId: number) => request<Connection[]>(`/countries/${countryId}/connections`),
+  create: (countryId: number, body: Record<string, unknown>) =>
+    request<Connection>(`/countries/${countryId}/connections`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  update: (id: number, body: Record<string, unknown>) =>
+    request<Connection>(`/connections/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  remove: (id: number) => request<void>(`/connections/${id}`, { method: 'DELETE' }),
+  test: (id: number) => request<ConnectionTest>(`/connections/${id}/test`, { method: 'POST' }),
+  preview: (id: number) => request<SyncPreview>(`/connections/${id}/preview`, { method: 'POST' }),
+  recordSync: (id: number, summary: Record<string, number>) =>
+    request<Connection>(`/connections/${id}/record-sync`, {
+      method: 'POST',
+      body: JSON.stringify(summary),
+    }),
 }

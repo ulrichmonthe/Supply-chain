@@ -148,6 +148,20 @@ a.btn:hover { text-decoration: none; }
 .scenario-kpis span { color: var(--dim); }
 .scenario-actions { display: flex; gap: 5px; margin-top: 8px; }
 
+/* Connection cards share the scenario card's shape but not its class: they sit in a
+   different panel and must be distinguishable, not least when reading a test report. */
+.connection {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 8px 10px; margin-bottom: 7px; cursor: pointer;
+  background: var(--panel-2); transition: border-color 0.12s, background 0.12s;
+}
+.connection:hover { border-color: #3a4d64; }
+.connection.active { border-color: var(--accent); background: #16283a; }
+.connection-head { display: flex; align-items: center; gap: 7px; }
+.connection-head b { font-size: 12px; font-weight: 600; flex: 1; }
+.connection-desc { font-size: 11px; color: var(--dim); margin-top: 4px; line-height: 1.4; }
+.connection-actions { display: flex; gap: 5px; margin-top: 8px; }
+
 .checkbox { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11.5px; }
 .checkbox input { accent-color: var(--accent); }
 

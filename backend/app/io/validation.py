@@ -143,15 +143,36 @@ def validate_dataset(
     edges: list[dict],
     products: list[dict],
     demand: list[dict],
+    partial: bool = False,
+    existing_node_codes: Optional[set] = None,
+    existing_product_skus: Optional[set] = None,
 ) -> ValidationReport:
+    """Validate a dataset that is either complete or a partial update.
+
+    ``partial`` is what makes it correct to run this over a live LMIS pull as well as
+    over a workbook. A workbook is the whole model, so a facility that nothing can
+    reach is an error. A sync from DHIS2 is facilities and consumption only — it
+    carries no lanes by design — so applying the complete-dataset rules to it would
+    reject a national facility list for not containing boat timetables, which is both
+    wrong and the fastest way to make an integration useless.
+
+    What changes in partial mode is narrow and deliberate: checks that depend on the
+    payload being the entire model are relaxed against what is already loaded. Nothing
+    that judges a record on its own merits is relaxed at all — a facility in the sea is
+    still a facility in the sea.
+    """
     report = ValidationReport()
     node_by_code: dict[str, dict] = {}
+    known_nodes = existing_node_codes or set()
+    known_products = existing_product_skus or set()
 
-    _validate_nodes(report, country_code, bbox, nodes, node_by_code)
-    _validate_products(report, products)
+    _validate_nodes(report, country_code, bbox, nodes, node_by_code, partial=partial)
+    _validate_products(report, products, partial=partial, known_products=known_products)
     _validate_edges(report, edges, node_by_code)
-    _validate_demand(report, demand, node_by_code, products)
-    _validate_coverage(report, nodes, edges, demand, node_by_code)
+    _validate_demand(report, demand, node_by_code, products, partial=partial, known_products=known_products)
+    _validate_coverage(
+        report, nodes, edges, demand, node_by_code, partial=partial, known_nodes=known_nodes
+    )
 
     report.stats.update(
         {
@@ -159,6 +180,7 @@ def validate_dataset(
             "edges": len(edges),
             "products": len(products),
             "demand_rows": len(demand),
+            "partial": partial,
         }
     )
     return report
@@ -173,6 +195,8 @@ def _validate_nodes(
     bbox: dict,
     nodes: list[dict],
     node_by_code: dict[str, dict],
+    *,
+    partial: bool = False,
 ) -> None:
     seen_coords: dict[tuple[float, float], str] = {}
     province_points: dict[str, list[tuple[float, float]]] = {}
@@ -218,11 +242,16 @@ def _validate_nodes(
         lon = _to_float(node.get("lon"))
 
         if lat is None or lon is None:
+            # On a full load this is fatal: a model with unplaced facilities cannot be
+            # mapped or costed. On a merge it is a gap to close, and refusing the whole
+            # national list over it would mean never importing a national list at all --
+            # every registry has facilities waiting to be geocoded.
             report.add(
                 Issue(
-                    ERROR,
+                    WARNING if partial else ERROR,
                     "node.missing_coordinates",
-                    f"{name} ({code}) has no coordinates.",
+                    f"{name} ({code}) has no coordinates."
+                    + (" It will not appear on the map until it is geocoded." if partial else ""),
                     "Geocode it from the facility master list, or place it at its district "
                     "headquarters and set geocode_confidence to 0.3 so the map shows it is "
                     "approximate.",
@@ -442,7 +471,13 @@ def _validate_nodes(
 # --- products --------------------------------------------------------------------------
 
 
-def _validate_products(report: ValidationReport, products: list[dict]) -> None:
+def _validate_products(
+    report: ValidationReport,
+    products: list[dict],
+    *,
+    partial: bool = False,
+    known_products: set = frozenset(),
+) -> None:
     seen: set[str] = set()
     for product in products:
         row = product.get("_row")
@@ -484,11 +519,22 @@ def _validate_products(report: ValidationReport, products: list[dict]) -> None:
 
         volume = _to_float(product.get("volume_per_unit_cm3"))
         if volume is None or volume <= 0:
+            # A product already in the model keeps the volume it has; no logistics
+            # system carries packed volume, so a sync that re-listed it without one is
+            # not proposing to change anything.
+            if partial and sku in known_products:
+                continue
             report.add(
                 Issue(
-                    ERROR,
+                    WARNING if partial else ERROR,
                     "product.no_volume",
-                    f"Product '{sku}' has no unit volume.",
+                    f"Product '{sku}' has no unit volume."
+                    + (
+                        " It is new, and until a volume is entered the model will treat it as "
+                        "taking up no space and costing nothing to move."
+                        if partial
+                        else ""
+                    ),
                     "The whole model is volumetric — a product with no volume consumes no "
                     "transport and no storage, so it will appear free. Take the packed volume "
                     "per dose or per pack from the EVM assessment.",
@@ -655,8 +701,13 @@ def _validate_demand(
     demand: list[dict],
     node_by_code: dict[str, dict],
     products: list[dict],
+    *,
+    partial: bool = False,
+    known_products: set = frozenset(),
 ) -> None:
-    product_codes = {str(p.get("sku") or "").strip() for p in products}
+    product_codes = {str(p.get("sku") or "").strip() for p in products} | (
+        known_products if partial else set()
+    )
     proxy_rows = 0
 
     for row_data in demand:
@@ -754,7 +805,37 @@ def _validate_coverage(
     edges: list[dict],
     demand: list[dict],
     node_by_code: dict[str, dict],
+    *,
+    partial: bool = False,
+    known_nodes: set = frozenset(),
 ) -> None:
+    # A payload with no lanes is not a payload with no network. A connector never
+    # returns lanes -- no LMIS knows them -- so reachability is a question about the
+    # loaded model, not about this pull, and asking it here would reject every sync.
+    if partial and not edges:
+        stranded = [
+            code
+            for code in {str(d.get("node") or "").strip() for d in demand}
+            if code in node_by_code and code not in known_nodes
+        ]
+        if stranded:
+            preview = ", ".join(sorted(stranded)[:8]) + ("…" if len(stranded) > 8 else "")
+            report.add(
+                Issue(
+                    WARNING,
+                    "coverage.new_facility_without_lane",
+                    f"{len(stranded)} facilities are new and have consumption but no lane yet: "
+                    f"{preview}.",
+                    "They will be imported and then sit outside the network until a lane "
+                    "reaches them. Add one in the workbook — including 'staff collect it when "
+                    "they come to town', which is a real lane with a real cost and frequency.",
+                    "Demand",
+                    None,
+                    preview,
+                )
+            )
+        return
+
     inbound: dict[str, int] = {}
     for edge in edges:
         destination = str(edge.get("to_node") or "").strip()

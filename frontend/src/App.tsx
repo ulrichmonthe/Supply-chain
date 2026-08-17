@@ -6,6 +6,7 @@ import { ScenarioPanel } from './components/ScenarioPanel'
 import { Scorecard } from './components/Scorecard'
 import { EquityPanel } from './components/EquityPanel'
 import { DataPanel, FacilityTable, ProvenancePanel, RoadmapPanel, SeasonPanel, ServicesPanel } from './components/Panels'
+import { ConnectionsPanel } from './components/ConnectionsPanel'
 import type {
   AuditRow,
   EdgeRow,
@@ -19,7 +20,7 @@ import type {
 } from './types'
 import { exact, formatKpi, money, signedPct } from './format'
 
-const TABS = ['Scorecard', 'Equity', 'Facilities', 'Services', 'Season', 'Data', 'Provenance', 'Roadmap'] as const
+const TABS = ['Scorecard', 'Equity', 'Facilities', 'Services', 'Season', 'Data', 'Live', 'Provenance', 'Roadmap'] as const
 type Tab = (typeof TABS)[number]
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -480,6 +481,15 @@ export default function App() {
                 overview={overview}
                 nodes={nodes}
                 onImported={() => {
+                  void loadNetwork(countryId)
+                  void loadScenarios(countryId)
+                }}
+              />
+            )}
+            {tab === 'Live' && countryId !== null && (
+              <ConnectionsPanel
+                countryId={countryId}
+                onApplied={() => {
                   void loadNetwork(countryId)
                   void loadScenarios(countryId)
                 }}

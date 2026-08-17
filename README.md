@@ -36,7 +36,7 @@ the frontend from source first. `make backend` and `make frontend` give you the 
 the Vite dev server separately, with hot reload on both.
 
 ```bash
-make test    # 85 tests
+make test    # 288 tests
 ```
 
 **`npm: command not found` is expected** and not a problem. The committed build means
@@ -231,6 +231,76 @@ generous tolerance, not a coastline: its job is to catch errors of hundreds of
 kilometres, which is the error class that actually occurs in master lists. The same
 geometry is what the map draws as its offline basemap, so what you see is exactly what
 the validator believes.
+
+### Live LMIS integration
+
+Connectors for **DHIS2**, **OpenLMIS v3** and **Open mSupply**, plus the Excel path,
+which remains first-class rather than a fallback.
+
+The design decision that matters is that a live pull earns **no privileges**. A
+connector's only job is to turn a remote system's response into the same record shape
+the Excel importer produces; from there it goes through the identical validator, the
+identical reconciliation and the identical commit. A facility pulled from a ministry's
+own DHIS2 with its coordinate in the Bismarck Sea is caught by exactly the check that
+catches it in a spreadsheet, and a test asserts precisely that.
+
+**Nothing is written until somebody has looked.** The sequence is *test* → *preview* →
+*apply*, and there is no button that reaches out and rewrites a national facility list.
+The test reports each step separately, because "connection failed" cannot be acted on
+and "authenticated, but this account cannot read organisation units" can. The preview
+reconciles against what is already loaded and reports what would change:
+
+> 6 facilities matched, 1 are new, 128 in the model were not in this pull, 1 would move
+> more than 2 km, 1 would be renamed.
+
+Matching runs in order of how much an identifier is worth: the system's own key first
+(a stored DHIS2 UID is proof), then facility code, then any shared external identifier,
+then name *and* proximity — never name alone. The source key is written back on commit,
+so a facility that gets recoded upstream still matches next time. Name normalisation is
+deliberately conservative: "Kerema General Hospital" and "Kerema Hospital" are the same
+place, but "Tabubil Hospital" and "Tabubil Rural Clinic" are not, and silently merging
+them would lose a facility from a national list.
+
+**No connector returns transport lanes, and applying a sync never touches them.** No
+logistics system knows which boat calls at Losuia on which day. A sync that dropped the
+timetables because DHIS2 has no view of them would delete the part of the model that
+took a fortnight of interviews to assemble.
+
+Two further consequences of that principle, both tested:
+
+* **Merge, not replace.** Demand is replaced only for the facility-and-product pairs the
+  pull actually supplied, so a sync covering two products does not wipe the other six.
+* **The validator knows the difference between a complete dataset and a partial update.**
+  A workbook is the whole model, so a facility nothing can reach is an error. A sync is
+  facilities and consumption only, so the same rule would reject a national facility list
+  for not containing boat timetables. Checks that judge a record on its own merits are
+  not relaxed at all.
+
+**Configuration, not code.** Endpoints, DHIS2 field selectors, GraphQL documents, facility
+levels and the data-element-to-SKU mapping are all settings on the connection, editable
+from the UI. A DHIS2 2.36 instance and a 2.41 instance disagree about details; a country
+should fix that in a form field during the workshop, not wait for a release.
+
+**Credentials** belong in an environment variable (`secret_env`), which keeps them out of
+the database and out of any backup of it. Storing one directly is supported and labelled
+as a convenience for a laptop during a workshop. No endpoint ever returns a credential.
+
+#### What is not yet true
+
+Every connector reports `verified_against_live_instance: false`, and the UI says so on
+the connection page. The endpoints follow each system's published API and are exercised
+against mock servers reproducing their real payload shapes — DHIS2's `pager` blocks,
+both of its coordinate representations, its headers-and-rows analytics table; OpenLMIS's
+separate client credential and Spring-style paging; GraphQL answering 200 with an
+`errors` array. The DHIS2 connector is additionally driven over real HTTP end to end.
+But nobody has pointed one at a ministry's own server, and that is the first Sprint 0
+task for any country.
+
+**Legacy mSupply — which is what PNG runs — has no such API.** The connector speaks Open
+mSupply's GraphQL, and says plainly in its own connection test that the legacy product
+does not expose it and that the realistic paths are a scheduled export through the Excel
+importer or a feed agreed with Beyond Essential Systems. Being caught overstating this
+in front of MSPDB would cost more than the integration is worth.
 
 ### Excel round trip
 

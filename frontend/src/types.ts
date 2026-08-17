@@ -325,3 +325,83 @@ export type AuditRow = {
   actor: string
   created_at: string
 }
+
+/* ---------------------------------------------------------------- connectors */
+
+export type ConnectorSpec = {
+  system: string
+  label: string
+  description: string
+  docs_url: string
+  auth_types: string[]
+  verified_against_live_instance: boolean
+  config_spec: Record<string, { default: unknown; help: string; kind: string }>
+}
+
+export type Connection = {
+  id: number
+  country_id: number
+  name: string
+  system: string
+  base_url: string
+  auth_type: string
+  username: string
+  secret_env: string
+  secret_set: boolean
+  secret_source: 'environment' | 'stored' | 'none'
+  verify_tls: boolean
+  timeout_s: number
+  enabled: boolean
+  config: Record<string, unknown>
+  last_tested_at: string | null
+  last_test_ok: boolean | null
+  last_test_detail: ConnectionTest | Record<string, never>
+  last_sync_at: string | null
+  last_sync_summary: Record<string, number>
+}
+
+export type ConnectionTest = {
+  ok: boolean
+  system: string
+  version: string
+  detail: string
+  checks: { name: string; ok: boolean; detail: string }[]
+}
+
+export type ReconciliationMatch = {
+  incoming_code: string
+  incoming_name: string
+  existing_code: string | null
+  existing_name: string | null
+  method: string
+  changes: Record<string, unknown[]>
+  distance_moved_km: number | null
+}
+
+export type Reconciliation = {
+  summary: {
+    matched: number
+    new: number
+    absent: number
+    collisions: number
+    moved: number
+    renamed: number
+    gained_coordinates: number
+    by_method: Record<string, number>
+  }
+  matched: ReconciliationMatch[]
+  new: ReconciliationMatch[]
+  absent: { id: number; code: string; name: string; admin1: string | null }[]
+  collisions: { existing_code: string; existing_name: string; claimed_by: string[]; detail: string }[]
+  truncated: { matched: number; new: number; absent: number }
+  headline: string
+}
+
+export type SyncPreview = ValidationReport & {
+  connection: Connection
+  reconciliation: Reconciliation
+  connector_warnings: string[]
+  stats: Record<string, unknown>
+  commit_mode: string
+  commit_note: string
+}

@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
-from .api import exports, ingest, network, scenarios
+from .api import connectors, exports, ingest, network, scenarios
 from .config import settings
 from .db import Base, SessionLocal, engine
 from .engine.runner import run_scenario
@@ -82,6 +82,7 @@ app.include_router(network.router, prefix="/api")
 app.include_router(scenarios.router, prefix="/api")
 app.include_router(ingest.router, prefix="/api")
 app.include_router(exports.router, prefix="/api")
+app.include_router(connectors.router, prefix="/api")
 
 
 @app.get("/api/health")

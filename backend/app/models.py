@@ -287,14 +287,84 @@ class AuditEntry(Base):
 
 
 class ImportBatch(Base):
-    """One upload of a workbook, with its validation report retained."""
+    """One proposed change to the data, with its validation report retained.
+
+    Covers both a workbook upload and a connector sync, deliberately. Live data earns
+    no separate path: it is validated, previewed and committed through exactly the
+    same machinery, so the record of what was applied is the same record either way.
+    """
 
     __tablename__ = "import_batch"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
     filename: Mapped[str] = mapped_column(String(255))
+    #: excel | dhis2 | msupply | openlmis
+    source: Mapped[str] = mapped_column(String(32), default="excel")
+    connection_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("connection.id", ondelete="SET NULL"), nullable=True
+    )
+    #: replace wipes the country first; merge upserts and leaves lanes alone.
+    mode: Mapped[str] = mapped_column(String(16), default="replace")
     status: Mapped[str] = mapped_column(String(24), default="validated")
     committed: Mapped[bool] = mapped_column(Boolean, default=False)
     report: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class Connection(Base):
+    """A configured link to a logistics information system.
+
+    **On the secret.** ``secret_env`` names an environment variable and is the way to
+    run this in anything resembling production: the credential lives in the process
+    environment, never in the database and never in a backup of it. ``secret`` stores
+    the value directly, which is honest about being a convenience for a laptop during
+    a workshop and is labelled as such in the UI. Neither is ever returned by the API.
+    A proper secret manager is the right answer for a hosted deployment and is a
+    deliberate gap, not an oversight.
+    """
+
+    __tablename__ = "connection"
+    __table_args__ = (UniqueConstraint("country_id", "name", name="uq_connection_country_name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+
+    name: Mapped[str] = mapped_column(String(128))
+    #: dhis2 | msupply | openlmis
+    system: Mapped[str] = mapped_column(String(32))
+    base_url: Mapped[str] = mapped_column(String(512), default="")
+
+    #: basic | token | bearer
+    auth_type: Mapped[str] = mapped_column(String(16), default="basic")
+    username: Mapped[str] = mapped_column(String(128), default="")
+    secret: Mapped[str] = mapped_column(String(512), default="")
+    secret_env: Mapped[str] = mapped_column(String(128), default="")
+
+    verify_tls: Mapped[bool] = mapped_column(Boolean, default=True)
+    timeout_s: Mapped[float] = mapped_column(Float, default=30.0)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    #: Endpoints, field selectors, GraphQL documents and product mappings. Everything
+    #: that differs between two installations of the same system lives here.
+    config: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    last_tested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_test_ok: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    last_test_detail: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_sync_summary: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    def resolved_secret(self) -> str:
+        """The credential to use, preferring the environment over the database."""
+        import os
+
+        if self.secret_env:
+            return os.environ.get(self.secret_env, "")
+        return self.secret or ""
+
+    def has_secret(self) -> bool:
+        return bool(self.resolved_secret())
