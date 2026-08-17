@@ -14,33 +14,39 @@ and the costed roadmap generator).
 
 ## Run it
 
+**Requires Python 3.10 or newer.** Node is optional — a built frontend is committed,
+so the API serves the whole application on its own.
+
 ```bash
-# Backend
-python3 -m venv .venv
-.venv/bin/pip install -r backend/requirements.txt
-cd backend && ../.venv/bin/python -m uvicorn app.main:app --reload
+make install
+make run
 ```
 
+Open <http://localhost:8000>. On first start the backend creates a SQLite database,
+seeds the Papua New Guinea reference workspace and solves the baseline, so the map has
+data on it before you touch anything.
+
+If you want to change the interface, install Node and use `make dev`, which rebuilds
+the frontend from source first. `make backend` and `make frontend` give you the API and
+the Vite dev server separately, with hot reload on both.
+
 ```bash
-# Frontend (a second terminal)
-cd frontend && npm install && npm run dev
+make test    # 85 tests
 ```
 
-Open <http://localhost:5173>. On first start the backend creates a SQLite database,
-seeds the Papua New Guinea reference workspace and solves the baseline, so the map
-has data on it before you touch anything.
+### If `make install` fails
 
-To run as a single process — which is what you want on a laptop in a workshop —
-build the frontend first and start only the backend; it serves the built app:
+**`npm: command not found`** — expected, and not a problem. The committed build means
+`make run` works without Node. Install it (`brew install node`) only to edit the
+interface.
 
-```bash
-cd frontend && npm run build && cd ../backend && ../.venv/bin/python -m uvicorn app.main:app
-```
-
-Then open <http://localhost:8000>.
+**Python is too old.** macOS ships 3.9 as the system `python3`, which installs every
+dependency happily and then fails at import. The Makefile checks the version before
+doing anything and tells you the fix:
 
 ```bash
-cd backend && ../.venv/bin/python -m pytest    # 84 tests
+brew install python@3.12
+rm -rf .venv && make install PYTHON=$(brew --prefix)/bin/python3.12
 ```
 
 ---

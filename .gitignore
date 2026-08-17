@@ -16,8 +16,12 @@ backend/exports/
 
 # Node
 node_modules/
-frontend/dist/
 .vite/
+frontend/tsconfig.tsbuildinfo
+
+# frontend/dist is deliberately COMMITTED. The product's whole claim is that it
+# survives without its authors, and requiring a Node toolchain to see a map in a
+# provincial health office defeats that. `make build` refreshes it.
 
 # Editor / OS
 .DS_Store
