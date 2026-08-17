@@ -144,8 +144,8 @@ def build_roadmap(
                 "detail": (
                     "Update the distribution plan, requisition routing in the eLMIS, and "
                     "transport contracts. Facilities affected: "
-                    + ", ".join(f"{f} ({a}→{b})" for f, a, b in reassigned[:12])
-                    + ("…" if len(reassigned) > 12 else "")
+                    + ", ".join(f"{f} ({a}→{b})" for f, a, b in reassigned[:6])
+                    + (f" and {len(reassigned) - 6} more" if len(reassigned) > 6 else "")
                 ),
                 "one_off_cost": round(len(reassigned) * 450.0, 2),
                 "annual_cost_delta": 0.0,

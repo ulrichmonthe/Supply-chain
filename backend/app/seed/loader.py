@@ -488,10 +488,12 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         name="Baseline — network as it operates today",
         description=(
             "Five Area Medical Stores, current catchments, current timetables, and the "
-            "standing policy that every facility is supplied. The cost model therefore "
-            "delivers 100% of demand — that is the policy, not an observation. What actually "
-            "happens is in the stockout risk column, which is driven by how often each "
-            "facility is reached and how much it can hold."
+            "standing policy that every facility is supplied — priced at 6,000 PGK per cubic "
+            "metre not delivered, which is more than the most expensive air charter in the "
+            "network. Under normal conditions the model therefore reaches everyone. Where it "
+            "cannot, that is a capacity limit rather than a choice, and the facilities "
+            "concerned are named. What happens in practice is in the stockout risk column, "
+            "which is driven by how often each facility is reached and how much it can hold."
         ),
         is_baseline=True,
         levers={
@@ -506,7 +508,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             "demand_growth": 0.0,
             "safety_stock_days": 14.0,
         },
-        constraints={"min_fill_rate": 1.0, "respect_capacity": True},
+        constraints={"respect_capacity": True},
         objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.5},
     )
     session.add(baseline)
@@ -517,14 +519,14 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             country_id=country.id,
             name="Cost optimisation — unconstrained",
             description=(
-                "Minimise total cost with no service floor and no equity weighting. This is "
-                "what a commercial network design tool produces if you let it. Read the "
+                "Minimise cost with the value of supply turned down to a quarter and equity "
+                "weighted at zero — a network design tool asked only about money. Read the "
                 "equity panel before you read the saving."
             ),
             parent_scenario_id=baseline.id,
             levers={**baseline.levers, "optimize_hubs": True},
             constraints={"respect_capacity": True},
-            objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.0},
+            objective_weights={"cost": 1.0, "service": 0.25, "equity": 0.0},
         ),
         Scenario(
             country_id=country.id,
@@ -538,7 +540,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             parent_scenario_id=baseline.id,
             levers={**baseline.levers, "optimize_hubs": True},
             constraints={"equity_floor": 0.90, "respect_capacity": True},
-            objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.6},
+            objective_weights={"cost": 1.0, "service": 0.25, "equity": 0.6},
         ),
         Scenario(
             country_id=country.id,
@@ -551,7 +553,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             ),
             parent_scenario_id=baseline.id,
             levers={**baseline.levers, "month": 3},
-            constraints={"min_fill_rate": 1.0, "respect_capacity": True},
+            constraints={"respect_capacity": True},
             objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.5},
         ),
         Scenario(
@@ -559,8 +561,9 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             name="Island services halved (fortnightly → monthly)",
             description=(
                 "Every weekly and fortnightly coastal run drops to monthly — the effect of "
-                "a fuel price shock or a vessel going off charter. Cost falls. Look at what "
-                "happens to stockout risk at island facilities, and at the equity panel."
+                "a fuel price shock or a vessel going off charter. Cost falls, because the "
+                "boats sail less often. Look at what that does to stockout risk at island "
+                "facilities, and to the equity panel."
             ),
             parent_scenario_id=baseline.id,
             levers={
@@ -575,7 +578,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
                     "Madang–Sepik coastal service": "MONTHLY",
                 },
             },
-            constraints={"min_fill_rate": 0.90, "respect_capacity": True},
+            constraints={"respect_capacity": True},
             objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.5},
         ),
         Scenario(
@@ -593,7 +596,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
                 "hub_nodes_open": ["AMS-WWK", "AMS-ALO", "AMS-BUK"],
                 "optimize_hubs": False,
             },
-            constraints={"min_fill_rate": 1.0, "respect_capacity": True},
+            constraints={"respect_capacity": True},
             objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.5},
         ),
         Scenario(
@@ -606,7 +609,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
             ),
             parent_scenario_id=baseline.id,
             levers={**baseline.levers, "integration_policy": "integrated", "third_party_share": 0.35},
-            constraints={"min_fill_rate": 1.0, "respect_capacity": True},
+            constraints={"respect_capacity": True},
             objective_weights={"cost": 1.0, "service": 1.0, "equity": 0.5},
         ),
     ]

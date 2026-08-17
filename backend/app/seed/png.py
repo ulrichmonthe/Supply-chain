@@ -47,6 +47,13 @@ COUNTRY = {
             "remoteness, terrain, months of restricted access and transport mode dependency."
         ),
         "national_buffer_stock_days": 14,
+        "capex_amortisation_years": 10,
+        # What it is worth, per cubic metre, to avoid failing to supply a facility.
+        # Set above the most expensive lane in the network (air charter, ~3,100) so
+        # that under the standing policy the model always prefers to deliver. A
+        # scenario that wants to ask "what would pure cost minimisation do?" lowers
+        # its service weight, which scales this down.
+        "unmet_penalty_per_m3": 6000.0,
         "data_provenance": {
             "status": "ILLUSTRATIVE",
             "real": "Facility locations, provinces, network structure, transport modes.",

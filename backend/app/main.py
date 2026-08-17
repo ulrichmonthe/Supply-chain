@@ -10,10 +10,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select
 
 from .api import exports, ingest, network, scenarios
 from .config import settings
 from .db import Base, SessionLocal, engine
+from .engine.runner import run_scenario
+from .models import Result, Scenario
 from .seed.loader import seed_png
 
 logger = logging.getLogger("hscn")
@@ -28,10 +31,32 @@ async def lifespan(_: FastAPI):
         session = SessionLocal()
         try:
             country = seed_png(session)
+            _ensure_baseline_result(session, country)
             logger.info("PNG workspace ready (country id %s).", country.id)
         finally:
             session.close()
     yield
+
+
+def _ensure_baseline_result(session, country) -> None:
+    """Run the baseline once so the application opens with a live map.
+
+    Only the baseline: running every scenario here would spend the demo's best
+    moment -- a scenario set solving in parallel while the room watches -- before
+    anybody is in the room.
+    """
+    baseline = session.scalar(
+        select(Scenario).where(Scenario.country_id == country.id, Scenario.is_baseline.is_(True))
+    )
+    if not baseline:
+        return
+    already = session.scalar(select(Result).where(Result.scenario_id == baseline.id))
+    if already:
+        return
+    try:
+        run_scenario(session, baseline)
+    except Exception:  # noqa: BLE001 - a failed warm-up must never block startup
+        logger.exception("Baseline warm-up run failed; the app will start without it.")
 
 
 app = FastAPI(

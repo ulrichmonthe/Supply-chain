@@ -28,3 +28,7 @@ frontend/dist/
 # Env
 .env
 .env.local
+
+# Playwright, installed ad hoc for UI verification
+frontend/demo.cjs
+frontend/tsconfig.tsbuildinfo

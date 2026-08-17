@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import math
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_session
-from ..engine import seasonality, service
+from ..engine import geo, seasonality, service
 from ..engine.distance import cascade_summary
 from ..engine.equity import compute_vulnerability
 from ..models import AuditEntry, Country, Demand, Edge, Node, Product
@@ -136,6 +138,56 @@ def overview(country_id: int, session: Session = Depends(get_session)):
         "vulnerability": {str(k): v.as_dict() for k, v in vulnerability.items()},
         "seasonality_profiles": seasonality.PROFILES,
         "months": seasonality.MONTHS,
+    }
+
+
+@router.get("/countries/{country_id}/basemap.geojson")
+def basemap(country_id: int, session: Session = Depends(get_session)):
+    """The land mask, as GeoJSON, so the map has a basemap with no internet.
+
+    A network design workshop in Papua New Guinea cannot assume a tile server is
+    reachable. Rather than ship a second dataset, the map draws the same coarse land
+    mask the validator screens coordinates against — which has the useful side effect
+    that what you see is exactly what the validator believes, coarseness included.
+    """
+    country = _country_or_404(session, country_id)
+    if country.code.upper() != "PNG":
+        return {"type": "FeatureCollection", "features": []}
+
+    features = [
+        {
+            "type": "Feature",
+            "properties": {"kind": "landmass"},
+            "geometry": {"type": "Polygon", "coordinates": [[*ring, ring[0]]]},
+        }
+        for ring in geo.PNG_POLYGONS
+    ]
+
+    # Circular buffers become 24-gon rings so the same fill layer can draw them.
+    for lat, lon, radius_km in geo.PNG_ISLAND_BUFFERS:
+        ring = []
+        for step in range(25):
+            angle = 2 * math.pi * step / 24
+            dlat = (radius_km / 111.32) * math.cos(angle)
+            dlon = (radius_km / (111.32 * max(0.2, math.cos(math.radians(lat))))) * math.sin(angle)
+            ring.append([lon + dlon, lat + dlat])
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"kind": "island"},
+                "geometry": {"type": "Polygon", "coordinates": [ring]},
+            }
+        )
+
+    return {
+        "type": "FeatureCollection",
+        "properties": {
+            "note": (
+                "Coarse land mask, accurate to roughly 10-25 km at the coast. It is a "
+                "screening geometry, not a coastline."
+            )
+        },
+        "features": features,
     }
 
 
