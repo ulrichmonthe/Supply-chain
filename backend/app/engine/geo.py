@@ -13,6 +13,7 @@ kilometres, which is the error class that actually occurs in master lists.
 from __future__ import annotations
 
 import math
+from typing import Optional
 
 EARTH_RADIUS_KM = 6371.0088
 
@@ -155,7 +156,7 @@ def land_distance_km(lat: float, lon: float) -> float:
 LAND_MASKS = {"PNG": land_distance_km}
 
 
-def offshore_km(country_code: str, lat: float, lon: float) -> float | None:
+def offshore_km(country_code: str, lat: float, lon: float) -> Optional[float]:
     """How far offshore a point is, or None when no mask is configured."""
     mask = LAND_MASKS.get(country_code.upper())
     if mask is None:

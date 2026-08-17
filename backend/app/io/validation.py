@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from statistics import median
+from typing import Optional
 
 from ..engine.geo import haversine_km, offshore_km
 
@@ -62,7 +63,7 @@ class Issue:
     message: str
     suggestion: str = ""
     sheet: str = ""
-    row: int | None = None
+    row: Optional[int] = None
     entity: str = ""
 
     def as_dict(self) -> dict:
@@ -125,7 +126,7 @@ class ValidationReport:
         return "Data passed every check."
 
 
-def _to_float(value) -> float | None:
+def _to_float(value) -> Optional[float]:
     if value is None or value == "":
         return None
     try:

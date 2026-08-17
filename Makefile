@@ -4,10 +4,9 @@ VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-# Python 3.10 or newer is required (dataclass slots). macOS ships 3.9 as the system
-# python3, which installs the dependencies happily and then fails at import with a
-# confusing TypeError, so the version is checked before anything else runs.
-PYTHON ?= $(shell command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
+# Python 3.9 or newer. 3.9 is what macOS ships as the system python3, and the code is
+# written to run on it: no PEP 604 unions in evaluated positions, no dataclass slots.
+PYTHON ?= $(shell command -v python3)
 
 help:
 	@echo "make install   create the virtualenv and install dependencies"
@@ -19,10 +18,9 @@ help:
 
 check-python:
 	@$(PYTHON) -c 'import sys; \
-	  sys.exit(0) if sys.version_info >= (3, 10) else \
-	  (print(f"\nThis project needs Python 3.10 or newer; {sys.executable} is {sys.version.split()[0]}.\n" \
-	         f"On macOS:   brew install python@3.12\n" \
-	         f"Then:       make install PYTHON=$$(brew --prefix)/bin/python3.12\n"), sys.exit(1))'
+	  sys.exit(0) if sys.version_info >= (3, 9) else \
+	  (print(f"\nThis project needs Python 3.9 or newer; {sys.executable} is {sys.version.split()[0]}.\n"), \
+	   sys.exit(1))'
 
 install: check-python
 	$(PYTHON) -m venv $(VENV)

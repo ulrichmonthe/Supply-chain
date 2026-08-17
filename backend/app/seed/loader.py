@@ -7,8 +7,7 @@ same provenance as an imported one. Nothing is privileged for being built in.
 
 from __future__ import annotations
 
-from typing import NamedTuple
-
+from typing import NamedTuple, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -50,7 +49,7 @@ class FacilitySpec(NamedTuple):
     hub: str
     mode: str
     profile: str
-    service_key: str | None
+    service_key: Optional[str]
 
 
 def country_exists(session: Session, code: str) -> bool:
@@ -93,9 +92,9 @@ def _make_edge(
     *,
     mode: str,
     profile_name: str,
-    frequency: str | None,
-    service_name: str | None = None,
-    service_days: list[str] | None = None,
+    frequency: Optional[str],
+    service_name: Optional[str] = None,
+    service_days: Optional[list[str]] = None,
     capacity_per_trip_m3: float = 0.0,
     cold_capacity_per_trip_m3: float = 0.0,
     fixed_cost_per_trip: float = 0.0,

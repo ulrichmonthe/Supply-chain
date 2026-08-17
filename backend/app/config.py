@@ -7,6 +7,7 @@ Set DATABASE_URL to a PostGIS instance for the production path.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
 
     # Distance cascade. When an OSRM instance is reachable it is preferred over
     # the great-circle + detour-factor fallback. Self-hosted per region; see README.
-    osrm_url: str | None = None
+    osrm_url: Optional[str] = None
     osrm_timeout_s: float = 5.0
 
     # Great-circle detour factors by terrain class, used when OSRM is unavailable.

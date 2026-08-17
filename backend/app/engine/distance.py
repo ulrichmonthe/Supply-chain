@@ -17,6 +17,7 @@ it" -- and then actually overwrite it, from the UI, with the override recorded.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 import httpx
 
@@ -56,7 +57,7 @@ SEA_DETOUR = 1.22
 RIVER_DETOUR = 1.55
 
 
-@dataclass(slots=True)
+@dataclass
 class DistanceResult:
     distance_km: float
     travel_time_hr: float
@@ -79,7 +80,7 @@ def _speed(mode: str, terrain_class: str) -> float:
     return table.get(terrain_class, table.get("_default", 40.0))
 
 
-def _osrm_route(lat1: float, lon1: float, lat2: float, lon2: float) -> tuple[float, float] | None:
+def _osrm_route(lat1: float, lon1: float, lat2: float, lon2: float) -> Optional[tuple[float,float]]:
     """Query a self-hosted OSRM. Returns (km, hours) or None if unavailable.
 
     Self-hosted per region on purpose: OSM coverage in the Pacific is thin and the
@@ -109,8 +110,8 @@ def resolve_distance(
     *,
     mode: str = "road",
     terrain_class: str = "mainland_road",
-    manual_km: float | None = None,
-    manual_hours: float | None = None,
+    manual_km: Optional[float] = None,
+    manual_hours: Optional[float] = None,
     manual_note: str = "",
 ) -> DistanceResult:
     """Run the cascade and return the winning number with its provenance."""

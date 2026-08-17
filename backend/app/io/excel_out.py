@@ -16,6 +16,7 @@ model does not know about, and a government analyst will want to re-sort it.
 from __future__ import annotations
 
 import io
+from typing import Optional
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -202,7 +203,7 @@ def export_network(country, nodes, edges, products, demand) -> bytes:
     return stream.getvalue()
 
 
-def export_results(country, scenario, result, roadmap: dict | None, comparison: dict | None) -> bytes:
+def export_results(country, scenario, result, roadmap: Optional[dict], comparison: Optional[dict]) -> bytes:
     """The consultancy deliverable."""
     workbook = Workbook()
     workbook.remove(workbook.active)

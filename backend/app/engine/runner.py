@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import time
 from statistics import median
+from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -57,7 +58,7 @@ def _resolve_levers(scenario: Scenario) -> dict:
     return levers
 
 
-def _frequency_for(edge: Edge, levers: dict) -> str | None:
+def _frequency_for(edge: Edge, levers: dict) -> Optional[str]:
     overrides = levers.get("service_frequency_overrides") or {}
     if edge.code in overrides:
         return overrides[edge.code]
@@ -122,7 +123,7 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
     hubs: list[HubIn] = []
     for node in hub_nodes:
         if node.code in forced_closed:
-            state: bool | None = False
+            state: Optional[bool] = False
         elif node.code in forced_open:
             state = True
         elif optimize_hubs:

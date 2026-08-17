@@ -16,6 +16,7 @@ through verbatim because retrofitting them after country #2 would be a rewrite:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy import (
     JSON,
@@ -82,8 +83,8 @@ class Node(Base):
     geocode_confidence: Mapped[float] = mapped_column(Float, default=0.5)
     geocode_source: Mapped[str] = mapped_column(String(64), default="unknown")
 
-    admin1: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    admin2: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    admin1: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    admin2: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
 
     #: {"dry_m3": float, "cold_by_band": {"+2-8": m3, "-20": m3, "-70": m3}}
     capacity: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -133,14 +134,14 @@ class Edge(Base):
     #: osrm | detour_factor | manual | gtfs | great_circle
     distance_method: Mapped[str] = mapped_column(String(24), default="detour_factor")
     distance_confidence: Mapped[float] = mapped_column(Float, default=0.5)
-    distance_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    distance_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # --- scheduled service (sea / air timetables) -------------------------------
     #: None for on-demand road lanes; else DAILY | WEEKLY | FORTNIGHTLY | MONTHLY | QUARTERLY
-    service_frequency: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    service_frequency: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     #: e.g. ["TUE"] -- "the boat only goes on Tuesdays"
-    service_days: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    service_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    service_days: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    service_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     capacity_per_trip_m3: Mapped[float] = mapped_column(Float, default=0.0)
     cold_capacity_per_trip_m3: Mapped[float] = mapped_column(Float, default=0.0)
 
@@ -214,7 +215,7 @@ class Scenario(Base):
 
     name: Mapped[str] = mapped_column(String(128))
     description: Mapped[str] = mapped_column(Text, default="")
-    parent_scenario_id: Mapped[int | None] = mapped_column(
+    parent_scenario_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("scenario.id", ondelete="SET NULL"), nullable=True
     )
     is_baseline: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -250,7 +251,7 @@ class Result(Base):
     solver_log: Mapped[dict] = mapped_column(JSON, default=dict)
     run_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     runtime_ms: Mapped[int] = mapped_column(Integer, default=0)
-    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     scenario: Mapped[Scenario] = relationship(back_populates="results")
 
@@ -273,8 +274,8 @@ class AuditEntry(Base):
     entity_ref: Mapped[str] = mapped_column(String(128), default="")
     field: Mapped[str] = mapped_column(String(64), default="")
 
-    old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
-    new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    old_value: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    new_value: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     #: seed | import | osrm | manual_override | field_interview | assumption
     provenance: Mapped[str] = mapped_column(String(32), default="assumption")

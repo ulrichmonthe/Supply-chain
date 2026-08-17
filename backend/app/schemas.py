@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,8 +27,8 @@ class NodeOut(BaseModel):
     lon: float
     geocode_confidence: float
     geocode_source: str
-    admin1: str | None
-    admin2: str | None
+    admin1: Optional[str]
+    admin2: Optional[str]
     capacity: dict
     operating_status: str
     catchment_population: float
@@ -58,10 +59,10 @@ class EdgeOut(BaseModel):
     base_travel_time_hr: float
     distance_method: str
     distance_confidence: float
-    distance_note: str | None
-    service_name: str | None
-    service_frequency: str | None
-    service_days: list | None
+    distance_note: Optional[str]
+    service_name: Optional[str]
+    service_frequency: Optional[str]
+    service_days: Optional[list]
     capacity_per_trip_m3: float
     cold_capacity_per_trip_m3: float
     fixed_cost_per_trip: float
@@ -90,18 +91,18 @@ class ProductOut(BaseModel):
 class ScenarioIn(BaseModel):
     name: str
     description: str = ""
-    parent_scenario_id: int | None = None
+    parent_scenario_id: Optional[int] = None
     levers: dict = Field(default_factory=dict)
     constraints: dict = Field(default_factory=dict)
     objective_weights: dict = Field(default_factory=dict)
 
 
 class ScenarioPatch(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    levers: dict | None = None
-    constraints: dict | None = None
-    objective_weights: dict | None = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    levers: Optional[dict] = None
+    constraints: Optional[dict] = None
+    objective_weights: Optional[dict] = None
 
 
 class ScenarioOut(BaseModel):
@@ -109,13 +110,13 @@ class ScenarioOut(BaseModel):
     country_id: int
     name: str
     description: str
-    parent_scenario_id: int | None
+    parent_scenario_id: Optional[int]
     is_baseline: bool
     levers: dict
     constraints: dict
     objective_weights: dict
-    latest_result_id: int | None = None
-    latest_status: str | None = None
+    latest_result_id: Optional[int] = None
+    latest_status: Optional[str] = None
     updated_at: datetime
 
     class Config:
@@ -129,7 +130,7 @@ class ResultSummary(BaseModel):
     kpi_set: dict
     runtime_ms: int
     run_timestamp: datetime
-    error: str | None
+    error: Optional[str]
 
     class Config:
         from_attributes = True
@@ -138,14 +139,14 @@ class ResultSummary(BaseModel):
 class EdgeOverride(BaseModel):
     """Manual override of a lane, recorded in the audit trail."""
 
-    distance_km: float | None = None
-    base_travel_time_hr: float | None = None
-    service_frequency: str | None = None
-    capacity_per_trip_m3: float | None = None
-    monthly_access: list[float] | None = None
-    reliability: float | None = None
-    cost_per_m3: float | None = None
-    active: bool | None = None
+    distance_km: Optional[float] = None
+    base_travel_time_hr: Optional[float] = None
+    service_frequency: Optional[str] = None
+    capacity_per_trip_m3: Optional[float] = None
+    monthly_access: Optional[list[float]] = None
+    reliability: Optional[float] = None
+    cost_per_m3: Optional[float] = None
+    active: Optional[bool] = None
     rationale: str = ""
     actor: str = "analyst"
 
@@ -155,8 +156,8 @@ class AuditOut(BaseModel):
     entity_type: str
     entity_ref: str
     field: str
-    old_value: str | None
-    new_value: str | None
+    old_value: Optional[str]
+    new_value: Optional[str]
     provenance: str
     confidence_marker: str
     rationale: str

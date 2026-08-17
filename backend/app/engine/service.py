@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Optional
 
 from . import seasonality
 
@@ -48,13 +49,13 @@ FREQUENCY_ORDER = list(TRIPS_PER_YEAR.keys())
 DEMAND_CV_BY_LEVEL: dict[int, float] = {0: 0.15, 1: 0.20, 2: 0.30, 3: 0.45}
 
 
-def trips_per_year(frequency: str | None) -> float:
+def trips_per_year(frequency: Optional[str]) -> float:
     if not frequency:
         return TRIPS_PER_YEAR["MONTHLY"]
     return TRIPS_PER_YEAR.get(frequency.upper(), TRIPS_PER_YEAR["MONTHLY"])
 
 
-def interval_days(frequency: str | None) -> float:
+def interval_days(frequency: Optional[str]) -> float:
     return 365.0 / max(1e-6, trips_per_year(frequency))
 
 
@@ -63,7 +64,7 @@ def _phi(z: float) -> float:
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
 
-@dataclass(slots=True)
+@dataclass
 class ServiceProfile:
     """What a lane can actually deliver, once the timetable and season are applied."""
 
@@ -77,7 +78,7 @@ class ServiceProfile:
     access_factor: float
 
 
-def profile_for(edge, month: int | None = None, frequency_override: str | None = None) -> ServiceProfile:
+def profile_for(edge, month: Optional[int] = None, frequency_override: Optional[str] = None) -> ServiceProfile:
     """Resolve a lane's delivery profile for a month (or annualised when month is None)."""
     frequency = frequency_override or edge.service_frequency
     is_scheduled = bool(edge.service_frequency)
@@ -175,8 +176,8 @@ def facility_risk(
     edge,
     annual_demand_m3: float,
     *,
-    month: int | None = None,
-    frequency_override: str | None = None,
+    month: Optional[int] = None,
+    frequency_override: Optional[str] = None,
     safety_stock_days: float = 0.0,
 ) -> dict:
     """Full risk picture for one facility served by one lane."""

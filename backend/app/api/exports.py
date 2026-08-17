@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy import select
@@ -16,7 +17,7 @@ from ..models import Node, Result, Scenario
 router = APIRouter(tags=["exports"])
 
 
-def _latest_ok(session: Session, scenario_id: int) -> Result | None:
+def _latest_ok(session: Session, scenario_id: int) -> Optional[Result]:
     return session.scalars(
         select(Result)
         .where(Result.scenario_id == scenario_id, Result.status == "ok")

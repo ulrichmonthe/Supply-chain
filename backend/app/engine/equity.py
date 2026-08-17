@@ -54,7 +54,7 @@ WEIGHTS = {
 }
 
 
-@dataclass(slots=True)
+@dataclass
 class NodeVulnerability:
     node_code: str
     score: float

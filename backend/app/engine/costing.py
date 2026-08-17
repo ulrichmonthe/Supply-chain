@@ -16,6 +16,7 @@ applied here and nowhere else, so there is one place to look when a number moves
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from . import seasonality, service
 
@@ -34,7 +35,7 @@ HANDLING_COST_PER_M3 = 14.0
 COLD_HANDLING_UPLIFT_PER_M3 = 46.0
 
 
-@dataclass(slots=True)
+@dataclass
 class LaneCost:
     unit_cost_per_m3: float
     transport_per_m3: float
@@ -55,7 +56,7 @@ class LaneCost:
 def lane_cost(
     edge,
     *,
-    month: int | None = None,
+    month: Optional[int] = None,
     fuel_index: float = 1.0,
     third_party_share: float = 0.0,
     cold_share: float = 0.0,
@@ -118,5 +119,5 @@ def demand_scaling(levers: dict) -> float:
     return max(0.0, 1.0 + float(levers.get("demand_growth", 0.0) or 0.0))
 
 
-def lane_annual_capacity_m3(edge, month: int | None, frequency_override: str | None) -> float:
+def lane_annual_capacity_m3(edge, month: Optional[int], frequency_override: Optional[str]) -> float:
     return service.profile_for(edge, month=month, frequency_override=frequency_override).annual_capacity_m3

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -90,7 +91,7 @@ def delete_scenario(scenario_id: int, session: Session = Depends(get_session)):
 
 
 @router.post("/scenarios/{scenario_id}/clone", response_model=ScenarioOut, status_code=201)
-def clone_scenario(scenario_id: int, payload: ScenarioIn | None = None, session: Session = Depends(get_session)):
+def clone_scenario(scenario_id: int, payload: Optional[ScenarioIn] = None, session: Session = Depends(get_session)):
     source = _scenario_or_404(session, scenario_id)
     name = (payload.name if payload and payload.name else f"{source.name} (copy)")
     suffix = 2
@@ -194,7 +195,7 @@ def get_result(result_id: int, session: Session = Depends(get_session)):
     }
 
 
-def _latest_result(session: Session, scenario: Scenario) -> Result | None:
+def _latest_result(session: Session, scenario: Scenario) -> Optional[Result]:
     return session.scalars(
         select(Result)
         .where(Result.scenario_id == scenario.id, Result.status == "ok")
@@ -203,7 +204,7 @@ def _latest_result(session: Session, scenario: Scenario) -> Result | None:
     ).first()
 
 
-def _baseline(session: Session, country_id: int) -> Scenario | None:
+def _baseline(session: Session, country_id: int) -> Optional[Scenario]:
     return session.scalar(
         select(Scenario).where(Scenario.country_id == country_id, Scenario.is_baseline.is_(True))
     )

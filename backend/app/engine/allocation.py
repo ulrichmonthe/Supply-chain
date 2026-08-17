@@ -23,13 +23,14 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Optional
 
 import highspy
 
 INF = highspy.kHighsInf
 
 
-@dataclass(slots=True)
+@dataclass
 class FacilityIn:
     id: int
     code: str
@@ -40,20 +41,20 @@ class FacilityIn:
     unmet_penalty: float = 0.0
 
 
-@dataclass(slots=True)
+@dataclass
 class HubIn:
     id: int
     code: str
     fixed_cost: float = 0.0
     throughput_m3: float = 0.0  # 0 means unconstrained
-    forced_open: bool | None = None  # None = solver decides
+    forced_open: Optional[bool] = None  # None = solver decides
     #: Capital cost of opening a closed hub, spread over its amortisation period. The
     #: full one-off figure belongs in the roadmap, never in an annual operating total.
     annualised_capex: float = 0.0
     currently_open: bool = True
 
 
-@dataclass(slots=True)
+@dataclass
 class LaneIn:
     edge_id: int
     code: str
@@ -64,14 +65,14 @@ class LaneIn:
     mode: str = "road"
 
 
-@dataclass(slots=True)
+@dataclass
 class SolveOptions:
     weight_cost: float = 1.0
     weight_service: float = 1.0
     weight_equity: float = 0.0
-    min_fill_rate: float | None = None
-    equity_floor: float | None = None
-    max_budget: float | None = None
+    min_fill_rate: Optional[float] = None
+    equity_floor: Optional[float] = None
+    max_budget: Optional[float] = None
     respect_capacity: bool = True
     n_strata: int = 5
     mip_rel_gap: float = 0.005

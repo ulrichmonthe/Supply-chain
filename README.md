@@ -14,7 +14,8 @@ and the costed roadmap generator).
 
 ## Run it
 
-**Requires Python 3.10 or newer.** Node is optional — a built frontend is committed,
+**Requires Python 3.9 or newer** — including the `python3` that ships with macOS, so
+there is nothing to install first. Node is optional too: a built frontend is committed,
 so the API serves the whole application on its own.
 
 ```bash
@@ -34,20 +35,14 @@ the Vite dev server separately, with hot reload on both.
 make test    # 85 tests
 ```
 
-### If `make install` fails
+**`npm: command not found` is expected** and not a problem. The committed build means
+`make run` works without Node. Install it (`brew install node`) only if you want to
+edit the interface.
 
-**`npm: command not found`** — expected, and not a problem. The committed build means
-`make run` works without Node. Install it (`brew install node`) only to edit the
-interface.
-
-**Python is too old.** macOS ships 3.9 as the system `python3`, which installs every
-dependency happily and then fails at import. The Makefile checks the version before
-doing anything and tells you the fix:
-
-```bash
-brew install python@3.12
-rm -rf .venv && make install PYTHON=$(brew --prefix)/bin/python3.12
-```
+Both floors are deliberate. Requiring a Node toolchain and a newer Python to see a map
+would contradict the durability claim the product is sold on, so the code is written to
+run on a stock macOS install: `Optional[X]` rather than `X | None`, no dataclass slots.
+The suite is run against 3.9 as well as 3.11.
 
 ---
 

@@ -9,6 +9,7 @@ than one that fails, because nobody can tell which half is real.
 from __future__ import annotations
 
 import io
+from typing import Optional
 
 from openpyxl import load_workbook
 
@@ -54,7 +55,7 @@ def _read_sheet(workbook, name: str) -> list[dict]:
     return out
 
 
-def _monthly_vector(record: dict, prefix: str, profile_key: str, profile_source) -> list[float] | None:
+def _monthly_vector(record: dict, prefix: str, profile_key: str, profile_source) -> Optional[list[float]]:
     """Read twelve monthly columns, or expand a named profile, or return None."""
     columns = [f"{prefix}{abbr.lower()}" for abbr in seasonality.MONTH_ABBR]
     if any(column in record and record[column] not in (None, "") for column in columns):

@@ -7,6 +7,7 @@ silently, and there is no worse place to discover that than in the room.
 
 from __future__ import annotations
 
+from typing import Optional
 import pytest
 from sqlalchemy import select
 
@@ -34,7 +35,7 @@ def _scenario(session, prefix: str) -> Scenario:
     return scenario
 
 
-def _run(session, prefix: str, month: int | None = "keep"):
+def _run(session, prefix: str, month: Optional[int] = "keep"):
     scenario = _scenario(session, prefix)
     if month != "keep":
         scenario.levers = {**scenario.levers, "month": month}
@@ -194,7 +195,7 @@ def test_scenarios_can_be_solved_concurrently(seeded_session_factory):
     """
     from concurrent.futures import ThreadPoolExecutor
 
-    def solve_one(scenario_id: int) -> tuple[str, str | None]:
+    def solve_one(scenario_id: int) -> tuple[str, Optional[str]]:
         session = seeded_session_factory()
         try:
             scenario = session.get(Scenario, scenario_id)
