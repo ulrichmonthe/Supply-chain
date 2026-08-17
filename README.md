@@ -23,7 +23,11 @@ make install
 make run
 ```
 
-Open <http://localhost:8000>. On first start the backend creates a SQLite database,
+`make run` starts the server and keeps running in that terminal — leave it alone and
+open <http://localhost:8000> in a browser. Ctrl+C stops it. If something already owns
+that port, use `make run PORT=8080`.
+
+On first start the backend creates a SQLite database,
 seeds the Papua New Guinea reference workspace and solves the baseline, so the map has
 data on it before you touch anything.
 

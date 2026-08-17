@@ -8,9 +8,13 @@ PIP  := $(VENV)/bin/pip
 # written to run on it: no PEP 604 unions in evaluated positions, no dataclass slots.
 PYTHON ?= $(shell command -v python3)
 
+# Override if something already owns 8000:  make run PORT=8080
+PORT ?= 8000
+
 help:
 	@echo "make install   create the virtualenv and install dependencies"
 	@echo "make run       run the app on http://localhost:8000  (no Node required)"
+	@echo "               override the port with:  make run PORT=8080"
 	@echo "make dev       rebuild the frontend from source, then run  (needs Node)"
 	@echo "make backend   API with autoreload, for frontend development"
 	@echo "make frontend  Vite dev server on :5173, proxying to the API"
@@ -41,8 +45,12 @@ install: check-python
 run:
 	@test -f frontend/dist/index.html || { \
 	  echo "frontend/dist is missing. Run 'make build' (needs Node)."; exit 1; }
-	@echo "Open http://localhost:8000"
-	cd backend && ../$(PY) -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+	@echo ""
+	@echo "  Starting the server. Open http://localhost:$(PORT) in your browser."
+	@echo "  The first start takes a few seconds: it seeds the dataset and solves the baseline."
+	@echo "  Leave this running; press Ctrl+C to stop."
+	@echo ""
+	cd backend && ../$(PY) -m uvicorn app.main:app --host 127.0.0.1 --port $(PORT)
 
 build:
 	@command -v npm >/dev/null 2>&1 || { \
