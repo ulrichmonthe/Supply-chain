@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { Scenario, ServiceSummary } from '../types'
 import { FREQUENCIES, frequencyLabel, money, pct } from '../format'
 
@@ -43,9 +43,19 @@ export function ScenarioPanel(props: Props) {
                   onChange={() => props.onToggleCompare(scenario.id)}
                   onClick={(event) => event.stopPropagation()}
                   style={{ accentColor: 'var(--accent)' }}
+                  aria-label={`Include ${scenario.name} in the next scenario set run`}
                   title="Include in the next scenario set run"
                 />
-                <b>{scenario.name}</b>
+                {/* The whole row stays clickable for a mouse, but selection also has
+                    a real control so it is reachable and announced without one. */}
+                <button
+                  type="button"
+                  className="row-select"
+                  aria-pressed={scenario.id === props.selectedId}
+                  onClick={() => props.onSelect(scenario.id)}
+                >
+                  {scenario.name}
+                </button>
                 {scenario.is_baseline && <span className="pill info">base</span>}
               </div>
               {scenario.id === props.selectedId && scenario.description && (
@@ -95,11 +105,12 @@ export function ScenarioPanel(props: Props) {
           className="btn primary"
           style={{ width: '100%', marginTop: 6 }}
           disabled={props.running || props.compareIds.length === 0}
+          aria-busy={props.running}
           onClick={props.onRunSet}
         >
           {props.running ? (
             <>
-              <span className="spinner" /> Running…
+              <span className="spinner" aria-hidden="true" /> Running…
             </>
           ) : (
             `Run ${props.compareIds.length} scenario${props.compareIds.length === 1 ? '' : 's'} in parallel`
@@ -122,6 +133,7 @@ function LeverEditor({
   onPatch: (id: number, patch: Partial<Scenario>) => void
 }) {
   const [openServices, setOpenServices] = useState(false)
+  const panelId = useId()
   const levers = scenario.levers ?? {}
   const constraints = scenario.constraints ?? {}
   const weights = scenario.objective_weights ?? {}
@@ -200,13 +212,17 @@ function LeverEditor({
 
         <div className="lever">
           <div className="lever-head">
-            <label>Modes allowed</label>
+            <span className="lever-label" id={`${panelId}-modes`}>
+              Modes allowed
+            </span>
           </div>
-          <div className="chips">
+          <div className="chips" role="group" aria-labelledby={`${panelId}-modes`}>
             {MODES.map((mode) => (
-              <span
+              <button
+                type="button"
                 key={mode}
                 className={`chip${allowed.includes(mode) ? ' on' : ''}`}
+                aria-pressed={allowed.includes(mode)}
                 onClick={() =>
                   setLever({
                     allowed_modes: allowed.includes(mode)
@@ -216,7 +232,7 @@ function LeverEditor({
                 }
               >
                 {mode}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -232,9 +248,10 @@ function LeverEditor({
 
         <div className="lever">
           <div className="lever-head">
-            <label>Programme integration</label>
+            <label htmlFor={`${panelId}-integration`}>Programme integration</label>
           </div>
           <select
+            id={`${panelId}-integration`}
             value={levers.integration_policy ?? 'vertical'}
             onChange={(event) => setLever({ integration_policy: event.target.value })}
           >
@@ -302,10 +319,16 @@ function LeverEditor({
             {scheduled.map((svc) => (
               <div className="lever" key={svc.name}>
                 <div className="lever-head">
-                  <label title={svc.name}>{svc.name.length > 34 ? `${svc.name.slice(0, 33)}…` : svc.name}</label>
+                  {/* The visible name is truncated to fit the column, so the control
+                      carries the full one for anyone who cannot see the tooltip. */}
+                  <label htmlFor={`${panelId}-svc-${svc.name}`} title={svc.name}>
+                    {svc.name.length > 34 ? `${svc.name.slice(0, 33)}…` : svc.name}
+                  </label>
                   <b className="dim">{svc.facilities} sites</b>
                 </div>
                 <select
+                  id={`${panelId}-svc-${svc.name}`}
+                  aria-label={`${svc.name} — call frequency`}
                   value={overrides[svc.name] ?? svc.frequency}
                   onChange={(event) => {
                     const next = { ...overrides }
@@ -352,13 +375,15 @@ function Slider({
   note?: string
   onChange: (value: number) => void
 }) {
+  const id = useId()
   return (
     <div className="lever">
       <div className="lever-head">
-        <label>{label}</label>
+        <label htmlFor={id}>{label}</label>
         <b>{format(value)}</b>
       </div>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}
@@ -398,6 +423,7 @@ function OptionalSlider({
       {value !== null && value !== undefined && (
         <input
           type="range"
+          aria-label={label}
           min={0.5}
           max={1}
           step={0.01}

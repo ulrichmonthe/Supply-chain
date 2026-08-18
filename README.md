@@ -37,6 +37,7 @@ the Vite dev server separately, with hot reload on both.
 
 ```bash
 make test    # 288 tests
+make a11y    # accessibility audit against the running app (needs Node)
 ```
 
 **`npm: command not found` is expected** and not a problem. The committed build means
@@ -382,6 +383,20 @@ retrofitting them after country #2 would be a rewrite:
    the UI rather than from a database console.
 3. **`Edge.monthly_access` is a 12-element vector on every edge.** This is what makes
    seasonality free rather than a bolt-on.
+
+### Interface
+
+The interface is audited against the `ui-ux-pro-max` design skill vendored in
+`.claude/skills/`, which is roughly 250 rules citing Apple's Human Interface Guidelines,
+Material Design and WCAG. `docs/design-audit.md` records what complied, what was fixed
+and what was deliberately left alone.
+
+The audit is executable, not a claim: `make a11y` runs axe-core over all nine tabs of the
+running app and then checks the things axe cannot see — that the skip link is really the
+first tab stop, that the tablist answers arrow keys, that a month can be chosen without a
+mouse, that focus draws a visible ring, that no viewport from 1440px down to 768px
+produces horizontal page scroll, and that every target is thumb-sized under a coarse
+pointer. Twenty-three checks; it exits non-zero on any failure.
 
 ### Configuration
 

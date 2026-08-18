@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -32,6 +32,7 @@ export function MapView(props: Props) {
   const [ready, setReady] = useState(false)
   const [hover, setHover] = useState<Hover>(null)
   const [online, setOnline] = useState(false)
+  const mapId = useId()
   const [tilesUnavailable, setTilesUnavailable] = useState(false)
 
   const nodeByCode = useMemo(() => new Map(props.nodes.map((n) => [n.code, n])), [props.nodes])
@@ -435,19 +436,28 @@ export function MapView(props: Props) {
 
   return (
     <div className="map-wrap">
-      <div className="map" ref={container} />
+      {/* The canvas itself carries no text. The map is named here, and the
+          facility table under the Facilities tab is the accessible equivalent of
+          what it shows — the numbers behind every dot, in a real table. */}
+      <div
+        className="map"
+        ref={container}
+        role="region"
+        aria-label="Network map. The Facilities tab lists the same data as a table."
+      />
 
       <div className="map-overlay map-legend">
         <h4>Lanes</h4>
         {['road', 'sea', 'air', 'river'].map((mode) => (
           <div className="legend-row" key={mode}>
-            <span className="legend-swatch" style={{ background: modeColour(mode) }} />
+            <span aria-hidden="true" className="legend-swatch" style={{ background: modeColour(mode) }} />
             {mode}
           </div>
         ))}
         {props.month && (
           <div className="legend-row" style={{ marginTop: 4 }}>
             <span
+              aria-hidden="true"
               className="legend-swatch"
               style={{ background: 'repeating-linear-gradient(90deg,#ef6b6b 0 3px,transparent 3px 6px)' }}
             />
@@ -456,20 +466,21 @@ export function MapView(props: Props) {
         )}
         <h4 style={{ marginTop: 9 }}>Facilities</h4>
         <div className="legend-row">
-          <span className="legend-dot" style={{ background: '#ffffff' }} /> national store
+          <span aria-hidden="true" className="legend-dot" style={{ background: '#ffffff' }} /> national store
         </div>
         <div className="legend-row">
-          <span className="legend-dot" style={{ background: '#4da3ff' }} /> area medical store
+          <span aria-hidden="true" className="legend-dot" style={{ background: '#4da3ff' }} /> area medical store
         </div>
         <div className="legend-row">
-          <span className="legend-dot" style={{ background: colourScaleHint(props.colourBy) }} />
+          <span aria-hidden="true" className="legend-dot" style={{ background: colourScaleHint(props.colourBy) }} />
           {colourByLabel(props.colourBy)}
         </div>
       </div>
 
       <div className="map-overlay map-mode">
-        <label>Colour facilities by</label>
+        <label htmlFor={`${mapId}-colour-by`}>Colour facilities by</label>
         <select
+          id={`${mapId}-colour-by`}
           value={props.colourBy}
           onChange={(event) => props.onColourBy(event.target.value as ColourBy)}
           style={{
@@ -485,7 +496,9 @@ export function MapView(props: Props) {
           <option value="mode">Transport mode</option>
         </select>
 
-        <label style={{ marginTop: 4 }}>Basemap</label>
+        <span className="field-label" style={{ marginTop: 4 }}>
+          Basemap
+        </span>
         <label className="checkbox">
           <input
             type="checkbox"
@@ -507,6 +520,7 @@ export function MapView(props: Props) {
       {hover && (
         <div
           className="map-tooltip"
+          role="tooltip"
           style={{
             left: Math.min(hover.x + 14, (container.current?.clientWidth ?? 800) - 300),
             top: Math.min(hover.y + 14, (container.current?.clientHeight ?? 600) - 190),

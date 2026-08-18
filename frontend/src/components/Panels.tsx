@@ -44,22 +44,40 @@ export function FacilityTable({
   return (
     <div>
       <div className="section" style={{ borderBottom: '1px solid var(--line)' }}>
-        <div className="chips">
+        <div className="chips" role="group" aria-label="Sort facilities by">
           {(['risk', 'cost', 'fill', 'vulnerability', 'name'] as const).map((key) => (
-            <span key={key} className={`chip${sort === key ? ' on' : ''}`} onClick={() => setSort(key)}>
+            <button
+              type="button"
+              key={key}
+              className={`chip${sort === key ? ' on' : ''}`}
+              aria-pressed={sort === key}
+              onClick={() => setSort(key)}
+            >
               {key === 'fill' ? 'worst fill' : key}
-            </span>
+            </button>
           ))}
         </div>
       </div>
       <table>
+        {/* The sort state lives on the chips above, so the header announces which
+            column is currently ordering the table rather than pretending the
+            headers are the control. */}
+        <caption className="visually-hidden">
+          Every facility in the network, sorted by {sort === 'fill' ? 'worst fill' : sort}.
+        </caption>
         <thead>
           <tr>
-            <th>Facility</th>
+            <th aria-sort={sort === 'name' ? 'ascending' : 'none'}>Facility</th>
             <th>Supplied by</th>
-            <th className="n">Fill</th>
-            <th className="n">Risk</th>
-            <th className="n">Cost</th>
+            <th className="n" aria-sort={sort === 'fill' ? 'ascending' : 'none'}>
+              Fill
+            </th>
+            <th className="n" aria-sort={sort === 'risk' ? 'descending' : 'none'}>
+              Risk
+            </th>
+            <th className="n" aria-sort={sort === 'cost' ? 'descending' : 'none'}>
+              Cost
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -70,7 +88,14 @@ export function FacilityTable({
               onClick={() => onSelect(node.code)}
             >
               <td>
-                <div>{node.name}</div>
+                <button
+                  type="button"
+                  className="row-select"
+                  aria-pressed={node.code === selectedCode}
+                  onClick={() => onSelect(node.code)}
+                >
+                  {node.name}
+                </button>
                 <div className="row-note">
                   {node.admin1} · {exact(node.population)} people ·{' '}
                   {node.storage_days.toFixed(0)}d storage
@@ -459,8 +484,20 @@ export function DataPanel({
         </div>
       </div>
 
+      {/* A drop target has to be reachable without a mouse, so it also behaves as a
+          button: focusable, activated by Enter or Space, and named for the action
+          rather than for the gesture. */}
       <div
         className={`dropzone${over ? ' over' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Choose a workbook to upload, or drop one here"
+        aria-busy={busy}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return
+          event.preventDefault()
+          document.getElementById('file-input')?.click()
+        }}
         onDragOver={(event) => {
           event.preventDefault()
           setOver(true)
@@ -476,7 +513,7 @@ export function DataPanel({
       >
         {busy ? (
           <>
-            <span className="spinner" /> Working…
+            <span className="spinner" aria-hidden="true" /> Working…
           </>
         ) : (
           <>
@@ -499,7 +536,7 @@ export function DataPanel({
         />
       </div>
 
-      {message && <div className="callout">{message}</div>}
+      <div aria-live="polite">{message && <div className="callout">{message}</div>}</div>
 
       {report && (
         <>
@@ -518,11 +555,17 @@ export function DataPanel({
             </div>
           </div>
           <div className="section">
-            <div className="chips">
+            <div className="chips" role="group" aria-label="Filter validation issues">
               {(['all', 'error', 'warning'] as const).map((key) => (
-                <span key={key} className={`chip${filter === key ? ' on' : ''}`} onClick={() => setFilter(key)}>
+                <button
+                  type="button"
+                  key={key}
+                  className={`chip${filter === key ? ' on' : ''}`}
+                  aria-pressed={filter === key}
+                  onClick={() => setFilter(key)}
+                >
                   {key}
-                </span>
+                </button>
               ))}
             </div>
           </div>
@@ -607,7 +650,7 @@ export function ProvenancePanel({
           return (
             <div key={row.key} style={{ marginBottom: 9 }}>
               <div className="lever-head">
-                <label>{row.label}</label>
+                <span className="lever-label">{row.label}</span>
                 <b className="num">{count}</b>
               </div>
               <div className="bar-track">

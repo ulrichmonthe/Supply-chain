@@ -1,4 +1,4 @@
-.PHONY: help install run dev backend frontend build test clean check-python
+.PHONY: help install run dev backend frontend build test a11y clean check-python
 
 VENV := .venv
 PY   := $(VENV)/bin/python
@@ -19,6 +19,8 @@ help:
 	@echo "make backend   API with autoreload, for frontend development"
 	@echo "make frontend  Vite dev server on :5173, proxying to the API"
 	@echo "make test      run the test suite"
+	@echo "make a11y      audit the running app for accessibility  (needs Node)"
+	@echo "               start 'make run' in another terminal first"
 
 check-python:
 	@$(PYTHON) -c 'import sys; \
@@ -67,6 +69,14 @@ frontend:
 
 test:
 	cd backend && ../$(PY) -m pytest -q
+
+## Runs axe-core over every tab of the running app, then checks the things axe cannot
+## see: keyboard reach, focus rings, hit sizes, and horizontal scroll at six widths.
+## Needs the app already serving — start 'make run' in another terminal.
+a11y:
+	@command -v npm >/dev/null 2>&1 || { \
+	  echo "npm not found. This check needs Node; the app itself does not."; exit 1; }
+	cd frontend && npm install && npm run a11y
 
 clean:
 	rm -rf backend/var

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { api, connectorApi } from '../api'
 import type { Connection, ConnectorSpec, SyncPreview } from '../types'
 import { exact } from '../format'
@@ -131,7 +131,17 @@ export function ConnectionsPanel({
               }}
             >
               <div className="connection-head">
-                <b>{connection.name}</b>
+                <button
+                  type="button"
+                  className="row-select"
+                  aria-pressed={connection.id === selectedId}
+                  onClick={() => {
+                    setSelectedId(connection.id)
+                    setPreview(null)
+                  }}
+                >
+                  {connection.name}
+                </button>
                 <span className="pill">{system?.label ?? connection.system}</span>
                 {connection.last_test_ok === true && <span className="pill good">tested</span>}
                 {connection.last_test_ok === false && <span className="pill bad">failing</span>}
@@ -153,16 +163,20 @@ export function ConnectionsPanel({
                   <button
                     className="btn small"
                     disabled={busy !== null}
+                    aria-label="Test connection"
+                    aria-busy={busy === 'test'}
                     onClick={() => void testConnection(connection.id)}
                   >
-                    {busy === 'test' ? <span className="spinner" /> : 'Test'}
+                    {busy === 'test' ? <span className="spinner" aria-hidden="true" /> : 'Test'}
                   </button>
                   <button
                     className="btn small primary"
                     disabled={busy !== null}
+                    aria-label="Preview sync"
+                    aria-busy={busy === 'preview'}
                     onClick={() => void previewSync(connection.id)}
                   >
-                    {busy === 'preview' ? <span className="spinner" /> : 'Preview sync'}
+                    {busy === 'preview' ? <span className="spinner" aria-hidden="true" /> : 'Preview sync'}
                   </button>
                   <button
                     className="btn small ghost"
@@ -280,8 +294,14 @@ function PreviewReport({
           {summary.moved > 0 && <span className="pill warn">{summary.moved} moved</span>}
           {summary.renamed > 0 && <span className="pill warn">{summary.renamed} renamed</span>}
           {preview.counts.error > 0 && <span className="pill bad">{preview.counts.error} errors</span>}
-          <button className="btn small primary" disabled={preview.blocking || busy !== null} onClick={onApply}>
-            {busy === 'apply' ? <span className="spinner" /> : 'Apply this sync'}
+          <button
+            className="btn small primary"
+            disabled={preview.blocking || busy !== null}
+            aria-label="Apply this sync"
+            aria-busy={busy === 'apply'}
+            onClick={onApply}
+          >
+            {busy === 'apply' ? <span className="spinner" aria-hidden="true" /> : 'Apply this sync'}
           </button>
         </div>
         <div className="tiny dim" style={{ marginTop: 7 }}>
@@ -290,11 +310,17 @@ function PreviewReport({
       </div>
 
       <div className="section">
-        <div className="chips">
+        <div className="chips" role="group" aria-label="Preview section">
           {(['changes', 'issues', 'notes'] as const).map((key) => (
-            <span key={key} className={`chip${tab === key ? ' on' : ''}`} onClick={() => setTab(key)}>
+            <button
+              type="button"
+              key={key}
+              className={`chip${tab === key ? ' on' : ''}`}
+              aria-pressed={tab === key}
+              onClick={() => setTab(key)}
+            >
               {key === 'issues' ? `issues (${preview.issues.length})` : key}
-            </span>
+            </button>
           ))}
         </div>
       </div>
@@ -437,6 +463,7 @@ function ConfigEditor({
 }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<Record<string, string>>({})
+  const fieldPrefix = useId()
 
   const current = (key: string): unknown =>
     key in connection.config ? connection.config[key] : spec.config_spec[key]?.default
@@ -491,16 +518,21 @@ function ConfigEditor({
           {Object.entries(spec.config_spec).map(([key, entry]) => (
             <div className="lever" key={key}>
               <div className="lever-head">
-                <label>{key.replace(/_/g, ' ')}</label>
+                <label htmlFor={`${fieldPrefix}-${key}`}>{key.replace(/_/g, ' ')}</label>
                 {key in connection.config && <span className="pill info">set</span>}
               </div>
               {entry.kind === 'boolean' ? (
-                <select value={value(key)} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}>
+                <select
+                  id={`${fieldPrefix}-${key}`}
+                  value={value(key)}
+                  onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                >
                   <option value="true">true</option>
                   <option value="false">false</option>
                 </select>
               ) : entry.kind === 'map' || entry.kind === 'graphql' ? (
                 <textarea
+                  id={`${fieldPrefix}-${key}`}
                   value={value(key)}
                   rows={entry.kind === 'graphql' ? 6 : 4}
                   spellCheck={false}
@@ -512,12 +544,13 @@ function ConfigEditor({
                     borderRadius: 5,
                     padding: '5px 7px',
                     fontFamily: 'var(--mono)',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-micro)',
                     resize: 'vertical',
                   }}
                 />
               ) : (
                 <input
+                  id={`${fieldPrefix}-${key}`}
                   value={value(key)}
                   onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
                   style={{
@@ -557,6 +590,7 @@ function NewConnectionForm({
   const [secret, setSecret] = useState('')
   const [secretEnv, setSecretEnv] = useState('')
   const [authType, setAuthType] = useState('basic')
+  const formId = useId()
 
   const spec = systems.find((s) => s.system === system)
 
@@ -564,9 +598,10 @@ function NewConnectionForm({
     <div className="connection active" style={{ cursor: 'default' }}>
       <div className="lever">
         <div className="lever-head">
-          <label>System</label>
+          <label htmlFor={`${formId}-system`}>System</label>
         </div>
         <select
+          id={`${formId}-system`}
           value={system}
           onChange={(e) => {
             setSystem(e.target.value)
@@ -588,9 +623,9 @@ function NewConnectionForm({
 
       <div className="lever">
         <div className="lever-head">
-          <label>Authentication</label>
+          <label htmlFor={`${formId}-auth`}>Authentication</label>
         </div>
-        <select value={authType} onChange={(e) => setAuthType(e.target.value)}>
+        <select id={`${formId}-auth`} value={authType} onChange={(e) => setAuthType(e.target.value)}>
           {(spec?.auth_types ?? ['basic']).map((t) => (
             <option key={t} value={t}>
               {t}
@@ -653,12 +688,14 @@ function Field({
   placeholder?: string
   type?: string
 }) {
+  const id = useId()
   return (
     <div className="lever">
       <div className="lever-head">
-        <label>{label}</label>
+        <label htmlFor={id}>{label}</label>
       </div>
       <input
+        id={id}
         type={type}
         value={value}
         placeholder={placeholder}

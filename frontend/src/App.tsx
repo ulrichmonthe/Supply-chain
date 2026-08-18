@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type React from 'react'
 import { api } from './api'
 import { MapView } from './components/MapView'
 import type { ColourBy } from './components/MapView'
@@ -22,6 +23,8 @@ import { exact, formatKpi, money, signedPct } from './format'
 
 const TABS = ['Scorecard', 'Equity', 'Facilities', 'Services', 'Season', 'Data', 'Live', 'Provenance', 'Roadmap'] as const
 type Tab = (typeof TABS)[number]
+
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -261,13 +264,33 @@ export default function App() {
     }))
   }, [result, scorecard])
 
+  /* Arrow keys move the selection and the focus together, so the panel under the
+     tablist changes as you arrow across it — the APG "automatic activation"
+     pattern, which suits tabs that are cheap to render. */
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const delta =
+      event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : event.key === 'Home' ? -Infinity : event.key === 'End' ? Infinity : 0
+    if (!delta) return
+    event.preventDefault()
+    const current = TABS.indexOf(tab)
+    const next =
+      delta === -Infinity ? 0 : delta === Infinity ? TABS.length - 1 : (current + delta + TABS.length) % TABS.length
+    setTab(TABS[next])
+    document.getElementById(`tab-${slug(TABS[next])}`)?.focus()
+  }
+
   /* ---------------------------------------------------------------- render */
 
   return (
     <div className="app">
+      {/* First tab stop on the page. The sidebar is a long list of scenarios and
+          levers; without this a keyboard user pays for it before every result. */}
+      <a className="skip-link" href="#results">
+        Skip to results
+      </a>
       <header className="topbar">
         <div className="brand">
-          <strong>Health Supply Chain Network Design</strong>
+          <h1>Health Supply Chain Network Design</h1>
           <span>{overview?.country.name ?? 'Loading…'}</span>
         </div>
 
@@ -312,21 +335,25 @@ export default function App() {
           <span>
             Real: {provenance.real} Illustrative: {provenance.illustrative} {provenance.before_use}
           </span>
-          <button className="btn small ghost" onClick={() => setShowBanner(false)}>
+          <button className="btn small ghost" onClick={() => setShowBanner(false)} aria-label="Dismiss data provenance notice">
             Dismiss
           </button>
         </div>
       )}
 
-      {error && (
-        <div className="banner" style={{ background: '#2a1717', borderColor: '#542b2b', color: '#f2b0b0' }}>
-          <b>Problem</b>
-          <span>{error}</span>
-          <button className="btn small ghost" onClick={() => setError(null)}>
-            Dismiss
-          </button>
-        </div>
-      )}
+      {/* Errors here are the result of something the user just asked for, so they
+          are announced rather than left to be noticed. */}
+      <div role="alert" aria-live="assertive">
+        {error && (
+          <div className="banner" style={{ background: '#2a1717', borderColor: '#542b2b', color: '#f2b0b0' }}>
+            <b>Problem</b>
+            <span>{error}</span>
+            <button className="btn small ghost" onClick={() => setError(null)} aria-label="Dismiss error">
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="body">
         <ScenarioPanel
@@ -368,26 +395,33 @@ export default function App() {
           />
 
           <div className="season-bar">
-            <div className="dim tiny" style={{ width: 74 }}>
+            <div className="dim tiny" style={{ width: 74 }} role="status" aria-live="polite">
               {running ? (
                 <>
-                  <span className="spinner" /> SOLVING
+                  <span className="spinner" aria-hidden="true" /> SOLVING
                 </>
               ) : (
                 'CONDITIONS'
               )}
             </div>
-            <div className="months">
-              <div className={`month-cell annual${month === null ? ' on' : ''}`} onClick={() => pickMonth(null)}>
+            <div className="months" role="group" aria-label="Conditions to hold for a year">
+              <button
+                type="button"
+                className={`month-cell annual${month === null ? ' on' : ''}`}
+                aria-pressed={month === null}
+                onClick={() => pickMonth(null)}
+              >
                 Annualised
-              </div>
+              </button>
               {MONTH_ABBR.map((abbr, index) => {
                 const value = index + 1
                 const closed = month === value ? season?.summary.lanes_closed ?? 0 : 0
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={abbr}
                     className={`month-cell${month === value ? ' on' : ''}`}
+                    aria-pressed={month === value}
                     onClick={() => pickMonth(value)}
                     title={`${abbr} conditions, held for a year`}
                   >
@@ -398,7 +432,7 @@ export default function App() {
                         style={{ background: closed > 0 ? 'var(--bad)' : 'var(--good)' }}
                       />
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -413,12 +447,12 @@ export default function App() {
           </div>
         </div>
 
-        <aside className="inspector">
+        <aside className="inspector" id="results" aria-label="Results">
           {headlineKpis.length > 0 && (
             <div className="kpi-grid">
               {headlineKpis.map((kpi) => (
                 <div className="kpi" key={kpi.key}>
-                  <label>{kpi.label}</label>
+                  <span className="kpi-label">{kpi.label}</span>
                   <b>{formatKpi(kpi.value, kpi.unit, kpi.key === 'total_cost' ? currency : '')}</b>
                   {kpi.comparison && kpi.comparison.delta_pct !== null && Math.abs(kpi.comparison.delta) > 1e-9 && (
                     <span className={`delta ${kpi.comparison.direction}`}>
@@ -437,15 +471,28 @@ export default function App() {
             </div>
           )}
 
-          <div className="tabs">
+          {/* A tablist is one tab stop, not eight: Tab reaches the selected tab,
+              arrows move between them. That is the APG pattern and it is what a
+              screen reader user expects when the role says tablist. */}
+          <div className="tabs" role="tablist" aria-label="Result views" onKeyDown={onTabKeyDown}>
             {TABS.map((name) => (
-              <button key={name} className={`tab${tab === name ? ' on' : ''}`} onClick={() => setTab(name)}>
+              <button
+                type="button"
+                key={name}
+                id={`tab-${slug(name)}`}
+                role="tab"
+                aria-selected={tab === name}
+                aria-controls="tab-body"
+                tabIndex={tab === name ? 0 : -1}
+                className={`tab${tab === name ? ' on' : ''}`}
+                onClick={() => setTab(name)}
+              >
                 {name}
               </button>
             ))}
           </div>
 
-          <div className="tab-body">
+          <div className="tab-body" id="tab-body" role="tabpanel" aria-labelledby={`tab-${slug(tab)}`} tabIndex={0}>
             {tab === 'Scorecard' && (
               <Scorecard data={scorecard} currency={currency} selectedId={selectedId} onSelect={setSelectedId} />
             )}
