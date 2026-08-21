@@ -1,4 +1,4 @@
-.PHONY: help install run dev backend frontend build test a11y panel clean check-python
+.PHONY: help install run dev backend frontend build test a11y board panel clean check-python
 
 VENV := .venv
 PY   := $(VENV)/bin/python
@@ -11,9 +11,9 @@ PYTHON ?= $(shell command -v python3)
 # Override if something already owns 8000:  make run PORT=8080
 PORT ?= 8000
 
-# The Build Companion panel is served separately from the app, so it can stay open
-# beside a conversation while the app itself is restarted.
-PANEL_PORT ?= 4321
+# The Build Companion board is served separately from the app, so it stays up while
+# the app itself is restarted.
+BOARD_PORT ?= 4321
 
 help:
 	@echo "make install   create the virtualenv and install dependencies"
@@ -25,8 +25,8 @@ help:
 	@echo "make test      run the test suite"
 	@echo "make a11y      audit the running app for accessibility  (needs Node)"
 	@echo "               start 'make run' in another terminal first"
-	@echo "make panel     open the plain-language build status panel"
-	@echo "               override the port with:  make panel PANEL_PORT=4322"
+	@echo "make board     open the plain-language build board"
+	@echo "               override the port with:  make board BOARD_PORT=4322"
 
 check-python:
 	@$(PYTHON) -c 'import sys; \
@@ -84,11 +84,14 @@ a11y:
 	  echo "npm not found. This check needs Node; the app itself does not."; exit 1; }
 	cd frontend && npm install && npm run a11y
 
-## The Build Companion panel: a plain-language view of what exists, what is being
-## worked on, what was agreed and what is waiting on a decision. Reads build-status.json,
-## which Claude Code keeps updated. Needs no toolchain beyond Python.
-panel:
-	bash .claude/skills/build-companion/scripts/dashboard.sh $(PANEL_PORT)
+## The Build Companion board: what has been built, what is in flight, what is finished
+## but not deployed, and what was discussed and dropped. Reads build-status.json, which
+## Claude Code keeps updated. Needs no toolchain beyond Python.
+board:
+	bash .claude/skills/build-companion/scripts/dashboard.sh $(BOARD_PORT)
+
+## Kept so `make panel` from the old instructions still works.
+panel: board
 
 clean:
 	rm -rf backend/var

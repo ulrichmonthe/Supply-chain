@@ -1,24 +1,46 @@
 ---
 name: build-companion
 description: >
-  Maintain a plain-language visual build dashboard for non-developers. Use whenever
-  starting a new project or feature, building/testing/deploying anything, when the
-  user asks "where are we", "what's the status", "what are you working on", "is X
-  done", "open the dashboard", when a decision is agreed, when work is paused or an
-  idea is parked, and before anything goes live. Also use when the user mentions the
-  build companion, build status, parking lot, or the status panel.
+  Compile a live board of what has been built, what is in flight, what is finished but
+  not yet in production, and what was discussed and never built. Use whenever starting a
+  new project or feature, writing or shipping code, deploying anything, when the user asks
+  "where are we", "what's the status", "what's in prod", "is X done", "what did we not
+  build", "open the board", when a decision is agreed, when work is paused or an idea is
+  parked, and before anything is deployed. Also use when the user mentions the build
+  companion, build status, parking lot, or the board.
 ---
 
 # Build Companion
 
-You are keeping a live, honest, plain-language record of the build so a
-non-developer can always see what exists, what is happening right now, what was
-agreed, and what still needs their attention. The record lives in one file —
-`build-status.json` in the project root — and a static page, `dashboard.html`,
-renders it as a visual panel the user keeps open beside the conversation.
+This is a reverse issue tracker. Nobody writes tickets up front — you write them
+down as you build, so that someone who is vibe-coding can look at one page and
+see what exists, what is half-done, what is finished but not yet in front of real
+users, and what was talked about and dropped.
 
-**The conversation stays primary. The panel is context beside it, never a
+The record lives in one file — `build-status.json` in the project root — and
+`dashboard.html` renders it as a full-width board.
+
+**The conversation stays primary. The board is a record beside it, never a
 replacement for talking to the user.**
+
+## The unit of work is a user story
+
+A **feature** is a chunk of product the user would name out loud ("Login page").
+A **story** is one thing a person can do, written from their side of the screen
+("Reset a forgotten password"). Stories are what move; features just hold them.
+
+Every story carries two independent facts, and conflating them is the main
+mistake to avoid:
+
+| Field | Meaning |
+|---|---|
+| `state` | how far it has got: `idea` → `planning` → `building` → `testing` → `done` |
+| `env` | where it actually runs: `"prod"`, `"preview"`, or `null` |
+
+`state: "done"` means the code is written and checked. `env: "prod"` means real
+people can use it. **A story is routinely done and not deployed** — that gap is
+the single most useful thing on the board, so never mark `env: "prod"` to signal
+"finished". Only a real deploy sets it.
 
 ## First time in a project (initialize)
 
@@ -27,88 +49,85 @@ If `build-status.json` does not exist in the project root:
 1. Copy `assets/dashboard.html` from this skill folder into the project root.
 2. Create `build-status.json` from `assets/build-status.example.json`, replacing
    the example content with this project's real name, a one-sentence summary in
-   the user's words, and an empty `features` array and `parkingLot`.
-3. Tell the user how to open the panel, in one short line:
-   "Run `bash <path-to-this-skill>/scripts/dashboard.sh` (or
-   `python3 -m http.server 4321` in the project folder) and open
-   http://localhost:4321/dashboard.html — keep it beside this window."
-   Offer to start the server for them.
+   the user's words, and empty `deploys`, `features` and `parkingLot`.
+3. Tell the user how to open it, in one line: "Run
+   `bash <path-to-this-skill>/scripts/dashboard.sh` (or `python3 -m http.server 4321`
+   in the project folder) and open http://localhost:4321/dashboard.html."
+   Offer to start the server.
 
 Never overwrite an existing `build-status.json`. If it exists but is invalid
-JSON, fix it conservatively and tell the user what you repaired.
+JSON, fix it conservatively and say what you repaired. Files using the older
+`pieces` / `stage` shape still render — migrate them to `stories` the next time
+you touch that feature.
 
 ## The core loop (do this without being asked)
 
-Update `build-status.json` at every one of these moments, as part of the same
-turn in which the event happens — not later, not on request:
+Update `build-status.json` in the same turn as the event, not later:
 
 | Moment | What to write |
 |---|---|
-| A new feature is agreed | Add a feature: next sequential id (`f1`, `f2`, …), short human name, one-line description in the user's words, `stage: 0` or `1`, empty arrays for the rest |
-| You start actively working | Set `building: true` and keep `currentAction` updated to a short present-tense line ("Rewriting how large PDFs load…"). Update it as you move between tasks within the turn |
-| You stop working / turn ends | Set `building: false`, clear `currentAction`, append an `activity` entry summarizing what happened |
-| A stage changes | Update `stage`. Moving **backward is normal** — when it happens, set `wentBack` with a calm, blame-free note ("Back in Building — testing found an issue with large files. Nothing is lost.") and append an activity entry with `kind: "back"` |
-| A decision is agreed in conversation | Append to `decisions` with the current stage, plain wording of what was agreed, and when |
-| A version is completed | Prepend to `versions` with a plain note of what changed ("Added 'forgot password' link") |
-| You know something is untested or uncertain | Add it to `unsure` ("Works with sample files — not yet tested over 50MB"). Remove entries once actually verified |
-| Work is paused or an idea is proposed but not built | Move/add it to `parkingLot` with tag `"Started, paused"` or `"Proposed, not built"` and a reassuring note that nothing is lost |
-| Something is ready to go live | Set `needsYou` (see Approvals below). Do NOT deploy yet |
-| Anything notable happens | Append to `activity` (newest first): `when`, plain-language `what`, `kind` of `work`, `ok`, `live`, or `back` |
+| A feature is agreed | Add a feature: next id (`f1`, `f2`…), short human name, one-line description in the user's words |
+| You work out what a feature needs to do | Add its stories at `state: "idea"` or `"planning"` — one line each, phrased as something a person can do |
+| You start writing code for a story | Set that story to `state: "building"`; set the feature's `building: true` and `currentAction` to a short present-tense line |
+| A story works and you have checked it | `state: "testing"` → then `"done"`. Leave `env` alone |
+| You deploy | For every story that went out, set `env` and its `at`. Prepend one entry to the top-level `deploys` with `at`, `env`, plain-language `what`, and the `storyIds` that rode along |
+| A story goes backwards | Just move `state` back and put the reason in the story's `note` ("Back in Building — large files were too slow. Nothing is lost.") Add an `activity` entry with `kind: "back"` |
+| A decision is agreed in conversation | Append to the feature's `decisions` with `at` and plain wording |
+| You know something is untested | Put it on the story's `unsure`, or the feature's `unsure` if it spans the whole thing. Remove only once actually verified |
+| An idea comes up and is not built | Add to `parkingLot` with tag `"Started, paused"` or `"Proposed, not built"`, and a note saying nothing is lost |
+| Something is ready to deploy | Set `needsYou` on the feature. Do NOT deploy yet |
+| You stop working / turn ends | Clear `building` and `currentAction`; append an `activity` entry |
 
-Always update the top-level `updated` field with the current ISO timestamp on
-every write. The dashboard polls the file every 2 seconds, so each save is
-immediately visible to the user.
+Set the top-level `updated` to the current ISO timestamp on **every** write. The
+board re-reads the file every 2 seconds.
 
-## Approvals — the safety rule
+**Timestamps are ISO 8601, always.** Write `at`, never a frozen phrase like
+"yesterday" — the board turns `at` into relative time at read time, so a hand-written
+"4 days ago" becomes a lie a week later. On a board whose whole point is honesty,
+that matters.
 
-Never put anything live (deploy, publish, release, make visible to end users)
-while a `needsYou` item is unresolved. The flow:
+## Deploying — the safety rule
 
-1. When something is ready, set on that feature:
-   `"needsYou": { "title": "Version 2 is ready to go live", "text": "Passed its checks. Nothing changes for anyone until you approve." }`
-2. Ask for approval **in the conversation** in plain words. The panel shows the
-   same request with the hint "reply in the chat to approve" — the panel is
-   read-only; the conversation is where decisions happen.
-3. On approval: clear `needsYou`, set `stage: 4`, mark the version `"live": true`,
-   append an activity entry `"You approved it — Version 2 went live"` with
-   `kind: "live"`.
-4. On "not yet": clear `needsYou`, append "You chose to wait — nothing changed",
-   and leave the stage as is.
-5. If the user asks to roll back, do it, then mark the previous version live
-   again and reassure in both chat and activity that the newer version is saved,
-   not deleted.
+Never deploy, publish, or release while a `needsYou` is unresolved.
+
+1. When stories are done and checked, set on the feature:
+   `"needsYou": { "title": "Ready to go to prod", "text": "All three stories are built and checked. Nothing changes for anyone until you approve." }`
+2. Ask in the conversation, in plain words. The board is read-only; approval happens in chat.
+3. On approval: deploy, clear `needsYou`, set `env` and `at` on each story that
+   went out, prepend a `deploys` entry, append activity with `kind: "live"`.
+4. On "not yet": clear `needsYou`, append "You chose to wait — nothing was
+   deployed". The stories stay `done` with `env: null`, which is exactly what the
+   "built, not in prod" column is for.
+5. On a rollback: flip the affected stories' `env` back to `null`, add a `deploys`
+   entry describing the rollback, and reassure that the code is saved, not deleted.
 
 ## Language rules (this is the whole point)
 
-The reader may not know what a branch, deploy, commit, or environment is.
+The reader may not know what a branch, commit, or environment is.
 
-- Say "went live", "saved version", "checking it works", "moved back to
-  Building" — never "merged", "deployed to prod", "CI passed", "reverted HEAD".
-- `activity` and `versions` notes describe outcomes a user can picture: "The
-  error message now says what went wrong instead of just 'Error'."
-- Be honest, not promotional. `unsure` is a first-class feature: if you have not
-  verified something, say so there. An empty `unsure` on a feature you just
-  built is usually a lie.
+- Say "went to prod", "real people can use it", "checking it works", "moved back
+  to Building" — never "merged", "deployed to prod via CI", "reverted HEAD".
+- Story titles are things a person does, not things the code has: "Download a
+  document", not "Implement download endpoint".
+- Be honest, not promotional. `unsure` is a first-class field: an empty `unsure`
+  on something you just built is usually a lie.
 - Backward movement is never framed as failure.
-- Keep every string short. The panel is narrow.
+- Keep strings short — one line each. The board is dense.
 
-## Stages
+## The parking lot matters
 
-`stage` is an integer 0–4: `0 Idea · 1 Planning · 2 Building · 3 Testing · 4 Live`.
-Features loop backward freely. `parkingLot` is for work outside the flow
-entirely (paused or never started).
+Half of what gets discussed while vibe-coding never gets built, and the reason it
+was dropped is lost within a day. Every time an idea is raised and set aside, put
+it in `parkingLot` **with why**, in the same turn. It is the cheapest thing on
+this board and the one users thank you for.
 
 ## Multiple projects
 
-This is a personal skill: it works in every project. Each project gets its own
-`build-status.json` + `dashboard.html` in its own root, on its own port if the
-user runs several panels at once. If the user asks for a view across all
-projects ("what's happening across everything?"), read the `build-status.json`
-from each project folder they name (or scan their stated workspace directory)
-and answer in chat.
+Each project gets its own `build-status.json` + `dashboard.html` in its own root,
+on its own port. If the user asks what's happening across everything, read the
+`build-status.json` from each project folder they name and answer in chat.
 
 ## Reference
 
-Full field-by-field schema with examples: `references/STATUS-FORMAT.md`.
-Read it before writing the file for the first time in a session if you are
-unsure about any field.
+Full field-by-field schema: `references/STATUS-FORMAT.md`. Read it before your
+first write in a session if you are unsure about any field.

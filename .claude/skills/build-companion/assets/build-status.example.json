@@ -4,88 +4,96 @@
     "summary": "Clients log in, see their documents, and get status updates — so email back-and-forth stops."
   },
   "updated": "2026-08-21T14:03:00Z",
+
+  "deploys": [
+    {
+      "at": "2026-08-21T09:40:00Z",
+      "env": "prod",
+      "what": "Login page — 'forgot password' link",
+      "storyIds": ["f1s2"],
+      "note": "Clients can reset their own password now"
+    },
+    {
+      "at": "2026-08-18T16:12:00Z",
+      "env": "prod",
+      "what": "Login page — first working version",
+      "storyIds": ["f1s1", "f1s3"]
+    }
+  ],
+
   "features": [
     {
       "id": "f1",
       "name": "Login page",
       "oneLiner": "Clients sign in with email and password.",
-      "stage": 4,
-      "pieces": [
-        { "name": "Sign-in form", "done": true },
-        { "name": "Forgot password", "done": true },
-        { "name": "Error messages", "done": true }
-      ],
-      "versions": [
-        { "v": "Version 3", "when": "2 days ago", "live": true, "note": "Added 'forgot password'. This is what's running now." },
-        { "v": "Version 2", "when": "5 days ago", "live": false, "note": "Clearer error messages." }
+      "stories": [
+        { "id": "f1s1", "title": "Sign in with email and password", "state": "done", "env": "prod", "at": "2026-08-18T16:12:00Z" },
+        { "id": "f1s2", "title": "Reset a forgotten password", "state": "done", "env": "prod", "at": "2026-08-21T09:40:00Z" },
+        { "id": "f1s3", "title": "See a clear message when the password is wrong", "state": "done", "env": "prod", "at": "2026-08-18T16:12:00Z" },
+        { "id": "f1s4", "title": "Stay signed in for a week", "state": "done", "env": null,
+          "note": "Built and checked — waiting to go out with the next deploy.",
+          "unsure": "Checked on Chrome and Safari, not yet on older phones." }
       ],
       "decisions": [
-        { "stage": 1, "when": "1 week ago", "what": "Email + password only for launch; social login parked." }
+        { "at": "2026-08-14T10:00:00Z", "what": "Email and password only for launch; social login parked." }
       ],
-      "unsure": ["Checked on Chrome and Safari, but not yet on older phones."],
+      "unsure": [],
       "activity": [
-        { "when": "2 days ago", "kind": "live", "what": "Version 3 went live" },
-        { "when": "3 days ago", "kind": "ok", "what": "Testing finished — all sign-in cases behaved correctly" }
+        { "at": "2026-08-21T09:40:00Z", "kind": "live", "what": "'Forgot password' went to prod" }
       ]
     },
     {
       "id": "f2",
       "name": "Document viewer",
       "oneLiner": "Clients open and download their PDFs inside the portal.",
-      "stage": 2,
       "building": true,
       "currentAction": "Rewriting how large PDFs load…",
-      "wentBack": {
-        "when": "yesterday",
-        "note": "Back in Building — testing found an issue with very large files. Nothing is lost."
-      },
-      "pieces": [
-        { "name": "List of documents", "done": true },
-        { "name": "PDF preview", "done": false, "current": true },
-        { "name": "Download button", "done": false }
-      ],
-      "versions": [
-        { "v": "Draft", "when": "today", "live": false, "note": "Work in progress — not visible to clients yet." }
+      "stories": [
+        { "id": "f2s1", "title": "See a list of my documents", "state": "done", "env": "prod", "at": "2026-08-19T11:00:00Z" },
+        { "id": "f2s2", "title": "Preview a PDF without downloading it", "state": "building",
+          "note": "Back in Building — large files loaded too slowly in testing. Nothing is lost." },
+        { "id": "f2s3", "title": "Download a document", "state": "testing",
+          "unsure": "Works with sample files — not yet tested over 50MB." },
+        { "id": "f2s4", "title": "Search my documents by name", "state": "idea" }
       ],
       "decisions": [
-        { "stage": 1, "when": "4 days ago", "what": "Preview inside the page, download button, no editing for now." },
-        { "stage": 3, "when": "yesterday", "what": "Must handle files up to 50MB before going live." }
+        { "at": "2026-08-17T09:00:00Z", "what": "Preview inside the page, download button, no editing for now." },
+        { "at": "2026-08-20T15:30:00Z", "what": "Must handle files up to 50MB before it goes to prod." }
       ],
-      "unsure": ["Works with sample files — not yet tested with files over 50MB."],
+      "unsure": ["The whole feature has only been tried with our own test account."],
       "activity": [
-        { "when": "yesterday", "kind": "back", "what": "Moved back to Building — large files loaded too slowly in testing" },
-        { "when": "2 days ago", "kind": "ok", "what": "Testing started" }
+        { "at": "2026-08-20T15:30:00Z", "kind": "back", "what": "PDF preview moved back to Building — large files were too slow" }
       ]
     },
     {
       "id": "f3",
       "name": "Status updates",
       "oneLiner": "Clients see a simple timeline of where their project stands.",
-      "stage": 3,
       "needsYou": {
-        "title": "Version 1 is ready to go live",
-        "text": "The timeline works and passed its checks. Nothing changes for clients until you approve."
+        "title": "Ready to go to prod",
+        "text": "All three stories are built and checked. Nothing changes for clients until you approve."
       },
-      "pieces": [
-        { "name": "Timeline layout", "done": true },
-        { "name": "Status labels", "done": true },
-        { "name": "Email notification", "done": true }
-      ],
-      "versions": [
-        { "v": "Version 1", "when": "yesterday", "live": false, "note": "Complete and checked — waiting for your go-ahead." }
+      "stories": [
+        { "id": "f3s1", "title": "See a timeline of my project", "state": "done", "env": null },
+        { "id": "f3s2", "title": "See one of three labels: started, in progress, done", "state": "done", "env": null },
+        { "id": "f3s3", "title": "Get an email when my status changes", "state": "done", "env": null,
+          "unsure": "Tested with 3 sample clients — not yet with the full real client list." }
       ],
       "decisions": [
-        { "stage": 1, "when": "1 week ago", "what": "Clients see three labels: Started, In progress, Done." },
-        { "stage": 3, "when": "yesterday", "what": "Each client must see only their own timeline." }
+        { "at": "2026-08-14T10:00:00Z", "what": "Clients see three labels: Started, In progress, Done." },
+        { "at": "2026-08-20T12:00:00Z", "what": "Each client must see only their own timeline." }
       ],
-      "unsure": ["Tested with 3 sample clients — not yet with the full real client list."],
+      "unsure": [],
       "activity": [
-        { "when": "yesterday", "kind": "ok", "what": "Testing finished — ready for your approval" }
+        { "at": "2026-08-20T17:00:00Z", "kind": "ok", "what": "Checks finished — waiting for your go-ahead to deploy" }
       ]
     }
   ],
+
   "parkingLot": [
-    { "name": "Social login (Google / Apple)", "tag": "Started, paused", "note": "Email login was enough for launch. Work so far is saved." },
-    { "name": "Dark mode", "tag": "Proposed, not built", "note": "Parked until clients ask for it." }
+    { "name": "Social login (Google / Apple)", "tag": "Started, paused",
+      "note": "Email login was enough for launch. The work so far is saved." },
+    { "name": "Dark mode", "tag": "Proposed, not built",
+      "note": "Came up while building the login page. Parked until clients ask for it." }
   ]
 }
