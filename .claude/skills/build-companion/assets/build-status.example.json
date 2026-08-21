@@ -1,0 +1,91 @@
+{
+  "project": {
+    "name": "Client portal",
+    "summary": "Clients log in, see their documents, and get status updates — so email back-and-forth stops."
+  },
+  "updated": "2026-08-21T14:03:00Z",
+  "features": [
+    {
+      "id": "f1",
+      "name": "Login page",
+      "oneLiner": "Clients sign in with email and password.",
+      "stage": 4,
+      "pieces": [
+        { "name": "Sign-in form", "done": true },
+        { "name": "Forgot password", "done": true },
+        { "name": "Error messages", "done": true }
+      ],
+      "versions": [
+        { "v": "Version 3", "when": "2 days ago", "live": true, "note": "Added 'forgot password'. This is what's running now." },
+        { "v": "Version 2", "when": "5 days ago", "live": false, "note": "Clearer error messages." }
+      ],
+      "decisions": [
+        { "stage": 1, "when": "1 week ago", "what": "Email + password only for launch; social login parked." }
+      ],
+      "unsure": ["Checked on Chrome and Safari, but not yet on older phones."],
+      "activity": [
+        { "when": "2 days ago", "kind": "live", "what": "Version 3 went live" },
+        { "when": "3 days ago", "kind": "ok", "what": "Testing finished — all sign-in cases behaved correctly" }
+      ]
+    },
+    {
+      "id": "f2",
+      "name": "Document viewer",
+      "oneLiner": "Clients open and download their PDFs inside the portal.",
+      "stage": 2,
+      "building": true,
+      "currentAction": "Rewriting how large PDFs load…",
+      "wentBack": {
+        "when": "yesterday",
+        "note": "Back in Building — testing found an issue with very large files. Nothing is lost."
+      },
+      "pieces": [
+        { "name": "List of documents", "done": true },
+        { "name": "PDF preview", "done": false, "current": true },
+        { "name": "Download button", "done": false }
+      ],
+      "versions": [
+        { "v": "Draft", "when": "today", "live": false, "note": "Work in progress — not visible to clients yet." }
+      ],
+      "decisions": [
+        { "stage": 1, "when": "4 days ago", "what": "Preview inside the page, download button, no editing for now." },
+        { "stage": 3, "when": "yesterday", "what": "Must handle files up to 50MB before going live." }
+      ],
+      "unsure": ["Works with sample files — not yet tested with files over 50MB."],
+      "activity": [
+        { "when": "yesterday", "kind": "back", "what": "Moved back to Building — large files loaded too slowly in testing" },
+        { "when": "2 days ago", "kind": "ok", "what": "Testing started" }
+      ]
+    },
+    {
+      "id": "f3",
+      "name": "Status updates",
+      "oneLiner": "Clients see a simple timeline of where their project stands.",
+      "stage": 3,
+      "needsYou": {
+        "title": "Version 1 is ready to go live",
+        "text": "The timeline works and passed its checks. Nothing changes for clients until you approve."
+      },
+      "pieces": [
+        { "name": "Timeline layout", "done": true },
+        { "name": "Status labels", "done": true },
+        { "name": "Email notification", "done": true }
+      ],
+      "versions": [
+        { "v": "Version 1", "when": "yesterday", "live": false, "note": "Complete and checked — waiting for your go-ahead." }
+      ],
+      "decisions": [
+        { "stage": 1, "when": "1 week ago", "what": "Clients see three labels: Started, In progress, Done." },
+        { "stage": 3, "when": "yesterday", "what": "Each client must see only their own timeline." }
+      ],
+      "unsure": ["Tested with 3 sample clients — not yet with the full real client list."],
+      "activity": [
+        { "when": "yesterday", "kind": "ok", "what": "Testing finished — ready for your approval" }
+      ]
+    }
+  ],
+  "parkingLot": [
+    { "name": "Social login (Google / Apple)", "tag": "Started, paused", "note": "Email login was enough for launch. Work so far is saved." },
+    { "name": "Dark mode", "tag": "Proposed, not built", "note": "Parked until clients ask for it." }
+  ]
+}

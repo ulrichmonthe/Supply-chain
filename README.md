@@ -38,6 +38,7 @@ the Vite dev server separately, with hot reload on both.
 ```bash
 make test    # 288 tests
 make a11y    # accessibility audit against the running app (needs Node)
+make panel   # plain-language build status panel, on http://localhost:4321
 ```
 
 **`npm: command not found` is expected** and not a problem. The committed build means
@@ -383,6 +384,21 @@ retrofitting them after country #2 would be a rewrite:
    the UI rather than from a database console.
 3. **`Edge.monthly_access` is a 12-element vector on every edge.** This is what makes
    seasonality free rather than a bolt-on.
+
+### The build status panel
+
+`make panel` opens a small read-only page beside your editor that says, in plain
+language, what exists, what is being worked on right now, what was agreed and when, what
+has *not* been checked yet, and what is waiting on your decision. No jargon: it says
+"went live" and "saved version", never "merged" or "deployed".
+
+It renders `build-status.json` in the repository root — plain, readable, committed JSON
+that you own. The page re-reads it every two seconds, so it stays current as work
+happens. Delete the page and the record survives; it is a view, not the source of truth.
+
+The panel is deliberately read-only. Approvals happen in conversation, and nothing goes
+live while something is waiting on you. The skill that keeps the file updated is
+vendored in `.claude/skills/build-companion/`.
 
 ### Interface
 

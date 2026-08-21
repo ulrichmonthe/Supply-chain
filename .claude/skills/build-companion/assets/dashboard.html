@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Build Companion</title>
+<style>
+  :root{
+    --paper:#F6F3EC; --card:#FFFFFF; --soft:#FBF9F4; --text:#2E2A23;
+    --muted:#8C8474; --line:#E6E0D3; --attn:#B0620F; --attn-bg:#FBEFDD;
+    --attn-line:#E8CFA6; --live:#4A7A55; --live-bg:#EDF3EE; --live-line:#CBDCCF;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:'Avenir Next','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--paper);color:var(--text);font-family:var(--sans);
+       max-width:430px;margin:0 auto;padding:24px 18px 60px;font-size:14px}
+  h1,h2,h3,.serif{font-family:var(--serif)}
+  h1{font-size:20px} h3{font-size:17px}
+  .muted{color:var(--muted)} .small{font-size:12px} .tiny{font-size:11px}
+  .eyebrow{font-family:var(--sans);font-size:10.5px;font-weight:800;
+           letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .card{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .attn-card{background:var(--attn-bg);border:1.5px solid var(--attn-line);
+             border-radius:10px;padding:12px 14px;cursor:pointer}
+  .clickable{cursor:pointer}
+  button.linky{background:none;border:none;color:var(--muted);cursor:pointer;
+               font-family:var(--sans);font-size:11.5px;text-decoration:underline;padding:0}
+  button.back{background:none;border:none;color:var(--muted);cursor:pointer;
+              font-family:var(--sans);font-size:12.5px;font-weight:600;padding:0;margin-bottom:10px}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+       background:var(--live);margin-right:7px;animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .cursor{animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+  /* stage track */
+  .track{display:flex;align-items:center}
+  .stop{display:flex;flex-direction:column;align-items:center;min-width:44px}
+  .stop .pip{width:11px;height:11px;border-radius:50%;background:#fff;border:1.8px solid var(--line)}
+  .stop.done .pip{background:#C9C2B2;border-color:#C9C2B2}
+  .stop.now  .pip{background:var(--text);border-color:var(--text)}
+  .stop.sel  .pip{box-shadow:0 0 0 4px var(--attn-bg)}
+  .stop .lbl{font-size:10.5px;margin-top:5px;color:var(--muted);font-weight:500}
+  .stop.now .lbl{color:var(--text);font-weight:700}
+  .stop.sel .lbl{color:var(--attn);text-decoration:underline}
+  .seg{flex:1;height:1.5px;margin:0 2px 16px;background:var(--line)}
+  .seg.done{background:#C9C2B2}
+  .track.click .stop{cursor:pointer}
+  .wentback{font-size:12px;color:var(--muted);font-style:italic;margin-top:2px}
+  .unsure{margin-top:12px;border-left:3px solid #D8CFBB;padding-left:10px}
+  .verrow{padding:8px 10px;border-radius:8px;margin-bottom:6px;
+          background:var(--soft);border:1px solid var(--line)}
+  .verrow.live{background:var(--live-bg);border-color:var(--live-line)}
+  .featrow{padding:12px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  pre{font-size:10.5px;background:#F3F0E8;border:1px solid var(--line);border-radius:8px;
+      padding:12px;overflow-x:auto;line-height:1.5;color:#4A4438;white-space:pre-wrap}
+  .toast{background:#F3F0E8;border:1px solid var(--line);border-radius:8px;
+         padding:9px 12px;font-size:12.5px;color:#5C5546;margin-bottom:14px;line-height:1.5}
+  a{color:inherit}
+  code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.92em}
+</style>
+</head>
+<body>
+<div id="app"><p class="muted small" style="margin-top:40px">Looking for <code>build-status.json</code>…</p></div>
+
+<script>
+const STAGES = ["Idea","Planning","Building","Testing","Live"];
+const STAGE_HELP = {
+  Idea:"Written down, not started yet.",
+  Planning:"Deciding exactly what this should do.",
+  Building:"Being actively written right now.",
+  Testing:"Built — checking everything works before it goes live.",
+  Live:"Running. People can use it."
+};
+
+let data=null, lastRaw="", view={page:"home", featureId:null, stage:null, lot:false, file:false}, errNote=null;
+const $=(s)=>document.querySelector(s);
+const esc=(s)=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function poll(){
+  try{
+    const r=await fetch("build-status.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    const raw=await r.text();
+    if(raw!==lastRaw){ data=JSON.parse(raw); lastRaw=raw; errNote=null; render(); }
+    else if(errNote){ errNote=null; render(); }
+  }catch(e){
+    if(!data){ $("#app").innerHTML =
+      `<div style="margin-top:40px" class="small muted">Can't find or read <code>build-status.json</code> yet.<br><br>
+       Make sure this page is served from the project folder<br>
+       (e.g. <code>python3 -m http.server 4321</code>) and that Claude has initialized the file.</div>`; }
+    else if(!errNote){ errNote="Lost sight of the status file — showing the last thing I saw."; render(); }
+  }
+}
+
+function track(stage, wentBack, clickable, selected){
+  let h=`<div class="track${clickable?" click":""}">`;
+  STAGES.forEach((s,i)=>{
+    const cls=[i<stage?"done":"", i===stage?"now":"", selected===i?"sel":""].join(" ");
+    h+=`<div class="stop ${cls}" ${clickable?`onclick="pickStage(${i})"`:""}>
+          <div class="pip"></div><div class="lbl">${s}</div></div>`;
+    if(i<STAGES.length-1) h+=`<div class="seg ${i<stage?"done":""}"></div>`;
+  });
+  h+=`</div>`;
+  if(wentBack) h+=`<div class="wentback">↩ ${esc(wentBack.note)}</div>`;
+  return h;
+}
+
+function unsureBlock(items){
+  if(!items||!items.length) return "";
+  return `<div class="unsure"><div class="eyebrow" style="margin-bottom:3px">Not yet checked</div>`+
+    items.map(u=>`<div class="small" style="color:#5C5546;line-height:1.45">${esc(u)}</div>`).join("")+`</div>`;
+}
+
+function home(){
+  const fs=data.features||[], lot=data.parkingLot||[];
+  const building=fs.find(f=>f.building);
+  let h="";
+  fs.filter(f=>f.needsYou).forEach(f=>{
+    h+=`<div class="attn-card" style="margin-bottom:12px" onclick="openFeature('${esc(f.id)}')">
+          <div class="eyebrow" style="color:var(--attn)">Needs you</div>
+          <div class="serif" style="font-size:14.5px;font-weight:700;margin-top:3px">${esc(f.name)}: ${esc(f.needsYou.title)}</div>
+          <div class="small" style="color:#6B5334;margin-top:2px">Reply in the chat to approve · open for details →</div>
+        </div>`;
+  });
+  if(building){
+    h+=`<div class="card" style="margin-bottom:16px">
+          <div class="eyebrow" style="margin-bottom:5px">Right now · ${esc(building.name)}</div>
+          <div><span class="dot"></span>${esc(building.currentAction||"Working…")}<span class="cursor">▍</span></div>
+        </div>`;
+  }
+  if(!fs.length){
+    h+=`<div class="card small muted" style="line-height:1.5">No features yet — as soon as work starts in the conversation, it appears here.</div>`;
+  }
+  fs.forEach(f=>{
+    h+=`<div class="featrow" onclick="openFeature('${esc(f.id)}')">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+            <span class="serif" style="font-size:15px;font-weight:700">${f.building?'<span class="dot"></span>':""}${esc(f.name)}</span>
+            <span class="tiny" style="font-weight:600;color:${f.stage===4?"var(--live)":"var(--muted)"}">${STAGES[f.stage]?.toLowerCase()||""}</span>
+          </div>
+          ${track(f.stage,f.wentBack,false)}
+          ${(f.unsure&&f.unsure.length)?`<div class="tiny muted" style="margin-top:5px">· ${f.unsure.length} thing${f.unsure.length>1?"s":""} not yet checked</div>`:""}
+        </div>`;
+  });
+  h+=`<div style="margin-top:14px">
+        <button class="linky" style="font-size:12.5px;font-weight:700;text-decoration:none"
+          onclick="view.lot=!view.lot;render()">${view.lot?"▾":"▸"} Parking lot (${lot.length}) — paused or proposed, nothing lost</button>`;
+  if(view.lot) lot.forEach(p=>{
+    h+=`<div style="margin:8px 0 0 14px;padding-left:10px;border-left:2px dashed var(--line)">
+          <div style="font-size:13px;font-weight:600">${esc(p.name)} <span class="tiny muted" style="font-weight:500">· ${esc(p.tag)}</span></div>
+          <div class="small muted" style="line-height:1.45">${esc(p.note)}</div>
+        </div>`;
+  });
+  h+=`</div>`;
+  return h;
+}
+
+function detail(f){
+  const sel = view.stage ?? f.stage;
+  const agreed=(f.decisions||[]).filter(d=>d.stage===sel);
+  let h=`<button class="back" onclick="goHome()">← All features</button>
+    <h3>${esc(f.name)}</h3>
+    <p class="small muted" style="margin:4px 0 14px;line-height:1.5">${esc(f.oneLiner)}</p>`;
+  if(f.needsYou){
+    h+=`<div class="attn-card" style="margin-bottom:14px;cursor:default">
+          <div class="serif" style="font-size:15px;font-weight:700;color:var(--attn)">${esc(f.needsYou.title)}</div>
+          <div class="small" style="color:#6B5334;margin:5px 0;line-height:1.5">${esc(f.needsYou.text)}</div>
+          <div class="tiny" style="color:#6B5334;font-weight:700">→ Reply in the chat: "put it live" or "not yet"</div>
+        </div>`;
+  }
+  if(f.building){
+    h+=`<div class="card" style="margin-bottom:14px"><span class="dot"></span>${esc(f.currentAction||"Working…")}<span class="cursor">▍</span></div>`;
+  }
+  h+=track(f.stage,f.wentBack,true,sel);
+  h+=`<div class="card" style="margin-top:8px;font-size:12.5px;color:#5C5546;line-height:1.5">
+        <strong style="color:var(--text)">${STAGES[sel]}.</strong> ${STAGE_HELP[STAGES[sel]]}`;
+  if(agreed.length){
+    h+=`<div style="margin-top:7px;border-top:1px solid var(--line);padding-top:7px">`+
+       agreed.map(d=>`<div style="padding:2px 0">Agreed: ${esc(d.what)} <span class="tiny muted">· ${esc(d.when)}</span></div>`).join("")+`</div>`;
+  } else {
+    h+=`<div class="tiny muted" style="margin-top:6px">Click any stage above to see what was agreed there.</div>`;
+  }
+  h+=`</div>`;
+  if(f.pieces&&f.pieces.length){
+    h+=`<div style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Pieces</div>`+
+      f.pieces.map(p=>`<div style="font-size:13px;padding:3px 0;color:${p.done?"#5C5546":p.current?"var(--text)":"var(--muted)"};font-weight:${p.current?700:400}">
+        ${p.done?"✓":"○"} ${esc(p.name)}${p.current?' <span class="muted" style="font-weight:500">— now</span>':""}</div>`).join("")+`</div>`;
+  }
+  if(f.versions&&f.versions.length){
+    h+=`<div style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Versions</div>`+
+      f.versions.map(v=>`<div class="verrow ${v.live?"live":""}">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px">
+          <strong style="color:${v.live?"var(--live)":"var(--text)"}">${esc(v.v)}${v.live?" · live":""}</strong>
+          <span class="tiny muted">${esc(v.when)}</span></div>
+        <div class="small" style="color:#5C5546;margin-top:2px;line-height:1.45">${esc(v.note)}</div>
+        ${v.live&&f.versions.length>1?`<div class="tiny muted" style="margin-top:5px">Want the previous version back? Just say so in the chat — nothing gets deleted.</div>`:""}
+      </div>`).join("")+`</div>`;
+  }
+  h+=unsureBlock(f.unsure);
+  if(f.activity&&f.activity.length){
+    h+=`<div style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Recently</div>`+
+      f.activity.slice(0,6).map(a=>`<div class="small" style="padding:3px 0;line-height:1.45;color:${a.kind==="live"?"var(--live)":a.kind==="back"?"#7A6A4A":"#5C5546"}">
+        ${a.kind==="back"?"↩":a.kind==="live"?"●":"·"} ${esc(a.what)} <span class="tiny muted">· ${esc(a.when)}</span></div>`).join("")+`</div>`;
+  }
+  return h;
+}
+
+function render(){
+  if(!data) return;
+  const p=data.project||{};
+  let h=`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px">
+      <h1>${esc(p.name||"Project")}</h1>
+      <button class="linky" style="flex:0 0 auto;white-space:nowrap" onclick="view.file=!view.file;render()">${view.file?"back to panel":"view the file"}</button>
+    </div>
+    <div class="small muted" style="line-height:1.5;margin-bottom:6px">${esc(p.summary||"")}</div>
+    <div class="tiny muted" style="margin-bottom:16px">Where things stand${data.updated?` · updated ${esc(fmtTime(data.updated))}`:""}</div>`;
+  if(errNote) h+=`<div class="toast">${esc(errNote)}</div>`;
+  if(view.file){
+    h+=`<div class="small muted" style="margin-bottom:8px;line-height:1.5">This panel is just a view of
+        <code>build-status.json</code> in your project folder. It's yours — open it, edit it, version it.
+        Claude keeps it updated as it works.</div>
+        <pre>${esc(JSON.stringify(data,null,2))}</pre>`;
+  } else if(view.page==="feature"){
+    const f=(data.features||[]).find(x=>x.id===view.featureId);
+    h+= f ? detail(f) : home();
+  } else {
+    h+=home();
+  }
+  $("#app").innerHTML=h;
+}
+
+function fmtTime(iso){
+  const d=new Date(iso); if(isNaN(d)) return iso;
+  const s=(Date.now()-d.getTime())/1000;
+  if(s<90) return "just now";
+  if(s<3600) return Math.round(s/60)+" min ago";
+  if(s<86400) return Math.round(s/3600)+" h ago";
+  return d.toLocaleDateString();
+}
+
+window.openFeature=(id)=>{view.page="feature";view.featureId=id;view.stage=null;render();};
+window.goHome=()=>{view.page="home";view.featureId=null;view.stage=null;render();};
+window.pickStage=(i)=>{view.stage=i;render();};
+
+poll(); setInterval(poll,2000);
+</script>
+</body>
+</html>
