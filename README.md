@@ -1,5 +1,8 @@
 # Health Supply Chain Network Design
 
+**→ [Open the live tool](https://ulrichmonthe.github.io/Supply-chain/)** — the real
+interface with every scenario pre-solved, running in your browser. Nothing to install.
+
 > A living digital twin of a national health supply chain that models sea, air and
 > seasonal road access as first-class realities, scores every scenario on cost *and*
 > equity, and stays with the government after the consultant leaves.
