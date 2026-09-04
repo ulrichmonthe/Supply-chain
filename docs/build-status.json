@@ -1,0 +1,256 @@
+{
+  "project": {
+    "name": "Health Supply Chain Network Design",
+    "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic — by road, boat and plane, month by month — and who gets left out when money is saved."
+  },
+  "updated": "2026-08-21T19:32:23Z",
+
+  "deploys": [],
+
+  "features": [
+    {
+      "id": "f7",
+      "name": "Usable by everyone",
+      "oneLiner": "The whole screen works with a keyboard, reads correctly aloud, and holds up on a small display.",
+      "needsYou": {
+        "title": "The design work is finished and waiting on you",
+        "text": "All 23 accessibility checks and 288 automatic tests pass. It is saved on its own copy and has not joined the main project. Nothing is deployed anywhere yet."
+      },
+      "stories": [
+        { "id": "f7s1", "title": "Use the whole tool with only a keyboard", "state": "done", "env": null,
+          "note": "Six controls used to be mouse-only and silent to a screen reader." },
+        { "id": "f7s2", "title": "Read every label and figure clearly", "state": "done", "env": null,
+          "note": "The faint grey most explanations were written in was too pale to read." },
+        { "id": "f7s3", "title": "Use it on a touch screen", "state": "done", "env": null,
+          "note": "Buttons stay small for a mouse and grow to finger size only on a touch screen." },
+        { "id": "f7s4", "title": "Have it checked automatically so it cannot quietly break", "state": "done", "env": null,
+          "note": "23 checks, run with one command, and they fail loudly." },
+        { "id": "f7s5", "title": "Use it comfortably on a phone", "state": "idea", "env": null,
+          "unsure": "It stacks and stays usable below 768 pixels, but has had no phone-first design pass." }
+      ],
+      "decisions": [
+        { "at": "2026-08-18T06:52:54Z", "what": "Buttons stay small for a mouse and grow to finger size only on a touch screen, so neither gets a compromise." },
+        { "at": "2026-08-18T06:52:54Z", "what": "The accessibility check runs itself and fails loudly, so this cannot quietly rot later." }
+      ],
+      "unsure": [
+        "There is no light-colour version of the screen — it is dark only."
+      ],
+      "activity": [
+        { "at": "2026-08-18T06:52:54Z", "kind": "ok", "what": "All 23 checks passed, on all nine panels, at six screen widths" },
+        { "at": "2026-08-18T06:00:00Z", "kind": "work", "what": "Six controls that only worked with a mouse now work with a keyboard too" }
+      ]
+    },
+    {
+      "id": "f1",
+      "name": "The map",
+      "oneLiner": "Every clinic, store and delivery route in the country on one screen you can read at a glance.",
+      "stories": [
+        { "id": "f1s1", "title": "See every clinic, store and delivery route on one map", "state": "done", "env": null,
+          "note": "134 clinics, 5 stores and 39 timetabled services." },
+        { "id": "f1s2", "title": "Read the map with no internet connection at all", "state": "done", "env": null,
+          "unsure": "The coastline we draw is rough — good to about 4km. Fine for showing where things are, not for measuring." },
+        { "id": "f1s3", "title": "Colour the map by how well each clinic is supplied", "state": "done", "env": null },
+        { "id": "f1s4", "title": "Switch on a detailed online map when there is a connection", "state": "done", "env": null }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:45:32Z", "what": "The map must work with no internet at all. A provincial office often has none, so the coastline ships with the tool and online maps are an optional extra on top." },
+        { "at": "2026-08-21T13:00:00Z", "what": "Decided against switching to Mapbox. It needs internet and a paid key, and would not change any answer the tool gives." }
+      ],
+      "unsure": [],
+      "activity": [
+        { "at": "2026-08-21T13:00:00Z", "kind": "ok", "what": "Looked at using Mapbox instead and decided the current approach is better here" },
+        { "at": "2026-08-17T12:00:00Z", "kind": "ok", "what": "Ten real towns were being marked as out at sea — the coastline was wrong and is now fixed" }
+      ]
+    },
+    {
+      "id": "f2",
+      "name": "Comparing plans side by side",
+      "oneLiner": "Run several 'what if' plans at once and see cost, coverage and risk in one table.",
+      "stories": [
+        { "id": "f2s1", "title": "Compare several 'what if' plans side by side", "state": "done", "env": null,
+          "note": "Today's network costs 11.24M kina a year and reaches everyone." },
+        { "id": "f2s2", "title": "Run every plan at once instead of waiting for each", "state": "done", "env": null },
+        { "id": "f2s3", "title": "See how each plan differs from how things work today", "state": "done", "env": null },
+        { "id": "f2s4", "title": "Download the comparison as a spreadsheet", "state": "done", "env": null }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:19:29Z", "what": "Instead of forcing every plan to reach everyone, we put a price on not reaching someone. Every plan now gives an answer you can read, rather than some simply failing." }
+      ],
+      "unsure": [
+        "The costs, demand and boat timetables in the demo are illustrative, not the ministry's real figures. The clinic locations and the shape of the network are real."
+      ],
+      "activity": [
+        { "at": "2026-08-17T10:54:20Z", "kind": "ok", "what": "Running seven plans at once was occasionally failing — found the cause and fixed it" },
+        { "at": "2026-08-17T10:30:00Z", "kind": "work", "what": "Opening three new stores looked like it cost 4.5M a year more than it does — a one-off building cost was being counted as a yearly bill" }
+      ]
+    },
+    {
+      "id": "f3",
+      "name": "Who pays for a saving",
+      "oneLiner": "Shows which communities lose their supply when a plan saves money — before anyone decides.",
+      "stories": [
+        { "id": "f3s1", "title": "See which communities lose supply when a plan saves money", "state": "done", "env": null,
+          "note": "Cutting cost by 19.5% moves 217,480 people from supplied to not supplied." },
+        { "id": "f3s2", "title": "See the number of people affected, not just a percentage", "state": "done", "env": null },
+        { "id": "f3s3", "title": "Set a floor that no community can fall below", "state": "done", "env": null,
+          "note": "Holding the hardest-to-reach fifth at 90% still saves 9.3%." }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:19:29Z", "what": "Fairness is part of the sum, not a report at the end. A plan that saves money by giving up on the hardest-to-reach fifth has to say so in the same breath." }
+      ],
+      "unsure": [
+        "How we decide which communities are hardest to reach is our own definition. A ministry may well use a different one, and can change it."
+      ],
+      "activity": [
+        { "at": "2026-08-17T11:00:00Z", "kind": "ok", "what": "Checked the numbers hold up both ways round — the saving and the abandonment are the same figure seen from two sides" }
+      ]
+    },
+    {
+      "id": "f4",
+      "name": "Month by month conditions",
+      "oneLiner": "See what the wet season does — which roads close, and who can only be reached by plane.",
+      "stories": [
+        { "id": "f4s1", "title": "See which routes close in each month of the year", "state": "done", "env": null },
+        { "id": "f4s2", "title": "Re-price a whole plan for a single month", "state": "done", "env": null,
+          "note": "In February 19 clinics cannot be reached at all and the plan costs 35.8% more." },
+        { "id": "f4s3", "title": "See who can only be reached by plane in the wet season", "state": "done", "env": null }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:19:29Z", "what": "Every route carries twelve monthly access figures from the start, so the seasons are built in rather than bolted on later." }
+      ],
+      "unsure": [
+        "The seasonal patterns come from typical weather, not from records of roads actually closing. Worth checking with provincial staff before publishing anything."
+      ],
+      "activity": [
+        { "at": "2026-08-17T10:40:00Z", "kind": "back", "what": "February and July had no workable answer at all — changed the approach so every month gives a readable result naming who is affected" }
+      ]
+    },
+    {
+      "id": "f5",
+      "name": "Getting your own data in",
+      "oneLiner": "Download a spreadsheet, fill it in, upload it back. It is checked before anything is saved.",
+      "stories": [
+        { "id": "f5s1", "title": "Download a blank template to fill in", "state": "done", "env": null,
+          "note": "Four sheets, 70 columns." },
+        { "id": "f5s2", "title": "See everything wrong with a file before any of it is saved", "state": "done", "env": null,
+          "note": "37 checks. Only six things are serious enough to stop an upload." },
+        { "id": "f5s3", "title": "Export everything back out again", "state": "done", "env": null,
+          "note": "What you download and what you upload have identical columns." },
+        { "id": "f5s4", "title": "Start a new country without filling in 70 columns by hand", "state": "idea", "env": null,
+          "unsure": "Nothing exists for this yet. It is the biggest obstacle for a country with little existing data." }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:19:29Z", "what": "Nothing is saved until you have seen the check results and said go ahead. A half-finished import is worse than one that stops, because nobody can tell which half is real." },
+        { "at": "2026-08-17T10:19:29Z", "what": "What you download and what you upload have identical columns, so the work survives even if this tool does not." }
+      ],
+      "unsure": [
+        "Only Excel files are accepted. No CSV, and no older .xls."
+      ],
+      "activity": [
+        { "at": "2026-08-17T10:19:29Z", "kind": "ok", "what": "Checked that exporting everything and importing it straight back changes nothing" }
+      ]
+    },
+    {
+      "id": "f6",
+      "name": "Connecting to a country's own systems",
+      "oneLiner": "Pull the clinic list and consumption straight out of the systems a ministry already runs.",
+      "stories": [
+        { "id": "f6s1", "title": "Pull the clinic list straight from DHIS2", "state": "testing", "env": null,
+          "unsure": "Only ever talked to a stand-in server we built, never a real ministry system." },
+        { "id": "f6s2", "title": "Pull from OpenLMIS", "state": "testing", "env": null,
+          "unsure": "Same — built and working, never tried against a real deployment." },
+        { "id": "f6s3", "title": "Pull from Open mSupply", "state": "testing", "env": null,
+          "unsure": "Papua New Guinea's own mSupply is an older version that does not offer this kind of connection." },
+        { "id": "f6s4", "title": "See every proposed change before anything is saved", "state": "done", "env": null,
+          "note": "6 clinics matched, 1 new, 1 moved, 1 renamed on the last run." },
+        { "id": "f6s5", "title": "Keep the delivery routes untouched when syncing", "state": "done", "env": null },
+        { "id": "f6s6", "title": "Keep passwords out of the tool entirely", "state": "done", "env": null,
+          "note": "They can live outside it, so they never end up in a backup of it." },
+        { "id": "f6s7", "title": "Have a sync run on a schedule instead of by hand", "state": "idea", "env": null }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T23:01:54Z", "what": "A sync never touches the delivery routes. No stock system knows about boats, and losing the timetables would destroy the hardest part of the model to rebuild." }
+      ],
+      "unsure": [
+        "The whole feature needs one real ministry connection before anyone relies on it."
+      ],
+      "activity": [
+        { "at": "2026-08-17T23:01:54Z", "kind": "ok", "what": "A full pull, preview and save worked over a real network connection to a stand-in server" },
+        { "at": "2026-08-17T22:00:00Z", "kind": "work", "what": "Two different clinics in the same town were being treated as one place because their names were trimmed too aggressively — fixed" }
+      ]
+    },
+    {
+      "id": "f8",
+      "name": "The costed plan of action",
+      "oneLiner": "Turns a chosen plan into a phased list of what to do, what it costs, and in what order.",
+      "stories": [
+        { "id": "f8s1", "title": "Turn a chosen plan into a phased list of what to do", "state": "done", "env": null },
+        { "id": "f8s2", "title": "See one-off costs separately from yearly running costs", "state": "done", "env": null },
+        { "id": "f8s3", "title": "Hand the plan to someone else as a document", "state": "idea", "env": null,
+          "unsure": "It exports as a spreadsheet only. Consultants present decks and reports." }
+      ],
+      "decisions": [
+        { "at": "2026-08-17T10:19:29Z", "what": "One-off building costs are shown separately from yearly running costs, so a plan cannot look cheaper than it is." }
+      ],
+      "unsure": [
+        "How long each phase takes is an estimate, not drawn from how long this work actually takes in practice."
+      ],
+      "activity": [
+        { "at": "2026-08-17T10:19:29Z", "kind": "ok", "what": "Checked the roadmap costs add up to the same total the plan reports" }
+      ]
+    },
+    {
+      "id": "f9",
+      "name": "Selling this beyond one country",
+      "oneLiner": "Turning a Papua New Guinea tool into something a consultant anywhere can pay to use.",
+      "stories": [
+        { "id": "f9s1", "title": "Set up a second country without a developer", "state": "idea", "env": null,
+          "unsure": "The information is already stored in a way that handles many countries. The map outline and the terrain settings are still written into the code for Papua New Guinea only." },
+        { "id": "f9s2", "title": "Sign in to your own account", "state": "idea", "env": null,
+          "unsure": "Nothing exists. Today anyone who reaches the tool can read and change everything in it." },
+        { "id": "f9s3", "title": "Pay for access", "state": "idea", "env": null },
+        { "id": "f9s4", "title": "Hand a country over to a ministry when the work ends", "state": "idea", "env": null,
+          "unsure": "This is the promise the whole tool is sold on, and how the money would work is unresolved." }
+      ],
+      "decisions": [
+        { "at": "2026-08-21T14:00:00Z", "what": "Wrote up what would have to be built and what the market looks like, including the parts that are uncomfortable." }
+      ],
+      "unsure": [
+        "If the consultant is the one paying and the tool is meant to stay after they leave, who pays next year? Unresolved.",
+        "The consultants this would be sold to lost most of their funding in 2025. The need went up; the number of people with a budget went down.",
+        "The estimate of a few hundred people who would pay is our own guess, not a figure from anywhere."
+      ],
+      "activity": [
+        { "at": "2026-08-21T14:00:00Z", "kind": "ok", "what": "Wrote up what to build and what the market looks like, with the honest version of both" }
+      ]
+    }
+  ],
+
+  "parkingLot": [
+    {
+      "name": "Mapbox as the map",
+      "tag": "Proposed, not built",
+      "note": "Looked at properly and set aside. It needs an internet connection and a paid key, and roads carry only 11.5% of the cost in this model — so it would not change any answer. The reasoning is written down."
+    },
+    {
+      "name": "Better-looking offline map",
+      "tag": "Proposed, not built",
+      "note": "A sharper map that still needs no internet. The genuinely useful version of the Mapbox idea we turned down. Nothing started."
+    },
+    {
+      "name": "Real road distances",
+      "tag": "Proposed, not built",
+      "note": "The tool already has a place for this to plug into. Until it does, road distances are informed estimates and the tool says so on every one."
+    },
+    {
+      "name": "Collecting data on phones in the field",
+      "tag": "Proposed, not built",
+      "note": "For countries where the information does not exist yet and has to be gathered. Would use the survey tools the sector already uses rather than a new app."
+    },
+    {
+      "name": "Accounts, logins and payment",
+      "tag": "Proposed, not built",
+      "note": "Needed before anyone could pay for access. Planned out in detail, not begun — it is the first thing to build if the answer is yes."
+    }
+  ]
+}
