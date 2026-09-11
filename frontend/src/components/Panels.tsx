@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import type {
   AuditRow,
   EdgeRow,
@@ -7,6 +7,7 @@ import type {
   Result,
   Roadmap,
   SeasonView,
+  ValidationIssue,
   ValidationReport,
 } from '../types'
 import { api } from '../api'
@@ -415,6 +416,158 @@ export function RoadmapPanel({
 
 /* ------------------------------------------------------------------ data */
 
+/*
+ * Which fields would resolve each kind of problem.
+ *
+ * A generic editor over seventy columns would be worse than the spreadsheet it
+ * replaces. The validator already knows what is wrong, so the fix offers only the
+ * fields that would answer it.
+ */
+const FIXABLE: Record<string, { fields: { name: string; label: string; hint?: string }[] }> = {
+  'node.offshore': { fields: [
+    { name: 'lat', label: 'Latitude', hint: 'Southern hemisphere is negative.' },
+    { name: 'lon', label: 'Longitude' },
+  ] },
+  'node.near_offshore': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
+  'node.null_island': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
+  'node.swapped_coordinates': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
+  'node.outside_country': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
+  'node.province_outlier': { fields: [
+    { name: 'lat', label: 'Latitude' },
+    { name: 'lon', label: 'Longitude' },
+    { name: 'admin1', label: 'Province', hint: 'Or correct the province if the coordinate is right.' },
+  ] },
+  'node.low_precision': { fields: [
+    { name: 'lat', label: 'Latitude' },
+    { name: 'lon', label: 'Longitude' },
+    { name: 'geocode_source', label: 'Where it came from', hint: 'mfl · gps · town_centroid · estimated' },
+    { name: 'geocode_confidence', label: 'Confidence 0-1' },
+  ] },
+  'node.no_population': { fields: [{ name: 'catchment_population', label: 'People served' }] },
+  'node.unknown_terrain': { fields: [
+    { name: 'terrain_class', label: 'Terrain', hint: 'mainland_road · coastal_road · highlands_road · island · riverine · remote_air_only' },
+  ] },
+  'node.hub_without_capacity': { fields: [{ name: 'hub_throughput_m3', label: 'Annual throughput m³' }] },
+  'product.no_volume': { fields: [{ name: 'volume_per_unit_cm3', label: 'Packed volume per unit, cm³' }] },
+  'product.bad_temperature_band': { fields: [
+    { name: 'temperature_band', label: 'Temperature band', hint: 'ambient · +2-8 · -20 · -70' },
+  ] },
+  'edge.unknown_mode': { fields: [{ name: 'mode', label: 'Mode', hint: 'road · sea · air · river · foot · drone' }] },
+  'edge.unknown_frequency': { fields: [
+    { name: 'service_frequency', label: 'How often it runs', hint: 'WEEKLY · FORTNIGHTLY · MONTHLY · QUARTERLY' },
+  ] },
+  'edge.scheduled_without_capacity': { fields: [
+    { name: 'capacity_per_trip_m3', label: 'Hold per trip, m³' },
+    { name: 'cost_per_m3', label: 'Or a quoted rate per m³', hint: 'A charter needs a rate rather than a hold.' },
+  ] },
+}
+
+//: Which sheets can be addressed by a single business key. Demand rows are keyed by a
+//: facility and a product together, so they are corrected in the workbook for now.
+const KEY_FIELD: Record<string, string> = { Nodes: 'code', Edges: 'code', Products: 'sku' }
+
+function IssueFix({
+  issue,
+  batchId,
+  onFixed,
+}: {
+  issue: ValidationIssue
+  batchId: number
+  onFixed: (report: ValidationReport) => void
+}) {
+  const spec = FIXABLE[issue.code]
+  const keyField = KEY_FIELD[issue.sheet]
+  const [open, setOpen] = useState(false)
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const fieldId = useId()
+
+  if (!spec || !keyField || !issue.entity) return null
+
+  async function save() {
+    const filled = Object.entries(values).filter(([, v]) => v.trim() !== '')
+    if (!filled.length) {
+      setError('Nothing to change yet.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const payload: Record<string, unknown> = {}
+      for (const [name, raw] of filled) {
+        const asNumber = Number(raw)
+        payload[name] = raw.trim() !== '' && !Number.isNaN(asNumber) ? asNumber : raw.trim()
+      }
+      const next = await api.correctImportRow(batchId, {
+        sheet: issue.sheet.toLowerCase(),
+        key: issue.entity,
+        values: payload,
+        reason: reason || 'Corrected during review.',
+      })
+      onFixed(next)
+      setOpen(false)
+      setValues({})
+      setReason('')
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="btn small" style={{ marginTop: 8 }} onClick={() => setOpen(true)}>
+        Fix this
+      </button>
+    )
+  }
+
+  return (
+    <div className="fix-form">
+      <p className="tiny dim" style={{ margin: '0 0 8px' }}>
+        Correcting <b>{issue.entity}</b> in this upload. Nothing is written to the model until you
+        apply the import.
+      </p>
+      {spec.fields.map((field) => (
+        <div className="lever" key={field.name}>
+          <div className="lever-head">
+            <label htmlFor={`${fieldId}-${field.name}`}>{field.label}</label>
+          </div>
+          <input
+            id={`${fieldId}-${field.name}`}
+            value={values[field.name] ?? ''}
+            onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}
+          />
+          {field.hint && <div className="lever-note">{field.hint}</div>}
+        </div>
+      ))}
+      <div className="lever">
+        <div className="lever-head">
+          <label htmlFor={`${fieldId}-reason`}>Why</label>
+        </div>
+        <input
+          id={`${fieldId}-reason`}
+          value={reason}
+          placeholder="Provincial officer gave the GPS fix"
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </div>
+      {error && <div className="lever-note" style={{ color: 'var(--bad)' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        <button className="btn small primary" disabled={busy} aria-busy={busy} onClick={() => void save()}>
+          {busy ? <span className="spinner" aria-hidden="true" /> : 'Save and re-check'}
+        </button>
+        <button className="btn small ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function DataPanel({
   countryId,
   overview,
@@ -580,6 +733,7 @@ export function DataPanel({
               </div>
               <p>{issue.message}</p>
               <p className="suggestion">{issue.suggestion}</p>
+              {report && <IssueFix issue={issue} batchId={report.batch_id} onFixed={setReport} />}
             </div>
           ))}
         </>

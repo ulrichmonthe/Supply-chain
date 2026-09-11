@@ -110,6 +110,7 @@ def _make_edge(
         destination.lon,
         mode=mode,
         terrain_class=destination.terrain_class,
+        config=country.config or {},
     )
     return Edge(
         country_id=country.id,
@@ -145,6 +146,7 @@ def seed_png(session: Session) -> Country:
         name=png.COUNTRY["name"],
         currency=png.COUNTRY["currency"],
         config=png.COUNTRY["config"],
+        boundary=png.BOUNDARY,
     )
     session.add(country)
     session.flush()

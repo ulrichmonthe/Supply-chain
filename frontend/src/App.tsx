@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type React from 'react'
 import { api } from './api'
 import { MapView } from './components/MapView'
@@ -28,8 +28,102 @@ const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+/*
+ * Opening a workspace for a country nobody has modelled yet.
+ *
+ * Deliberately short. The only things asked for are the ones with no sensible default;
+ * everything else — the bounding box, the terrain factors, the seasonal profiles, the
+ * land mask — starts as an honest blank and is filled in later from the data itself.
+ * Asking an analyst to invent a bounding box before they have seen a facility list is
+ * how you get a check that rejects real places.
+ */
+function NewCountryDialog({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void
+  onCreated: (id: number) => void
+}) {
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [currency, setCurrency] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const id = useId()
+
+  async function create() {
+    setBusy(true)
+    setError(null)
+    try {
+      const created = await api.createCountry({
+        code: code.trim(),
+        name: name.trim(),
+        currency: currency.trim() || undefined,
+      })
+      onCreated(created.id)
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="modal-scrim" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+      <div className="modal">
+        <h3 id={`${id}-title`}>Open a country workspace</h3>
+        <p className="lever-note" style={{ marginTop: 0 }}>
+          You will get an empty network. Load a facility list from a spreadsheet or a
+          connected system next, and the tool will tell you what it still needs.
+        </p>
+
+        <div className="lever">
+          <div className="lever-head">
+            <label htmlFor={`${id}-code`}>Country code</label>
+          </div>
+          <input id={`${id}-code`} value={code} placeholder="SLB" onChange={(e) => setCode(e.target.value)} />
+          <div className="lever-note">Short, and yours to choose. ISO three-letter codes are the usual habit.</div>
+        </div>
+
+        <div className="lever">
+          <div className="lever-head">
+            <label htmlFor={`${id}-name`}>Name</label>
+          </div>
+          <input id={`${id}-name`} value={name} placeholder="Solomon Islands" onChange={(e) => setName(e.target.value)} />
+        </div>
+
+        <div className="lever">
+          <div className="lever-head">
+            <label htmlFor={`${id}-currency`}>Currency</label>
+          </div>
+          <input id={`${id}-currency`} value={currency} placeholder="SBD" onChange={(e) => setCurrency(e.target.value)} />
+          <div className="lever-note">Used for every cost shown. Defaults to USD.</div>
+        </div>
+
+        {error && <div className="callout bad" style={{ margin: '10px 0 0' }}>{error}</div>}
+
+        <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
+          <button
+            className="btn small primary"
+            disabled={busy || !code.trim() || !name.trim()}
+            aria-busy={busy}
+            onClick={() => void create()}
+          >
+            {busy ? <span className="spinner" aria-hidden="true" /> : 'Open workspace'}
+          </button>
+          <button className="btn small ghost" onClick={onClose}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [countryId, setCountryId] = useState<number | null>(null)
+  const [countries, setCountries] = useState<{ id: number; code: string; name: string }[]>([])
+  const [newCountry, setNewCountry] = useState(false)
   const [overview, setOverview] = useState<Overview | null>(null)
   const [nodes, setNodes] = useState<NodeRow[]>([])
   const [edges, setEdges] = useState<EdgeRow[]>([])
@@ -59,15 +153,23 @@ export default function App() {
 
   /* ---------------------------------------------------------------- load */
 
+  const loadCountries = useCallback(
+    (select?: number) =>
+      api
+        .countries()
+        .then((list) => {
+          setCountries(list)
+          if (select) setCountryId(select)
+          else if (list.length) setCountryId((current) => current ?? list[0].id)
+          else setError('No country workspace exists yet.')
+        })
+        .catch((e) => setError(String(e))),
+    [],
+  )
+
   useEffect(() => {
-    api
-      .countries()
-      .then((list) => {
-        if (list.length) setCountryId(list[0].id)
-        else setError('No country workspace exists yet.')
-      })
-      .catch((e) => setError(String(e)))
-  }, [])
+    void loadCountries()
+  }, [loadCountries])
 
   const loadNetwork = useCallback(async (id: number) => {
     const [ov, ns, es, bm, au] = await Promise.all([
@@ -87,13 +189,23 @@ export default function App() {
   const loadScenarios = useCallback(async (id: number) => {
     const list = await api.scenarios(id)
     setScenarios(list)
-    setSelectedId((current) => current ?? list.find((s) => s.is_baseline)?.id ?? list[0]?.id ?? null)
-    setCompareIds((current) => (current.length ? current : list.slice(0, 4).map((s) => s.id)))
-    setScorecard(await api.scorecard(id))
+    setSelectedId(list.find((s) => s.is_baseline)?.id ?? list[0]?.id ?? null)
+    setCompareIds(list.slice(0, 4).map((s) => s.id))
+    // A workspace nobody has loaded data into yet has no baseline, and asking for a
+    // scorecard would answer with an error. That is the expected state of something
+    // created a moment ago, not a fault, so it gets an empty scorecard and the
+    // interface says what to do next.
+    setScorecard(list.length ? await api.scorecard(id) : null)
   }, [])
 
   useEffect(() => {
     if (countryId === null) return
+    // Clear the previous country's answers first, so nothing from it is briefly shown
+    // against the new one's name.
+    setResult(null)
+    setScorecard(null)
+    setRoadmap(null)
+    setError(null)
     Promise.all([loadNetwork(countryId), loadScenarios(countryId)]).catch((e) => setError(String(e)))
   }, [countryId, loadNetwork, loadScenarios])
 
@@ -291,7 +403,22 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <h1>Health Supply Chain Network Design</h1>
-          <span>{overview?.country.name ?? 'Loading…'}</span>
+          {countries.length > 1 ? (
+            <select
+              className="country-picker"
+              aria-label="Country workspace"
+              value={countryId ?? ''}
+              onChange={(event) => setCountryId(Number(event.target.value))}
+            >
+              {countries.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{overview?.country.name ?? 'Loading…'}</span>
+          )}
         </div>
 
         {overview && (
@@ -316,14 +443,28 @@ export default function App() {
         )}
 
         <div className="topbar-right">
+          <button className="btn small ghost" onClick={() => setNewCountry(true)}>
+            New country
+          </button>
           {result?.status === 'ok' && (
             <span className="pill info">
               {String(result.solver_log.month_label ?? 'Annualised')} · {result.runtime_ms} ms
             </span>
           )}
+          {selected && selected.latest_result_id && (
+            <a
+              className="btn small primary"
+              href={api.reportUrl(selected.id)}
+              target="_blank"
+              rel="noreferrer"
+              title="A document for people who will not open this tool. Prints to PDF from your browser."
+            >
+              Report
+            </a>
+          )}
           {selected && !selected.is_baseline && selected.latest_result_id && (
             <a className="btn small" href={api.resultsExportUrl(selected.id)} download>
-              Export deliverable
+              Spreadsheet
             </a>
           )}
         </div>
@@ -339,6 +480,16 @@ export default function App() {
             Dismiss
           </button>
         </div>
+      )}
+
+      {newCountry && (
+        <NewCountryDialog
+          onClose={() => setNewCountry(false)}
+          onCreated={(id) => {
+            setNewCountry(false)
+            void loadCountries(id)
+          }}
+        />
       )}
 
       {/* Errors here are the result of something the user just asked for, so they

@@ -8,6 +8,7 @@ the wording is part of the contract.
 from __future__ import annotations
 
 from app.io.validation import ERROR, WARNING, validate_dataset
+from app.seed.png import BOUNDARY as PNG_BOUNDARY
 
 BBOX = {"min_lat": -11.9, "max_lat": -1.0, "min_lon": 140.5, "max_lon": 160.2}
 
@@ -45,6 +46,7 @@ def _run(nodes=None, edges=None, products=None, demand=None):
     return validate_dataset(
         country_code="PNG",
         bbox=BBOX,
+        boundary=PNG_BOUNDARY,
         nodes=nodes if nodes is not None else [_node()],
         edges=edges or [],
         products=products if products is not None else [_product()],

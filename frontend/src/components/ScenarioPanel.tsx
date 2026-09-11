@@ -28,6 +28,14 @@ export function ScenarioPanel(props: Props) {
     <div className="sidebar">
       <div className="section">
         <h3>Scenarios</h3>
+        {props.scenarios.length === 0 && (
+          <div className="callout">
+            <h4>Nothing loaded yet</h4>
+            This workspace is empty. Open the <b>Data</b> tab, download the blank template, and
+            upload a facility list — the tool checks it and tells you what is missing before
+            anything is saved. A baseline scenario appears once there is a network to run it on.
+          </div>
+        )}
         {props.scenarios.map((scenario) => {
           const kpis = props.kpiByScenario[scenario.id]
           return (

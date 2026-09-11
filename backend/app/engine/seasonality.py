@@ -10,6 +10,8 @@ bolted on -- it is a lookup. The month slider in the UI is this module.
 
 from __future__ import annotations
 
+from typing import Optional
+
 MONTHS = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -79,6 +81,16 @@ def closed_months(edge, threshold: float = 0.0) -> list[int]:
     """1-based months in which the lane is at or below `threshold` access."""
     vector = edge.monthly_access or [1.0] * 12
     return [i + 1 for i, value in enumerate(vector) if value <= threshold]
+
+
+def profiles_for(config: Optional[dict] = None) -> dict:
+    """Named access profiles for a country: its own, over the built-in ones.
+
+    A monsoon is not a monsoon everywhere. A country that knows its own wet season puts
+    twelve numbers under ``seasonal_profiles`` in its config and the importer can then
+    refer to them by name, exactly like the built-ins.
+    """
+    return {**PROFILES, **((config or {}).get("seasonal_profiles") or {})}
 
 
 def profile(name: str) -> list[float]:

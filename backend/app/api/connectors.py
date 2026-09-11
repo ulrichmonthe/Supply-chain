@@ -233,6 +233,7 @@ def preview_sync(
     report = validate_dataset(
         country_code=country.code,
         bbox=(country.config or {}).get("bbox", DEFAULT_BBOX),
+        boundary=country.boundary or {},
         nodes=parsed["nodes"],
         edges=parsed["edges"],
         products=parsed["products"],

@@ -20,6 +20,7 @@ from app.connectors.msupply import MSupplyConnector
 from app.connectors.openlmis import OpenLMISConnector
 from app.connectors.reconcile import normalise_name, reconcile
 from app.io.validation import validate_dataset
+from app.seed.png import BOUNDARY as PNG_BOUNDARY
 from app.models import Node
 
 from . import lmis_fixtures as fixtures
@@ -309,6 +310,7 @@ def test_a_facility_in_open_water_is_rejected_whatever_system_it_came_from(facto
     report = validate_dataset(
         country_code="PNG",
         bbox=BBOX,
+        boundary=PNG_BOUNDARY,
         nodes=result.nodes,
         edges=[],
         products=result.products,
@@ -323,7 +325,7 @@ def test_a_facility_in_open_water_is_rejected_whatever_system_it_came_from(facto
 def test_live_data_gets_the_same_actionable_messages_as_a_spreadsheet():
     result = dhis2().fetch()
     report = validate_dataset(
-        country_code="PNG", bbox=BBOX, nodes=result.nodes, edges=[],
+        country_code="PNG", bbox=BBOX, boundary=PNG_BOUNDARY, nodes=result.nodes, edges=[],
         products=result.products, demand=result.demand,
     )
     for issue in report.issues:

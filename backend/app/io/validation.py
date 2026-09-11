@@ -143,6 +143,7 @@ def validate_dataset(
     edges: list[dict],
     products: list[dict],
     demand: list[dict],
+    boundary: Optional[dict] = None,
     partial: bool = False,
     existing_node_codes: Optional[set] = None,
     existing_product_skus: Optional[set] = None,
@@ -166,7 +167,7 @@ def validate_dataset(
     known_nodes = existing_node_codes or set()
     known_products = existing_product_skus or set()
 
-    _validate_nodes(report, country_code, bbox, nodes, node_by_code, partial=partial)
+    _validate_nodes(report, country_code, bbox, boundary, nodes, node_by_code, partial=partial)
     _validate_products(report, products, partial=partial, known_products=known_products)
     _validate_edges(report, edges, node_by_code)
     _validate_demand(report, demand, node_by_code, products, partial=partial, known_products=known_products)
@@ -193,6 +194,7 @@ def _validate_nodes(
     report: ValidationReport,
     country_code: str,
     bbox: dict,
+    boundary: Optional[dict],
     nodes: list[dict],
     node_by_code: dict[str, dict],
     *,
@@ -314,7 +316,7 @@ def _validate_nodes(
             )
             continue
 
-        sea_distance = offshore_km(country_code, lat, lon)
+        sea_distance = offshore_km(boundary, lat, lon)
         if sea_distance is not None and sea_distance > OFFSHORE_ERROR_KM:
             offshore_count += 1
             report.add(

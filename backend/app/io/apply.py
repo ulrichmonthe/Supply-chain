@@ -256,6 +256,7 @@ def _apply_edges(session: Session, country: Country, records: List[dict], nodes:
             terrain_class=destination.terrain_class,
             manual_km=manual_km,
             manual_hours=record.get("base_travel_time_hr") or None,
+            config=country.config or {},
             manual_note=record.get("distance_note") or "",
         )
         session.add(

@@ -50,8 +50,15 @@ class Country(Base):
 
     currency: Mapped[str] = mapped_column(String(8), default="USD")
     # Config is intentionally free-form JSON: level_labels, terrain_classes, seasons,
-    # temperature_bands, equity_definition, bbox, fx_rate.
+    # temperature_bands, equity_definition, bbox, fx_rate, detour_factors, mode_speeds,
+    # seasonal_profiles.
     config: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    #: Coarse land mask: {"polygons": [ring of (lon, lat), ...], "buffers": [(lat, lon, km)]}.
+    #: Screens coordinates for being in the sea and doubles as the offline basemap, so the
+    #: validator and the map always agree about where the land is. Empty is allowed and
+    #: simply switches the offshore check off for that country.
+    boundary: Mapped[dict] = mapped_column(JSON, default=dict)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 

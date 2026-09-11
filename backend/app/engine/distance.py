@@ -75,11 +75,6 @@ class DistanceResult:
         }
 
 
-def _speed(mode: str, terrain_class: str) -> float:
-    table = MODE_SPEEDS.get(mode, MODE_SPEEDS["road"])
-    return table.get(terrain_class, table.get("_default", 40.0))
-
-
 def _osrm_route(lat1: float, lon1: float, lat2: float, lon2: float) -> Optional[tuple[float,float]]:
     """Query a self-hosted OSRM. Returns (km, hours) or None if unavailable.
 
@@ -102,6 +97,23 @@ def _osrm_route(lat1: float, lon1: float, lat2: float, lon2: float) -> Optional[
         return None
 
 
+def _tuning(config: Optional[dict]) -> tuple:
+    """Detour factors and speeds for this country, falling back to the defaults.
+
+    These are assumptions, not measurements, and they are not the same everywhere: a
+    highland road in Nepal is not a highland road in Papua New Guinea. A country that
+    has measured its own puts them in ``Country.config`` and the cascade uses those.
+    """
+    config = config or {}
+    factors = {**DETOUR_FACTORS, **(config.get("detour_factors") or {})}
+    speeds = {mode: dict(table) for mode, table in MODE_SPEEDS.items()}
+    for mode, table in (config.get("mode_speeds") or {}).items():
+        speeds.setdefault(mode, {}).update(table)
+    sea = float((config.get("sea_detour") or SEA_DETOUR))
+    river = float((config.get("river_detour") or RIVER_DETOUR))
+    return factors, speeds, sea, river
+
+
 def resolve_distance(
     lat1: float,
     lon1: float,
@@ -113,9 +125,15 @@ def resolve_distance(
     manual_km: Optional[float] = None,
     manual_hours: Optional[float] = None,
     manual_note: str = "",
+    config: Optional[dict] = None,
 ) -> DistanceResult:
     """Run the cascade and return the winning number with its provenance."""
     straight = haversine_km(lat1, lon1, lat2, lon2)
+    detour_factors, mode_speeds, sea_detour, river_detour = _tuning(config)
+
+    def _speed(mode_name: str, terrain: str) -> float:
+        table = mode_speeds.get(mode_name, mode_speeds["road"])
+        return table.get(terrain, table.get("_default", 40.0))
 
     if manual_km is not None and manual_km > 0:
         hours = manual_hours if manual_hours else manual_km / _speed(mode, terrain_class)
@@ -132,19 +150,19 @@ def resolve_distance(
         if routed:
             km, hours = routed
             return DistanceResult(km, hours, "osrm", 0.85, "Routed on self-hosted OSRM graph.")
-        factor = DETOUR_FACTORS.get(terrain_class, settings.default_detour_factor)
+        factor = detour_factors.get(terrain_class, settings.default_detour_factor)
         km = straight * factor
         return DistanceResult(
             km,
             km / _speed(mode, terrain_class),
             "detour_factor",
-            0.60 if terrain_class in DETOUR_FACTORS else 0.45,
+            0.60 if terrain_class in detour_factors else 0.45,
             f"Great circle {straight:.0f} km x {factor:.2f} detour factor ({terrain_class}). "
             "Replace with OSRM or a field measurement before publishing.",
         )
 
     if mode in ("sea", "river"):
-        factor = SEA_DETOUR if mode == "sea" else RIVER_DETOUR
+        factor = sea_detour if mode == "sea" else river_detour
         km = straight * factor
         return DistanceResult(
             km,

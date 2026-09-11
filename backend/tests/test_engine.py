@@ -10,6 +10,7 @@ from app.engine.costing import lane_cost
 from app.engine.distance import resolve_distance
 from app.engine.equity import assign_strata, compute_vulnerability, equity_penalty_weight
 from app.engine.geo import haversine_km, offshore_km
+from app.seed.png import BOUNDARY as PNG_BOUNDARY
 
 
 # --- geo ---------------------------------------------------------------------------
@@ -30,16 +31,19 @@ def test_land_mask_accepts_real_towns():
         (-6.2167, 155.5667),  # Arawa, Bougainville
         (-2.0226, 147.2712),  # Lorengau, Manus
     ]:
-        assert offshore_km("PNG", lat, lon) == 0.0, (lat, lon)
+        assert offshore_km(PNG_BOUNDARY, lat, lon) == 0.0, (lat, lon)
 
 
 def test_land_mask_rejects_open_water():
     """The failure this whole check exists for: a facility in the Bismarck Sea."""
-    assert offshore_km("PNG", -3.5, 149.0) > 100
+    assert offshore_km(PNG_BOUNDARY, -3.5, 149.0) > 100
 
 
 def test_land_mask_absent_for_unconfigured_country():
-    assert offshore_km("KEN", -1.29, 36.82) is None
+    """A country nobody has drawn yet loses the check rather than failing every point."""
+    assert offshore_km(None, -1.29, 36.82) is None
+    assert offshore_km({}, -1.29, 36.82) is None
+    assert offshore_km({"polygons": [], "buffers": []}, -1.29, 36.82) is None
 
 
 # --- distance cascade ---------------------------------------------------------------

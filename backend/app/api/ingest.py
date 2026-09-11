@@ -19,8 +19,13 @@ from ..io import excel_in, excel_out
 from ..io.apply import apply_payload
 from ..io.validation import validate_dataset
 from ..models import Country, Demand, Edge, ImportBatch, Node, Product
+from ..schemas import ImportRowPatch
 
 router = APIRouter(tags=["data"])
+
+#: Used when a country has not set its own. Rejects nothing, which is the honest
+#: default: a made-up bounding box would reject real facilities.
+WORLD_BBOX = {"min_lat": -90, "max_lat": 90, "min_lon": -180, "max_lon": 180}
 
 
 def _country_or_404(session: Session, country_id: int) -> Country:
@@ -77,7 +82,8 @@ async def validate_upload(
 
     report = validate_dataset(
         country_code=country.code,
-        bbox=(country.config or {}).get("bbox", {"min_lat": -90, "max_lat": 90, "min_lon": -180, "max_lon": 180}),
+        bbox=(country.config or {}).get("bbox", WORLD_BBOX),
+        boundary=country.boundary or {},
         nodes=parsed["nodes"],
         edges=parsed["edges"],
         products=parsed["products"],
@@ -106,6 +112,89 @@ async def validate_upload(
     return payload
 
 
+@router.patch("/imports/{batch_id}/rows")
+def correct_import_row(
+    batch_id: int,
+    payload: ImportRowPatch,
+    session: Session = Depends(get_session),
+):
+    """Correct a row inside an import that has not been committed, and re-check it.
+
+    This is the answer to a validation report that says a clinic is three kilometres out
+    to sea. Before this existed the only remedy was to reopen the workbook, find the
+    row, fix it, and upload the file again — which is a bulk operation to change one
+    cell, and sends the person who spotted the problem away from the screen that showed
+    it to them.
+
+    Nothing live is touched. The correction is applied to the parsed payload held in the
+    uncommitted batch, the whole dataset is validated again, and the report comes back.
+    The model still changes only at commit, exactly as before.
+    """
+    batch = session.get(ImportBatch, batch_id)
+    if not batch:
+        raise HTTPException(404, f"No import batch with id {batch_id}.")
+    if batch.committed:
+        raise HTTPException(409, "That import has already been applied; corrections would have nowhere to go.")
+
+    country = _country_or_404(session, batch.country_id)
+    report_blob = dict(batch.report or {})
+    parsed = dict(report_blob.get("parsed") or {})
+
+    sheet = payload.sheet
+    rows = list(parsed.get(sheet) or [])
+    if not rows:
+        raise HTTPException(400, f"This import has no {sheet} to correct.")
+
+    index = next((i for i, row in enumerate(rows) if str(row.get(payload.key_field)) == str(payload.key)), None)
+    if index is None:
+        raise HTTPException(404, f"No {sheet[:-1]} with {payload.key_field} '{payload.key}' in this import.")
+
+    row = dict(rows[index])
+    before = {field: row.get(field) for field in payload.values}
+    row.update(payload.values)
+    rows[index] = row
+    parsed[sheet] = rows
+
+    report = validate_dataset(
+        country_code=country.code,
+        bbox=(country.config or {}).get("bbox", WORLD_BBOX),
+        boundary=country.boundary or {},
+        nodes=parsed.get("nodes") or [],
+        edges=parsed.get("edges") or [],
+        products=parsed.get("products") or [],
+        demand=parsed.get("demand") or [],
+        partial=bool(report_blob.get("partial")),
+        existing_node_codes=set(report_blob.get("existing_node_codes") or []) or None,
+        existing_product_skus=set(report_blob.get("existing_product_skus") or []) or None,
+    )
+
+    corrections = list(report_blob.get("corrections") or [])
+    corrections.append(
+        {
+            "sheet": sheet,
+            "key": payload.key,
+            "before": before,
+            "after": payload.values,
+            "reason": payload.reason or "Corrected during review.",
+        }
+    )
+
+    batch.report = {
+        **report_blob,
+        **report.as_dict(),
+        "parsed": parsed,
+        "corrections": corrections,
+    }
+    batch.status = "blocked" if report.blocking else "validated"
+    session.commit()
+
+    payload_out = report.as_dict()
+    payload_out["batch_id"] = batch.id
+    payload_out["corrections"] = corrections
+    payload_out["corrected"] = {"sheet": sheet, "key": payload.key, "values": payload.values}
+    return payload_out
+
+
 @router.post("/imports/{batch_id}/commit")
 def commit_import(batch_id: int, replace: bool = True, session: Session = Depends(get_session)):
     """Apply a validated import.
@@ -123,8 +212,8 @@ def commit_import(batch_id: int, replace: bool = True, session: Session = Depend
     if batch.report.get("blocking"):
         raise HTTPException(
             409,
-            "This import has errors that must be fixed first. Download the report, correct "
-            "the workbook, and validate it again.",
+            "This import has errors that must be fixed first. Correct the rows here and they "
+            "are re-checked as you go, or fix the workbook and upload it again.",
         )
 
     country = _country_or_404(session, batch.country_id)

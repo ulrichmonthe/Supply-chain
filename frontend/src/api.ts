@@ -74,7 +74,17 @@ export const api = {
       { method: 'POST' },
     ),
 
+  createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
+    request<{ id: number; code: string; name: string }>('/countries', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  correctImportRow: (batchId: number, body: { sheet: string; key: string; values: Record<string, unknown>; reason?: string }) =>
+    request<ValidationReport>(`/imports/${batchId}/rows`, { method: 'PATCH', body: JSON.stringify(body) }),
+
   templateUrl: () => `${BASE}/template.xlsx`,
+  reportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/report.html`,
   networkExportUrl: (countryId: number) => `${BASE}/countries/${countryId}/export/network.xlsx`,
   resultsExportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/export/results.xlsx`,
 }

@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from ..db import get_session
 from ..engine import kpis as kpi_mod
 from ..engine.roadmap import build_roadmap
-from ..io import excel_out
-from ..models import Node, Result, Scenario
+from ..engine.distance import cascade_summary
+from ..io import excel_out, report as report_mod
+from ..models import Edge, Node, Result, Scenario
 
 router = APIRouter(tags=["exports"])
 
@@ -67,4 +68,63 @@ def export_results(scenario_id: int, session: Session = Depends(get_session)):
         content=payload,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{country.code} - {safe_name}.xlsx"'},
+    )
+
+
+@router.get("/scenarios/{scenario_id}/report.html")
+def export_report(scenario_id: int, session: Session = Depends(get_session)):
+    """The scenario as a document, for people who will never open the tool.
+
+    Served as HTML rather than PDF on purpose: it needs no rendering service, opens on
+    any machine, survives being emailed, and prints to PDF from any browser. The
+    spreadsheet remains the export for anyone who wants to check the arithmetic.
+    """
+    scenario = session.get(Scenario, scenario_id)
+    if not scenario:
+        raise HTTPException(404, f"No scenario with id {scenario_id}.")
+    result = _latest_ok(session, scenario_id)
+    if not result:
+        raise HTTPException(409, "Run this scenario before producing a report for it.")
+
+    country = scenario.country
+    baseline = session.scalar(
+        select(Scenario).where(Scenario.country_id == country.id, Scenario.is_baseline.is_(True))
+    )
+    baseline_result = _latest_ok(session, baseline.id) if baseline else None
+
+    roadmap = None
+    if baseline and baseline_result and baseline.id != scenario.id:
+        nodes_by_code = {
+            n.code: n for n in session.scalars(select(Node).where(Node.country_id == country.id))
+        }
+        roadmap = build_roadmap(
+            baseline_scenario=baseline,
+            baseline_result=baseline_result,
+            scenario=scenario,
+            result=result,
+            nodes_by_code=nodes_by_code,
+            currency=country.currency,
+        )
+
+    edges = list(session.scalars(select(Edge).where(Edge.country_id == country.id)))
+    nodes = list(session.scalars(select(Node).where(Node.country_id == country.id)))
+
+    html_doc = report_mod.render_report(
+        country=country,
+        scenario=scenario,
+        result=result,
+        baseline_scenario=baseline,
+        baseline_result=baseline_result,
+        roadmap=roadmap,
+        provenance=cascade_summary(edges),
+        counts={
+            "facilities": sum(1 for n in nodes if n.level >= 2),
+            "scheduled_services": len({e.service_name for e in edges if e.service_name}),
+        },
+    )
+    safe_name = "".join(c if c.isalnum() or c in "-_ " else "-" for c in scenario.name).strip()[:60]
+    return Response(
+        content=html_doc,
+        media_type="text/html; charset=utf-8",
+        headers={"Content-Disposition": f'inline; filename="{country.code} - {safe_name}.html"'},
     )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,9 +12,34 @@ class CountryOut(BaseModel):
     name: str
     currency: str
     config: dict
+    has_boundary: bool = False
 
     class Config:
         from_attributes = True
+
+
+class CountryIn(BaseModel):
+    """Everything needed to open a workspace for a country nobody has modelled yet.
+
+    Only the code, the name and the currency are required. The rest has defaults that
+    are honest rather than accurate: a world-sized bounding box that rejects nothing,
+    the built-in terrain classes, and no land mask at all. Each can be replaced from
+    the interface once somebody knows better, and the tool says which are still
+    defaults rather than pretending they were chosen.
+    """
+
+    code: str = Field(min_length=2, max_length=8)
+    name: str = Field(min_length=2, max_length=128)
+    currency: str = Field(default="USD", max_length=8)
+    config: dict = Field(default_factory=dict)
+    boundary: dict = Field(default_factory=dict)
+
+
+class CountryPatch(BaseModel):
+    name: Optional[str] = None
+    currency: Optional[str] = None
+    config: Optional[dict] = None
+    boundary: Optional[dict] = None
 
 
 class NodeOut(BaseModel):
@@ -166,3 +191,17 @@ class AuditOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ImportRowPatch(BaseModel):
+    """A correction to one row of an import that has not been committed yet.
+
+    The row is found by a business key rather than a position, because a spreadsheet
+    row number stops meaning anything the moment somebody sorts the sheet.
+    """
+
+    sheet: Literal["nodes", "edges", "products", "demand"]
+    key: str
+    key_field: str = "code"
+    values: dict
+    reason: str = ""

@@ -13,7 +13,16 @@ from ..engine import geo, seasonality, service
 from ..engine.distance import cascade_summary
 from ..engine.equity import compute_vulnerability
 from ..models import AuditEntry, Country, Demand, Edge, Node, Product
-from ..schemas import AuditOut, CountryOut, EdgeOut, EdgeOverride, NodeOut, ProductOut
+from ..schemas import (
+    AuditOut,
+    CountryIn,
+    CountryOut,
+    CountryPatch,
+    EdgeOut,
+    EdgeOverride,
+    NodeOut,
+    ProductOut,
+)
 
 router = APIRouter(tags=["network"])
 
@@ -25,9 +34,107 @@ def _country_or_404(session: Session, country_id: int) -> Country:
     return country
 
 
+#: What a country gets when nobody has told the tool anything about it yet. The bounding
+#: box spans the world on purpose: an invented one would reject real facilities, and a
+#: check that fires on correct data is worse than no check.
+DEFAULT_CONFIG = {
+    "bbox": {"min_lat": -90, "max_lat": 90, "min_lon": -180, "max_lon": 180},
+    "level_labels": {"0": "National store", "1": "Regional store", "2": "District store", "3": "Facility"},
+    "equity_definition": "Facilities ranked by how hard they are to reach, in five population-weighted groups.",
+}
+
+
+def _as_out(country: Country) -> dict:
+    return {
+        "id": country.id,
+        "code": country.code,
+        "name": country.name,
+        "currency": country.currency,
+        "config": country.config or {},
+        "has_boundary": bool((country.boundary or {}).get("polygons") or (country.boundary or {}).get("buffers")),
+    }
+
+
 @router.get("/countries", response_model=list[CountryOut])
 def list_countries(session: Session = Depends(get_session)):
-    return list(session.scalars(select(Country).order_by(Country.name)))
+    return [_as_out(c) for c in session.scalars(select(Country).order_by(Country.name))]
+
+
+@router.post("/countries", response_model=CountryOut, status_code=201)
+def create_country(payload: CountryIn, session: Session = Depends(get_session)):
+    """Open a workspace for a new country.
+
+    This is the step that used to require editing Python. The coarse land mask, the
+    terrain detour factors and the seasonal profiles are all country data now, so a
+    second country is a form rather than a release.
+    """
+    code = payload.code.strip().upper()
+    existing = session.scalar(select(Country).where(Country.code == code))
+    if existing:
+        raise HTTPException(
+            409,
+            f"{code} already exists as '{existing.name}'. Open that workspace, or choose another code.",
+        )
+
+    country = Country(
+        code=code,
+        name=payload.name.strip(),
+        currency=(payload.currency or "USD").strip().upper(),
+        config={**DEFAULT_CONFIG, **(payload.config or {})},
+        boundary=payload.boundary or {},
+    )
+    session.add(country)
+    session.flush()
+
+    session.add(
+        AuditEntry(
+            country_id=country.id,
+            entity_type="global",
+            entity_ref=code,
+            field="created",
+            new_value=f"Workspace opened for {country.name}",
+            rationale="A new country workspace.",
+            actor="analyst",
+        )
+    )
+    session.commit()
+    return _as_out(country)
+
+
+@router.patch("/countries/{country_id}", response_model=CountryOut)
+def update_country(country_id: int, payload: CountryPatch, session: Session = Depends(get_session)):
+    """Change a country's settings — its name, currency, bounding box, terrain factors,
+    seasonal profiles or land mask.
+
+    Changing the boundary or the detour factors changes what the validator believes and
+    what the cascade computes, so every change is written to the audit trail. Distances
+    already stored are not recomputed: re-import or re-run the cascade if you want them
+    to follow.
+    """
+    country = _country_or_404(session, country_id)
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(400, "No settings to change.")
+
+    for field, value in changes.items():
+        if value is None:
+            continue
+        old = getattr(country, field)
+        setattr(country, field, value)
+        session.add(
+            AuditEntry(
+                country_id=country.id,
+                entity_type="global",
+                entity_ref=country.code,
+                field=field,
+                old_value=("(a land mask)" if field == "boundary" else str(old))[:2000],
+                new_value=("(a land mask)" if field == "boundary" else str(value))[:2000],
+                rationale="Country settings changed.",
+                actor="analyst",
+            )
+        )
+    session.commit()
+    return _as_out(country)
 
 
 @router.get("/countries/{country_id}", response_model=CountryOut)
@@ -145,26 +252,34 @@ def overview(country_id: int, session: Session = Depends(get_session)):
 def basemap(country_id: int, session: Session = Depends(get_session)):
     """The land mask, as GeoJSON, so the map has a basemap with no internet.
 
-    A network design workshop in Papua New Guinea cannot assume a tile server is
+    A network design workshop in a provincial office cannot assume a tile server is
     reachable. Rather than ship a second dataset, the map draws the same coarse land
     mask the validator screens coordinates against — which has the useful side effect
     that what you see is exactly what the validator believes, coarseness included.
+
+    A country with no boundary drawn yet returns nothing rather than failing: the map
+    falls back to whatever tiles it can reach, and the offshore check is simply not
+    applied.
     """
     country = _country_or_404(session, country_id)
-    if country.code.upper() != "PNG":
+    boundary = country.boundary or {}
+    polygons = boundary.get("polygons") or []
+    buffers = boundary.get("buffers") or []
+    if not polygons and not buffers:
         return {"type": "FeatureCollection", "features": []}
 
     features = [
         {
             "type": "Feature",
             "properties": {"kind": "landmass"},
-            "geometry": {"type": "Polygon", "coordinates": [[*ring, ring[0]]]},
+            "geometry": {"type": "Polygon", "coordinates": [[*[list(point) for point in ring], list(ring[0])]]},
         }
-        for ring in geo.PNG_POLYGONS
+        for ring in polygons
     ]
 
     # Circular buffers become 24-gon rings so the same fill layer can draw them.
-    for lat, lon, radius_km in geo.PNG_ISLAND_BUFFERS:
+    for entry in buffers:
+        lat, lon, radius_km = entry[0], entry[1], entry[2]
         ring = []
         for step in range(25):
             angle = 2 * math.pi * step / 24
