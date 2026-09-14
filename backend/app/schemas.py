@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -117,6 +117,7 @@ class ScenarioIn(BaseModel):
     name: str
     description: str = ""
     parent_scenario_id: Optional[int] = None
+    tags: List[str] = Field(default_factory=list)
     levers: dict = Field(default_factory=dict)
     constraints: dict = Field(default_factory=dict)
     objective_weights: dict = Field(default_factory=dict)
@@ -125,6 +126,9 @@ class ScenarioIn(BaseModel):
 class ScenarioPatch(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    #: An empty list clears the tags, so this one is distinguished by exclude_unset
+    #: rather than by being None -- see update_scenario.
+    tags: Optional[List[str]] = None
     levers: Optional[dict] = None
     constraints: Optional[dict] = None
     objective_weights: Optional[dict] = None
@@ -137,6 +141,7 @@ class ScenarioOut(BaseModel):
     description: str
     parent_scenario_id: Optional[int]
     is_baseline: bool
+    tags: List[str] = Field(default_factory=list)
     levers: dict
     constraints: dict
     objective_weights: dict

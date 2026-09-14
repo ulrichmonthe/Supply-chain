@@ -227,6 +227,11 @@ class Scenario(Base):
     )
     is_baseline: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    #: Free-text labels, cleaned by app.tagging before they get here. Deliberately a
+    #: list on the scenario rather than a join table: tags are a filing convenience for
+    #: one country's workspace, not an entity anything else refers to.
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+
     #: allowed_modes, hub_nodes_open, delivery_frequency_by_level, third_party_share,
     #: integration_policy, fuel_index, demand_growth, month, service_frequency_overrides
     levers: Mapped[dict] = mapped_column(JSON, default=dict)

@@ -178,9 +178,27 @@
           "title": "Download the comparison as a spreadsheet",
           "state": "done",
           "env": null
+        },
+        {
+          "id": "f2s5",
+          "title": "File scenarios so a year of them stays findable",
+          "state": "done",
+          "env": null,
+          "note": "Free-text tags on every scenario, chips that narrow the list as you add them, and a search box that also looks inside descriptions. A duplicate keeps its parent's tags."
+        },
+        {
+          "id": "f2s6",
+          "title": "Name and revisit a particular version of a scenario",
+          "state": "idea",
+          "env": null,
+          "unsure": "Tags make scenarios findable; they do not freeze one. Saying 'this is what we showed the minister in March' still needs the input data versioned alongside the run, which it is not."
         }
       ],
       "decisions": [
+        {
+          "at": "2026-09-14T00:00:00Z",
+          "what": "Tags are cleaned when they are stored, not when they are compared, so three spellings of one label cannot quietly split a filter."
+        },
         {
           "at": "2026-08-17T10:19:29Z",
           "what": "Instead of forcing every plan to reach everyone, we put a price on not reaching someone. Every plan now gives an answer you can read, rather than some simply failing."
@@ -190,6 +208,11 @@
         "The costs, demand and boat timetables in the demo are illustrative, not the ministry's real figures. The clinic locations and the shape of the network are real."
       ],
       "activity": [
+        {
+          "at": "2026-09-14T00:00:00Z",
+          "kind": "work",
+          "what": "Scenarios can be tagged and filtered; filtering hides rows without changing what runs"
+        },
         {
           "at": "2026-08-17T10:54:20Z",
           "kind": "ok",

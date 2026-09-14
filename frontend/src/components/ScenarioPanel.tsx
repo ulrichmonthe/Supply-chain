@@ -1,4 +1,5 @@
-import { useId, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
+import type React from 'react'
 import type { Scenario, ServiceSummary } from '../types'
 import { FREQUENCIES, frequencyLabel, money, pct } from '../format'
 
@@ -21,13 +22,185 @@ type Props = {
 
 const MODES = ['road', 'sea', 'air', 'river']
 
+/** Tags are compared without case, so "Ministerial" and "ministerial" are one tag. */
+const key = (tag: string) => tag.trim().toLowerCase()
+
+const matches = (scenario: Scenario, query: string, active: string[]) => {
+  if (active.length) {
+    const own = new Set((scenario.tags ?? []).map(key))
+    // Every selected tag has to be present. Narrowing is the point of a second tag;
+    // widening is what the search box is for.
+    if (!active.every((tag) => own.has(tag))) return false
+  }
+  if (!query) return true
+  const needle = query.trim().toLowerCase()
+  if (!needle) return true
+  return (
+    scenario.name.toLowerCase().includes(needle) ||
+    scenario.description.toLowerCase().includes(needle) ||
+    (scenario.tags ?? []).some((tag) => tag.toLowerCase().includes(needle))
+  )
+}
+
+/**
+ * Adding and removing tags on one scenario.
+ *
+ * Comma and Enter both commit, because people type tags both ways and neither is
+ * worth correcting them over. Backspace on an empty box removes the last tag, which
+ * is the one gesture everyone already knows from every other tag field.
+ */
+function TagEditor({ scenario, onPatch }: { scenario: Scenario; onPatch: Props['onPatch'] }) {
+  const [draft, setDraft] = useState('')
+  const id = useId()
+  const tags = scenario.tags ?? []
+
+  const commit = (text: string) => {
+    const wanted = text.trim()
+    setDraft('')
+    if (!wanted) return
+    if (tags.some((tag) => key(tag) === key(wanted))) return
+    onPatch(scenario.id, { tags: [...tags, wanted] })
+  }
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault()
+      commit(draft)
+    } else if (event.key === 'Backspace' && !draft && tags.length) {
+      onPatch(scenario.id, { tags: tags.slice(0, -1) })
+    }
+  }
+
+  return (
+    <div className="tag-editor">
+      <label className="field-label" htmlFor={id}>
+        Tags
+      </label>
+      <div className="tag-row">
+        {tags.map((tag) => (
+          <span className="tag" key={tag}>
+            {tag}
+            <button
+              type="button"
+              className="tag-x"
+              aria-label={`Remove the tag ${tag}`}
+              onClick={() => onPatch(scenario.id, { tags: tags.filter((t) => t !== tag) })}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+      </div>
+      <input
+        id={id}
+        className="tag-input"
+        value={draft}
+        placeholder={tags.length ? 'Another tag…' : 'board pack, equity, Q3 review…'}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={onKeyDown}
+        onBlur={() => commit(draft)}
+      />
+    </div>
+  )
+}
+
 export function ScenarioPanel(props: Props) {
   const selected = props.scenarios.find((s) => s.id === props.selectedId) ?? null
+  const [query, setQuery] = useState('')
+  const [activeTags, setActiveTags] = useState<string[]>([])
+  const searchId = useId()
+
+  /* Every tag in use, with how many scenarios carry it, most used first. The label
+     shown is the first spelling encountered, so the filter reads the way it was typed. */
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, { label: string; count: number }>()
+    for (const scenario of props.scenarios) {
+      for (const tag of scenario.tags ?? []) {
+        const entry = counts.get(key(tag))
+        if (entry) entry.count += 1
+        else counts.set(key(tag), { label: tag, count: 1 })
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1].count - a[1].count || a[1].label.localeCompare(b[1].label))
+      .map(([id, entry]) => ({ id, ...entry }))
+  }, [props.scenarios])
+
+  const visible = useMemo(
+    () => props.scenarios.filter((scenario) => matches(scenario, query, activeTags)),
+    [props.scenarios, query, activeTags],
+  )
+
+  const filtering = Boolean(query.trim() || activeTags.length)
+  const clearFilter = () => {
+    setQuery('')
+    setActiveTags([])
+  }
+  const toggleTag = (id: string) =>
+    setActiveTags((current) => (current.includes(id) ? current.filter((t) => t !== id) : [...current, id]))
+
+  /* Filtering hides rows; it does not untick them. A run that quietly dropped the
+     scenarios you had chosen, because a search box happened to be filled in, would be
+     the worst kind of surprise — so the ticked set is left alone and the count is said
+     out loud instead. */
+  const hiddenTicked = props.compareIds.filter(
+    (id) => !visible.some((scenario) => scenario.id === id) && props.scenarios.some((s) => s.id === id),
+  ).length
 
   return (
     <div className="sidebar">
       <div className="section" data-tour="scenarios">
         <h3>Scenarios</h3>
+
+        {props.scenarios.length > 1 && (
+          <div className="scenario-filter">
+            <label className="visually-hidden" htmlFor={searchId}>
+              Search scenarios by name, description or tag
+            </label>
+            <input
+              id={searchId}
+              type="search"
+              className="tag-input"
+              value={query}
+              placeholder="Search scenarios…"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            {tagCounts.length > 0 && (
+              <div className="tag-row" role="group" aria-label="Filter by tag">
+                {tagCounts.map((tag) => (
+                  <button
+                    type="button"
+                    key={tag.id}
+                    className={`tag filter${activeTags.includes(tag.id) ? ' on' : ''}`}
+                    aria-pressed={activeTags.includes(tag.id)}
+                    onClick={() => toggleTag(tag.id)}
+                  >
+                    {tag.label}
+                    <span className="tag-count">{tag.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {filtering && (
+              <div className="filter-status">
+                <span role="status" aria-live="polite">
+                  {visible.length} of {props.scenarios.length} shown
+                </span>
+                <button type="button" className="btn small ghost" onClick={clearFilter}>
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {filtering && visible.length === 0 && (
+          <div className="callout">
+            <h4>Nothing matches</h4>
+            No scenario here carries {activeTags.length ? 'all of those tags' : 'that text'}.
+            Clear the filter to see all {props.scenarios.length}.
+          </div>
+        )}
         {props.scenarios.length === 0 && (
           <div className="callout">
             <h4>Nothing loaded yet</h4>
@@ -36,7 +209,7 @@ export function ScenarioPanel(props: Props) {
             anything is saved. A baseline scenario appears once there is a network to run it on.
           </div>
         )}
-        {props.scenarios.map((scenario) => {
+        {visible.map((scenario) => {
           const kpis = props.kpiByScenario[scenario.id]
           return (
             <div
@@ -66,6 +239,28 @@ export function ScenarioPanel(props: Props) {
                 </button>
                 {scenario.is_baseline && <span className="pill info">base</span>}
               </div>
+              {/* Only the chips swallow the click. Stopping it on the whole row would
+                  make the middle of a tagged scenario dead to selection, which is
+                  exactly where people click. */}
+              {(scenario.tags ?? []).length > 0 && (
+                <div className="tag-row on-row">
+                  {(scenario.tags ?? []).map((tag) => (
+                    <button
+                      type="button"
+                      key={tag}
+                      className={`tag filter${activeTags.includes(key(tag)) ? ' on' : ''}`}
+                      aria-pressed={activeTags.includes(key(tag))}
+                      title={`Show only scenarios tagged ${tag}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        toggleTag(key(tag))
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
               {scenario.id === props.selectedId && scenario.description && (
                 <div className="scenario-desc">{scenario.description}</div>
               )}
@@ -105,6 +300,11 @@ export function ScenarioPanel(props: Props) {
                   )}
                 </div>
               )}
+              {scenario.id === props.selectedId && (
+                <div onClick={(event) => event.stopPropagation()}>
+                  <TagEditor scenario={scenario} onPatch={props.onPatch} />
+                </div>
+              )}
             </div>
           )
         })}
@@ -125,7 +325,31 @@ export function ScenarioPanel(props: Props) {
             `Run ${props.compareIds.length} scenario${props.compareIds.length === 1 ? '' : 's'} in parallel`
           )}
         </button>
+        {hiddenTicked > 0 && (
+          <div className="lever-note" style={{ marginTop: 5 }}>
+            {hiddenTicked === 1 ? 'One of those is' : `${hiddenTicked} of those are`} hidden by the
+            filter. Filtering changes what you can see, not what will run.
+          </div>
+        )}
       </div>
+
+      {/* The levers below belong to the selected scenario, which the filter may be
+          hiding. Unlabelled sliders for an invisible scenario is how somebody edits the
+          wrong thing and does not find out until the numbers move. */}
+      {selected && !visible.some((s) => s.id === selected.id) && (
+        <div className="section">
+          <div className="callout">
+            <h4>Hidden by the filter</h4>
+            The levers below are still <b>{selected.name}</b>, which does not match what you
+            are filtering on.
+            <div style={{ marginTop: 7 }}>
+              <button type="button" className="btn small" onClick={clearFilter}>
+                Show it again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selected && <LeverEditor scenario={selected} services={props.services} onPatch={props.onPatch} />}
     </div>

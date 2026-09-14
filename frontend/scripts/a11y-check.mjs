@@ -33,6 +33,22 @@ const check = (ok, message) => {
 
 const browser = await chromium.launch({ executablePath: EXECUTABLE })
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
+
+/*
+ * Marked as already seen, so the guided tour does not open over the app.
+ *
+ * Not a way of hiding the tour from the checks: while a modal dialog is open, focus
+ * belongs inside it and the skip link is *supposed* to be unreachable, so a first-run
+ * profile would fail two checks for doing the right thing. What is checked here is the
+ * app in the state people spend their time in. The tour has its own axe coverage.
+ */
+await page.addInitScript(() => {
+  try {
+    window.localStorage.setItem('hscn.tour.seen.v1', 'a11y-check')
+  } catch {
+    /* storage blocked: the tour opens, and the two focus checks below will say so */
+  }
+})
 const consoleErrors = []
 page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()))
 page.on('pageerror', (e) => consoleErrors.push(String(e)))

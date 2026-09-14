@@ -318,6 +318,27 @@ Excel front end is why logisticians actually used it. A country that cannot get 
 model out of the tool has not been handed anything, and the durability claim the whole
 product is sold on is empty.
 
+### Filing scenarios
+
+A workspace that has been used for a few months holds scenarios for a board pack, for
+a minister, for the finance team's own question, and half a dozen abandoned variants.
+Scenarios carry free-text tags, and the sidebar filters on them: chips narrow with each
+one you add, and a search box also looks inside names and descriptions. A duplicate
+inherits its parent's tags, because a copy of ministerial work is still ministerial.
+
+Tags are cleaned at the boundary rather than at the point of comparison, in
+`app/tagging.py`. Left alone, hand-typed labels become "Ministerial", "ministerial" and
+" ministerial " — three tags, and a filter that quietly shows a third of what it should.
+Whitespace is collapsed, the first spelling of a tag wins, duplicates are dropped
+without regard to case, and there is no controlled vocabulary: a fixed list would be
+wrong in the second country.
+
+Filtering hides rows; it never unticks them. Run the set while a filter is active and
+the scenarios you chose still run, with a note saying how many of them you cannot
+currently see. The alternative — a run that silently drops scenarios because a search
+box happened to be filled in — is the kind of surprise that costs trust in everything
+else the tool says.
+
 ### The costed roadmap
 
 The terms of reference ask for a costed roadmap. If the tool does not generate it, the
@@ -466,3 +487,13 @@ building, and no inventory optimisation.
   conditions held all year?". It is not a monthly budget. The UI labels it as such.
 * Stockout risk is analytic, not simulated. It responds correctly to frequency,
   storage, reliability and season, but it does not model wastage, expiry or queueing.
+* There are no migrations. `create_all` makes missing tables and ignores tables that
+  already exist, so a new column never reaches a database that predates it — which
+  arrives as `no such column` on the first query, an outage rather than a warning.
+  `add_missing_columns` in `app/db.py` closes that one gap at startup: it adds columns
+  the models declare and the database lacks, and fills new JSON columns with an empty
+  object or list rather than leaving existing rows NULL. It is a stopgap and nothing
+  more. It cannot rename a column, drop one, change a type, add a constraint, or
+  backfill a value it cannot derive. Anything beyond adding a column still needs a real
+  migration tool, and this should be Alembic before the first instance holds data
+  somebody would mind losing.

@@ -14,7 +14,7 @@ from sqlalchemy import select
 
 from .api import connectors, exports, ingest, network, scenarios
 from .config import settings
-from .db import Base, SessionLocal, engine
+from .db import Base, SessionLocal, add_missing_columns, engine
 from .engine.runner import run_scenario
 from .models import Result, Scenario
 from .seed.loader import seed_png
@@ -27,6 +27,7 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "di
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(engine)
+    add_missing_columns()
     if settings.seed_on_startup:
         session = SessionLocal()
         try:

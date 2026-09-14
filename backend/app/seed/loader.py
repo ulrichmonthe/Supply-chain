@@ -487,6 +487,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
     baseline = Scenario(
         country_id=country.id,
         name="Baseline — network as it operates today",
+        tags=["reference"],
         description=(
             "Five Area Medical Stores, current catchments, current timetables, and the "
             "standing policy that every facility is supplied — priced at 6,000 PGK per cubic "
@@ -519,6 +520,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Cost optimisation — unconstrained",
+            tags=["cost", "board pack"],
             description=(
                 "Minimise cost with the value of supply turned down to a quarter and equity "
                 "weighted at zero — a network design tool asked only about money. Read the "
@@ -532,6 +534,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Cost optimisation with a 90% equity floor",
+            tags=["cost", "equity", "board pack"],
             description=(
                 "The same optimisation, with a hard constraint that every vulnerability "
                 "quintile reaches at least 90% of its demand. The saving is smaller. That "
@@ -546,6 +549,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Wet season stress test (March)",
+            tags=["seasonal", "risk"],
             description=(
                 "The baseline network under March conditions held for a full year. "
                 "Floodplain and unsealed highland roads close; the cost of every remaining "
@@ -560,6 +564,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Island services halved (fortnightly → monthly)",
+            tags=["seasonal", "risk", "cost"],
             description=(
                 "Every weekly and fortnightly coastal run drops to monthly — the effect of "
                 "a fuel price shock or a vessel going off charter. Cost falls, because the "
@@ -585,6 +590,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Open Alotau, Wewak and Buka stores",
+            tags=["investment", "board pack"],
             description=(
                 "Bring the three proposed Area Medical Stores into service, shortening the "
                 "island runs in Milne Bay, the Sepik coast and Bougainville. Capital cost "
@@ -603,6 +609,7 @@ def _seed_scenarios(session: Session, country: Country) -> None:
         Scenario(
             country_id=country.id,
             name="Integrated programme supply chain",
+            tags=["investment", "structural"],
             description=(
                 "Consolidate programme-specific stores (EPI, malaria, TB/HIV) into the "
                 "shared network. The largest structural saving available, and the hardest "

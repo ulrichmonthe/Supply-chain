@@ -67,7 +67,22 @@ for m in range(1, 13):
     save(f"season/{m}.json", call(f"/countries/1/season/{m}"))
 print("static data captured")
 
-original = {s["id"]: (s.get("levers") or {}) for s in call("/countries/1/scenarios")}
+scenarios_now = call("/countries/1/scenarios")
+original = {s["id"]: (s.get("levers") or {}) for s in scenarios_now}
+
+# The opening state is read from the live database, so anything that has touched the
+# app first is baked into what visitors see. The accessibility check presses a month
+# cell; a half-finished capture leaves its own pin behind. Either way the demo then
+# greets everyone with February under the heading "as it operates today". Refuse.
+for s in scenarios_now:
+    if s.get("is_baseline") and (s.get("levers") or {}).get("month"):
+        sys.exit(
+            f"The baseline is pinned to month {s['levers']['month']}. This database has been "
+            "used since it was seeded, and capturing now would publish that month as the "
+            "baseline.\nStart again from a fresh one:\n"
+            "  rm -f backend/var/hscn.db backend/var/hscn.db-wal backend/var/hscn.db-shm\n"
+            "  make run   # in another terminal, then re-run this"
+        )
 
 # Pass 1 — everything has a result before any snapshot is taken.
 for sid in sorted(original):

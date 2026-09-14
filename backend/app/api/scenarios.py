@@ -5,7 +5,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,7 @@ from ..engine import kpis as kpi_mod
 from ..engine.roadmap import build_roadmap
 from ..engine.runner import run_scenario
 from ..models import Country, Node, Result, Scenario
+from ..tagging import normalise_tags
 from ..schemas import ResultSummary, ScenarioIn, ScenarioOut, ScenarioPatch
 
 router = APIRouter(tags=["scenarios"])
@@ -30,15 +31,27 @@ def _to_out(session: Session, scenario: Scenario) -> ScenarioOut:
     latest = session.scalars(
         select(Result).where(Result.scenario_id == scenario.id).order_by(Result.id.desc()).limit(1)
     ).first()
+    fields = {
+        key: getattr(scenario, key)
+        for key in ScenarioOut.model_fields
+        if hasattr(scenario, key) and key != "tags"
+    }
     return ScenarioOut(
-        **{key: getattr(scenario, key) for key in ScenarioOut.model_fields if hasattr(scenario, key)},
+        **fields,
+        # Cleaned on the way out as well as in, so a row written before tags existed
+        # -- or by hand -- reads as an empty list rather than failing the response.
+        tags=normalise_tags(scenario.tags),
         latest_result_id=latest.id if latest else None,
         latest_status=latest.status if latest else None,
     )
 
 
 @router.get("/countries/{country_id}/scenarios", response_model=list[ScenarioOut])
-def list_scenarios(country_id: int, session: Session = Depends(get_session)):
+def list_scenarios(
+    country_id: int,
+    tag: Optional[str] = Query(None, description="Only scenarios carrying this tag, ignoring case."),
+    session: Session = Depends(get_session),
+):
     scenarios = list(
         session.scalars(
             select(Scenario)
@@ -46,7 +59,13 @@ def list_scenarios(country_id: int, session: Session = Depends(get_session)):
             .order_by(Scenario.is_baseline.desc(), Scenario.id)
         )
     )
-    return [_to_out(session, s) for s in scenarios]
+    out = [_to_out(session, s) for s in scenarios]
+    if tag:
+        # Matched in Python rather than in SQL: JSON containment is spelled differently
+        # in SQLite and PostgreSQL, and a country has tens of scenarios, not millions.
+        wanted = tag.casefold()
+        out = [s for s in out if any(t.casefold() == wanted for t in s.tags)]
+    return out
 
 
 @router.post("/countries/{country_id}/scenarios", response_model=ScenarioOut, status_code=201)
@@ -58,7 +77,9 @@ def create_scenario(country_id: int, payload: ScenarioIn, session: Session = Dep
     ):
         raise HTTPException(409, f"A scenario named '{payload.name}' already exists.")
 
-    scenario = Scenario(country_id=country_id, **payload.model_dump())
+    fields = payload.model_dump()
+    fields["tags"] = normalise_tags(fields.get("tags"))
+    scenario = Scenario(country_id=country_id, **fields)
     session.add(scenario)
     session.commit()
     session.refresh(scenario)
@@ -74,8 +95,11 @@ def get_scenario(scenario_id: int, session: Session = Depends(get_session)):
 def update_scenario(scenario_id: int, payload: ScenarioPatch, session: Session = Depends(get_session)):
     scenario = _scenario_or_404(session, scenario_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
-        if value is not None:
-            setattr(scenario, field, value)
+        if value is None:
+            continue
+        # An empty list is a real instruction -- "remove every tag" -- and survives
+        # because the check above is against None, not against falsiness.
+        setattr(scenario, field, normalise_tags(value) if field == "tags" else value)
     session.commit()
     session.refresh(scenario)
     return _to_out(session, scenario)
@@ -106,6 +130,8 @@ def clone_scenario(scenario_id: int, payload: Optional[ScenarioIn] = None, sessi
         name=name,
         description=payload.description if payload and payload.description else source.description,
         parent_scenario_id=source.id,
+        # A copy of ministerial work is still ministerial; the filing carries over.
+        tags=normalise_tags(payload.tags if payload and payload.tags else source.tags),
         levers=dict(source.levers or {}),
         constraints=dict(source.constraints or {}),
         objective_weights=dict(source.objective_weights or {}),

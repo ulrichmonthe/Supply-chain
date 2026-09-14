@@ -99,6 +99,12 @@ export function buildTour({ setTab, setColourBy }: TourActions): TourStep[] {
             Click one to work on it. Tick the boxes to choose which ones get compared side
             by side. <b>Duplicate</b> is how you ask a variation without losing the original.
           </p>
+          <p>
+            Tag them — <i>board pack</i>, <i>seasonal</i>, <i>cost</i> — and the chips at the
+            top filter the list. Two tags narrow rather than widen, and the search box also
+            looks inside descriptions. Filtering only changes what you can see: whatever is
+            ticked still runs.
+          </p>
         </>
       ),
     },

@@ -123,6 +123,7 @@ export type Scenario = {
   description: string
   is_baseline: boolean
   parent_scenario_id: number | null
+  tags: string[]
   levers: Levers
   constraints: Constraints
   objective_weights: Weights
