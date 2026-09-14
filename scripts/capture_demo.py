@@ -8,10 +8,17 @@ Two passes matter:
      fully populated scorecard rather than half the rows saying "not run yet";
   2. for each scenario and month, pin the month, re-solve, and record the state
      the interface would be in.
-"""
-import json, pathlib, sys, urllib.request, urllib.error
 
-BASE = "http://127.0.0.1:8000/api"
+The opening state is recorded between the two, not after them. Capturing it at the
+end meant reconstructing it by putting the levers back, which is only correct if the
+database started clean — and this script is what makes it dirty. A capture run that
+died half way through the month sweep left the next run treating February as the
+baseline's own setting, and the published demo then opened on a February the landing
+page described as an ordinary year.
+"""
+import json, os, pathlib, sys, urllib.request, urllib.error
+
+BASE = os.environ.get("API", "http://127.0.0.1:8000/api")
 OUT = pathlib.Path(sys.argv[1])
 MONTHS = [None] + list(range(1, 13))
 results_seen = set()
@@ -66,6 +73,13 @@ original = {s["id"]: (s.get("levers") or {}) for s in call("/countries/1/scenari
 for sid in sorted(original):
     call(f"/scenarios/{sid}/run", "POST")
 print("all scenarios solved once")
+for sid in sorted(original):
+    pinned = original[sid].get("month")
+    if pinned:
+        print(f"  note: scenario {sid} is pinned to month {pinned}")
+
+# The state on first load, taken while the levers are still the seeded ones.
+snapshot("initial")
 
 # Pass 2 — the state behind every scenario/month the interface can reach.
 for sid in sorted(original):
@@ -82,11 +96,20 @@ for sid in sorted(original):
     except urllib.error.HTTPError as e:
         save(f"roadmap/{sid}.json", {"__status": e.code, "detail": json.loads(e.read())["detail"]})
 
-# Put the levers back, re-solve, and record that as the state on first load.
+# Leave the database as it was found, so the next capture starts from the seeded
+# settings rather than from wherever the month sweep stopped.
 for sid, levers in original.items():
     call(f"/scenarios/{sid}", "PATCH", {"levers": levers})
     call(f"/scenarios/{sid}/run", "POST")
-snapshot("initial")
+
+# Result ids are database rows, so they change every capture. Files from an earlier
+# run are unreachable but still shipped, and the demo doubled in size before anyone
+# noticed. Anything no snapshot points at goes.
+live = {f"{rid}.json" for rid in results_seen}
+for stale in (OUT / "results").glob("*.json"):
+    if stale.name not in live:
+        stale.unlink()
+        print(f"  pruned orphaned {stale.name}")
 
 files = list(OUT.rglob("*.json"))
 print(f"\n{len(files)} files, {sum(f.stat().st_size for f in files)/1024/1024:.1f} MB")

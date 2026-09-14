@@ -413,6 +413,14 @@ vendored in `.claude/skills/build-companion/`.
 
 ### Interface
 
+A fourteen-step guide opens the first time somebody loads the app, and afterwards sits
+behind the **Guide** button in the top bar. It dims the page, lights up one control at a
+time and says what that control is for, opening the Equity, Data, Live and Provenance
+tabs as it reaches them. It points at the live interface rather than at screenshots,
+which is the only version of this that does not rot: a screenshot tour is wrong the week
+after the layout changes, and nobody notices. Refusing it is remembered in
+`localStorage`, so it is offered once, not every visit.
+
 The interface is audited against the `ui-ux-pro-max` design skill vendored in
 `.claude/skills/`, which is roughly 250 rules citing Apple's Human Interface Guidelines,
 Material Design and WCAG. `docs/design-audit.md` records what complied, what was fixed

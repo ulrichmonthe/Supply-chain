@@ -3,7 +3,7 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic \u2014 by road, boat and plane, month by month \u2014 and who gets left out when money is saved."
   },
-  "updated": "2026-09-11T13:32:46Z",
+  "updated": "2026-09-14T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -44,6 +44,13 @@
           "note": "23 checks, run with one command, and they fail loudly."
         },
         {
+          "id": "f7s6",
+          "title": "Understand the screen without being shown it",
+          "state": "done",
+          "env": null,
+          "note": "A fourteen-step guide dims the screen, lights up one control at a time and says what it is for. It opens by itself the first time and lives behind a Guide button after that."
+        },
+        {
           "id": "f7s5",
           "title": "Use it comfortably on a phone",
           "state": "idea",
@@ -52,6 +59,10 @@
         }
       ],
       "decisions": [
+        {
+          "at": "2026-09-14T00:00:00Z",
+          "what": "The guide points at the live interface rather than showing screenshots, so it cannot drift out of date as the screen changes."
+        },
         {
           "at": "2026-08-18T06:52:54Z",
           "what": "Buttons stay small for a mouse and grow to finger size only on a touch screen, so neither gets a compromise."
@@ -65,6 +76,11 @@
         "There is no light-colour version of the screen \u2014 it is dark only."
       ],
       "activity": [
+        {
+          "at": "2026-09-14T00:00:00Z",
+          "kind": "work",
+          "what": "A first-run guide now explains the map, the levers, the equity view and the seasons, pointing at the real controls"
+        },
         {
           "at": "2026-08-18T06:52:54Z",
           "kind": "ok",

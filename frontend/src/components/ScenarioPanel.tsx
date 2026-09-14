@@ -26,7 +26,7 @@ export function ScenarioPanel(props: Props) {
 
   return (
     <div className="sidebar">
-      <div className="section">
+      <div className="section" data-tour="scenarios">
         <h3>Scenarios</h3>
         {props.scenarios.length === 0 && (
           <div className="callout">
@@ -111,6 +111,7 @@ export function ScenarioPanel(props: Props) {
 
         <button
           className="btn primary"
+          data-tour="run"
           style={{ width: '100%', marginTop: 6 }}
           disabled={props.running || props.compareIds.length === 0}
           aria-busy={props.running}
@@ -159,7 +160,7 @@ function LeverEditor({
 
   return (
     <>
-      <div className="section">
+      <div className="section" data-tour="levers">
         <h3>Objective</h3>
         <Slider
           label="Cost"

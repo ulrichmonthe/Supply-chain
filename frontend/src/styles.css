@@ -44,6 +44,8 @@
 
   /* One declared z-index scale, so a new overlay has somewhere to go. */
   --z-base: 0; --z-raised: 10; --z-overlay: 20; --z-tooltip: 40; --z-modal: 100;
+  /* The guide sits above the modal: it explains the app, including its dialogs. */
+  --z-tour: 200;
 
   /* Interactive sizing. 32px suits a pointer; a coarse pointer gets the 44px Apple
      HIG minimum through the media query at the end of this file. */
@@ -557,4 +559,72 @@ tbody tr.selected { background: #17293b; }
   width: 100%; background: var(--panel-3); border: 1px solid var(--line);
   border-radius: 5px; padding: 6px 8px; color: var(--text); font: inherit;
   font-size: var(--fs-small);
+}
+
+/* ---------- guided tour ---------- */
+
+.tour { position: fixed; inset: 0; z-index: var(--z-tour); }
+
+/* Nothing behind the guide is operable while it is open, so a step describing a
+   control cannot be read against a screen that has already moved on. */
+.tour-blocker { position: absolute; inset: 0; cursor: default; }
+
+/* The dim is a very large shadow cast outwards from the lit area, which is how the
+   hole gets rounded corners and stays exactly on the control as it moves. */
+.tour-ring {
+  position: fixed; border-radius: 9px; pointer-events: auto;
+  box-shadow: 0 0 0 9999px rgba(6, 10, 15, 0.74);
+  outline: 2px solid var(--accent); outline-offset: 0;
+  transition: top var(--dur) var(--ease-out), left var(--dur) var(--ease-out),
+              width var(--dur) var(--ease-out), height var(--dur) var(--ease-out);
+}
+.tour-dim { position: absolute; inset: 0; background: rgba(6, 10, 15, 0.74); }
+
+.tour-card {
+  position: fixed; box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 14px 16px 13px;
+  box-shadow: 0 26px 64px -24px rgba(0, 0, 0, 0.9);
+  font-size: var(--fs-base); line-height: 1.5;
+}
+.tour-card.sheet { max-height: 62vh; overflow-y: auto; }
+
+.tour-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.tour-count {
+  font-family: var(--mono); font-size: var(--fs-micro);
+  color: var(--dim); letter-spacing: 0.04em;
+}
+.tour-x {
+  background: none; border: none; color: var(--dim); cursor: pointer;
+  font-size: 13px; line-height: 1; padding: 4px; margin: -4px -6px -4px 0;
+  border-radius: 4px;
+}
+.tour-x:hover { color: var(--text); background: var(--panel-3); }
+
+.tour-title { margin: 0 0 6px; font-size: var(--fs-lead); line-height: 1.3; }
+.tour-title:focus { outline: none; }
+.tour-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.tour-body p { margin: 0 0 8px; color: var(--muted); }
+.tour-body p:last-child { margin-bottom: 0; }
+.tour-body b { color: var(--text); font-weight: 600; }
+.tour-body .tour-aside {
+  font-size: var(--fs-small); color: var(--dim);
+  border-left: 2px solid var(--line); padding-left: 9px;
+}
+
+.tour-progress {
+  height: 2px; background: var(--line-soft); border-radius: 2px;
+  margin: 12px 0 10px; overflow: hidden;
+}
+.tour-progress span {
+  display: block; height: 100%; background: var(--accent);
+  transition: width var(--dur) var(--ease-out);
+}
+
+.tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-actions-right { display: flex; gap: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-ring, .tour-progress span { transition: none; }
 }

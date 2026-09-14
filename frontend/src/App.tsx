@@ -8,6 +8,8 @@ import { Scorecard } from './components/Scorecard'
 import { EquityPanel } from './components/EquityPanel'
 import { DataPanel, FacilityTable, ProvenancePanel, RoadmapPanel, SeasonPanel, ServicesPanel } from './components/Panels'
 import { ConnectionsPanel } from './components/ConnectionsPanel'
+import { Tour } from './components/Tour'
+import { TOUR_STORAGE_KEY, buildTour } from './tour'
 import type {
   AuditRow,
   EdgeRow,
@@ -145,6 +147,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('Scorecard')
 
   const [running, setRunning] = useState(false)
+  const [tourOpen, setTourOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(true)
 
@@ -391,6 +394,37 @@ export default function App() {
     document.getElementById(`tab-${slug(TABS[next])}`)?.focus()
   }
 
+  /* ------------------------------------------------------------------ guide */
+
+  const tourSteps = useMemo(
+    () => buildTour({ setTab: (name) => setTab(name as Tab), setColourBy }),
+    [],
+  )
+
+  /*
+   * Offered once, unprompted, to somebody who has never been here — and only once the
+   * network has actually loaded, because a tour pointing at an empty map teaches
+   * nothing. Refusing it is remembered; the Guide button reopens it on purpose.
+   */
+  useEffect(() => {
+    if (!overview) return
+    try {
+      if (window.localStorage.getItem(TOUR_STORAGE_KEY)) return
+    } catch {
+      return // private browsing, or storage blocked: never nag rather than nag every load
+    }
+    setTourOpen(true)
+  }, [overview])
+
+  const closeTour = useCallback(() => {
+    setTourOpen(false)
+    try {
+      window.localStorage.setItem(TOUR_STORAGE_KEY, new Date().toISOString())
+    } catch {
+      /* not remembering is a smaller failure than not closing */
+    }
+  }, [])
+
   /* ---------------------------------------------------------------- render */
 
   return (
@@ -443,6 +477,9 @@ export default function App() {
         )}
 
         <div className="topbar-right">
+          <button className="btn small ghost" onClick={() => setTourOpen(true)}>
+            Guide
+          </button>
           <button className="btn small ghost" onClick={() => setNewCountry(true)}>
             New country
           </button>
@@ -719,6 +756,8 @@ export default function App() {
           )}
         </aside>
       </div>
+
+      <Tour steps={tourSteps} open={tourOpen} onClose={closeTour} />
     </div>
   )
 }
