@@ -37,6 +37,53 @@ export type NodeRow = {
   capacity: { dry_m3?: number; cold_by_band?: Record<string, number>; cover_days_assumed?: number }
   geocode_confidence: number
   geocode_source: string
+  retired_at: string | null
+  retired_reason: string
+}
+
+export type DemandRow = {
+  id: number
+  node_id: number
+  node_code: string
+  sku: string
+  product_name: string
+  period: number
+  quantity: number
+  source: string
+  confidence: number
+  unit: string
+}
+
+export type ConfidenceMarker = 'S' | 'I' | 'U'
+
+export type ChangeRow = {
+  key: string
+  label: string
+  kind: string
+  fields: Record<string, { from: unknown; to: unknown }>
+  conflicts: Record<string, { model: unknown; file: unknown; last_import: unknown }>
+  method: string
+}
+
+export type SheetChanges = {
+  counts: { add: number; update: number; retire: number; restore: number; conflict: number; unchanged: number }
+  adds: ChangeRow[]
+  updates: ChangeRow[]
+  retires: ChangeRow[]
+  restores: ChangeRow[]
+  conflicts: ChangeRow[]
+}
+
+export type ImportChanges = {
+  batch_id: number
+  mode: string
+  headline: string
+  conflicts: number
+  collisions: unknown[]
+  nodes: SheetChanges
+  edges: SheetChanges
+  products: SheetChanges
+  demand: SheetChanges
 }
 
 export type EdgeRow = {

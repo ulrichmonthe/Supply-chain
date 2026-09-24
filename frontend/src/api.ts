@@ -1,10 +1,12 @@
 import type {
   AuditRow,
+  ConfidenceMarker,
   Connection,
   ConnectionTest,
   ConnectorSpec,
-  SyncPreview,
+  DemandRow,
   EdgeRow,
+  ImportChanges,
   NodeRow,
   Overview,
   Result,
@@ -12,6 +14,8 @@ import type {
   Scenario,
   Scorecard,
   SeasonView,
+  SyncPreview,
+  ValidationIssue,
   ValidationReport,
 } from './types'
 
@@ -101,12 +105,53 @@ export const api = {
     form.append('file', file)
     return request<ValidationReport>(`/countries/${countryId}/validate`, { method: 'POST', body: form })
   },
-  commitImport: (batchId: number, replace: boolean) =>
-    request<{ committed: boolean; counts: Record<string, number> }>(
-      `/imports/${batchId}/commit?replace=${replace}`,
+  commitImport: (batchId: number, replace: boolean, conflicts: 'keep' | 'take_file' = 'keep', takeFile: string[] = []) => {
+    const query = new URLSearchParams({ replace: String(replace), conflicts })
+    for (const key of takeFile) query.append('take_file', key)
+    return request<{ committed: boolean; mode: string; counts: Record<string, number | Record<string, number>> }>(
+      `/imports/${batchId}/commit?${query.toString()}`,
       { method: 'POST' },
-    ),
-
+    )
+  },
+  importChanges: (batchId: number, replace: boolean) => request<ImportChanges>(`/imports/${batchId}/changes?replace=${replace}`),
+  /* --- editing in the tool --- */
+  retiredNodes: (countryId: number) => request<NodeRow[]>(`/countries/${countryId}/nodes/retired`),
+  patchNode: (
+    nodeId: number,
+    patch: Partial<NodeRow> & { confidence_marker?: ConfidenceMarker; reason?: string },
+  ) => request<{ node: NodeRow; issues: ValidationIssue[] }>(`/nodes/${nodeId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  createNode: (
+    countryId: number,
+    payload: {
+      code: string
+      name: string
+      lat: number
+      lon: number
+      level?: number
+      type?: string
+      admin1?: string
+      admin2?: string
+      terrain_class?: string
+      catchment_population?: number
+      operating_status?: string
+      confidence_marker?: ConfidenceMarker
+      reason?: string
+    },
+  ) => request<{ node: NodeRow; issues: ValidationIssue[] }>(`/countries/${countryId}/nodes`, { method: 'POST', body: JSON.stringify(payload) }),
+  retireNode: (nodeId: number, reason: string) =>
+    request<{ retired: string; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  restoreNode: (nodeId: number, reason: string) =>
+    request<{ node: NodeRow; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  nodeDemand: (nodeId: number) => request<DemandRow[]>(`/nodes/${nodeId}/demand`),
+  setNodeDemand: (
+    nodeId: number,
+    lines: { sku: string; quantity: number; period?: number; source?: string; confidence?: number }[],
+    confidence_marker: ConfidenceMarker,
+    reason: string,
+  ) => request<DemandRow[]>(`/nodes/${nodeId}/demand`, { method: 'PUT', body: JSON.stringify({ lines, confidence_marker, reason }) }),
+  overrideEdge: (edgeId: number, patch: Partial<EdgeRow> & { rationale?: string }) =>
+    request<EdgeRow>(`/edges/${edgeId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
   createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
     request<{ id: number; code: string; name: string }>('/countries', {
       method: 'POST',

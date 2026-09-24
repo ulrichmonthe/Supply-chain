@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from typing import Optional
 
 from sqlalchemy import create_engine, event, inspect, text
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker, with_loader_criteria
 
 from .config import settings
 
@@ -31,6 +31,36 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 class Base(DeclarativeBase):
     pass
+
+
+#: Execution option that lets a query see retired rows: ``select(Node).execution_options(include_retired=True)``.
+INCLUDE_RETIRED = "include_retired"
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _hide_retired_rows(state) -> None:
+    """Retired rows do not exist, unless a query says otherwise.
+
+    Nothing is deleted by an import any more; facilities, lanes, products and demand
+    rows that drop out of a master list are retired, keep their history, and can come
+    back. The price of that is one rule every query must obey, and a rule twenty-three
+    query sites must each remember is a rule that will be forgotten. So it is applied
+    here, once, to every ORM query in the application -- listing, the solver, exports,
+    relationship loads -- and a query that genuinely wants retired rows (a Retired
+    facilities list, a restore) opts in by execution option.
+    """
+    if not state.is_select or state.is_column_load or state.is_relationship_load:
+        # Relationship and column loads follow an object already in hand; filtering
+        # them would make an edge's retired endpoint vanish mid-object.
+        return
+    if state.execution_options.get(INCLUDE_RETIRED):
+        return
+    from . import models  # local import: models depend on Base, defined above
+
+    for model in (models.Node, models.Edge, models.Product, models.Demand):
+        state.statement = state.statement.options(
+            with_loader_criteria(model, lambda cls: cls.retired_at.is_(None), include_aliases=True)
+        )
 
 
 def get_session() -> Iterator[Session]:

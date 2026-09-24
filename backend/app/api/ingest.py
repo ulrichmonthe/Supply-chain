@@ -7,7 +7,7 @@ tell afterwards which half of the data is real.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -17,7 +17,8 @@ from ..db import get_session
 from .deps import author_claim, new_batch_id
 from ..engine import seasonality
 from ..io import excel_in, excel_out
-from ..io.apply import apply_payload
+from ..io.apply import CONFLICT_POLICIES, apply_payload
+from ..io.diff import compute_changes
 from ..io.validation import validate_dataset
 from ..models import Country, Demand, Edge, ImportBatch, Node, Product
 from ..schemas import ImportRowPatch
@@ -198,19 +199,46 @@ def correct_import_row(
     return payload_out
 
 
+@router.get("/imports/{batch_id}/changes")
+def preview_changes(batch_id: int, replace: bool = True, session: Session = Depends(get_session)):
+    """What applying this import would do -- adds, updates, retirements, restorations and
+    conflicts -- computed against the model as it is now. Reads only.
+
+    A conflict is a field the file changed *and* somebody changed by hand in the tool
+    since the last import. Those are decisions, so they are all listed, never sampled.
+    """
+    batch = session.get(ImportBatch, batch_id)
+    if not batch:
+        raise HTTPException(404, f"No import with id {batch_id}.")
+    if batch.committed:
+        raise HTTPException(409, "That import has already been applied.")
+    country = _country_or_404(session, batch.country_id)
+    parsed = batch.report.get("parsed") or {}
+    changes = compute_changes(
+        session, country, parsed, mode="replace" if replace else "merge", source=batch.source or "excel"
+    )
+    return {"batch_id": batch.id, **changes.as_dict()}
+
+
 @router.post("/imports/{batch_id}/commit")
 def commit_import(
     batch_id: int,
     replace: bool = True,
+    conflicts: str = "keep",
+    take_file: list[str] = Query(default=[], description='Conflicts to resolve in the file\'s favour, as "sheet:key:field".'),
     session: Session = Depends(get_session),
     author: str = Depends(author_claim),
 ):
     """Apply a validated import.
 
-    ``replace`` wipes the country's network first. That is the honest default for a
-    master-list refresh from a workbook: a merge that silently keeps orphaned
-    facilities from last year's list is how a model drifts away from reality. A
-    connector sync uses merge instead, and applies through the same function.
+    ``replace`` is a full refresh: rows the file no longer mentions are retired -- kept
+    with their history, hidden from the solver, restorable -- never deleted. A merge
+    (what a connector sync uses, through this same function) leaves them alone.
+
+    ``conflicts`` decides what happens where the file disagrees with a correction made
+    in the tool since the last import: ``keep`` the correction (the default) or
+    ``take_file``. ``take_file`` may also name individual conflicts to override while
+    keeping the rest. Every resolution is written to the ledger either way.
     """
     batch = session.get(ImportBatch, batch_id)
     if not batch:
@@ -224,6 +252,8 @@ def commit_import(
             "are re-checked as you go, or fix the workbook and upload it again.",
         )
 
+    if conflicts not in CONFLICT_POLICIES:
+        raise HTTPException(400, f"conflicts must be one of {CONFLICT_POLICIES}.")
     country = _country_or_404(session, batch.country_id)
     parsed = batch.report.get("parsed") or {}
     mode = "replace" if replace else "merge"
@@ -237,6 +267,8 @@ def commit_import(
         reference=batch.filename,
         author_claim=author,
         batch_id=new_batch_id(),
+        conflict_policy=conflicts,
+        take_file=take_file,
     )
 
     batch.committed = True
@@ -251,9 +283,14 @@ def commit_import(
             "nodes": counts["nodes_created"] + counts["nodes_updated"],
             "nodes_created": counts["nodes_created"],
             "nodes_updated": counts["nodes_updated"],
+            "nodes_retired": counts["nodes_retired"],
+            "nodes_restored": counts["nodes_restored"],
             "edges": counts["edges"],
+            "edges_retired": counts["edges_retired"],
             "products": counts["products_created"],
             "demand": counts["demand_rows"],
+            "demand_retired": counts["demand_retired"],
+            "conflicts": counts["conflicts"],
         },
         "distances_computed_by_cascade": counts["distances_computed"],
         "note": (

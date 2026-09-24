@@ -84,7 +84,9 @@ def parse_workbook(data: bytes) -> dict:
                 "_row": record["_row"],
                 "code": str(record.get("code") or "").strip(),
                 "name": str(record.get("name") or "").strip(),
-                "level": int(_to_float(record.get("level"), 3) or 3),
+                # Not ``or 3``: level 0 is the national store, and 0 is falsy. That one
+                # word demoted the central store to a clinic on every re-import.
+                "level": int(_to_float(record.get("level"), 3)),
                 "type": str(record.get("type") or "health_facility").strip(),
                 "lat": _to_float(record.get("lat")),
                 "lon": _to_float(record.get("lon")),

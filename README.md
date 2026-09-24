@@ -237,6 +237,44 @@ kilometres, which is the error class that actually occurs in master lists. The s
 geometry is what the map draws as its offline basemap, so what you see is exactly what
 the validator believes.
 
+### Editing in the tool
+
+The spreadsheet round trip stays — it is how a whole master list moves. Editing in the
+tool is for the other case: one coordinate a provincial officer knows is wrong, one
+clinic that opened last month, one demand figure the last upload got from a stale
+forecast. Click a facility and the Facilities tab opens an editor for its name, status,
+coordinates, catchment population, storage by temperature band, demand per product and
+the capacity of the lanes that serve it. Every save asks how sure the person is —
+**sourced**, **inferred** or **unverified** — and that marker is written beside the change
+in the ledger, so editing becomes the act of documenting. A typed coordinate is
+re-checked on the spot by the same rules an import runs; a facility can be added from
+the Data tab by clicking the map; retiring one takes its lanes and demand with it and
+keeps its history, and the Data tab lists what is retired with a Restore button. Any
+hand-made change can be put back from the Provenance tab: undo is a row that reverses
+it, never a deletion.
+
+### An import is a diff, not a wipe
+
+A full refresh used to delete every facility, lane, product and demand row and reload
+the file. That is honest about the file and brutal about everything else: a coordinate
+corrected by hand died at the next master-list refresh, and a facility that dropped
+off the list took its history with it. An import is now a three-way diff — the
+**file**, the **model**, and what the file said the **last time** (kept on every row as
+`last_import`) — and it is shown before it is applied. File and model agree: nothing.
+The file moved and the model still matches the last import: an *update*. The file
+moved and so did the model — by hand, since — a *conflict*, which is a decision, not an
+edit. In the model and absent from a full refresh: *retired*, never deleted, invisible
+to the solver and the exports, restorable. Retired and back in the file: *restored*,
+the same row with its history, not a duplicate beside its own ghost.
+
+Conflicts default to keeping the correction made in the tool; the person applying can
+take the file's values instead, globally or one conflict at a time, and every
+resolution is a ledger row either way. A correction the file was told to override is
+marked *superseded*, so it stops raising the same conflict and cannot be reverted into
+the middle of a later import. The rule that makes this hold is enforced once, in
+`app/db.py`: retired rows are filtered out of every ORM query in the application, and
+a query that wants them says so with an execution option.
+
 ### The ledger
 
 Every change to the model is one row in the audit trail: what changed, from what, to

@@ -8,6 +8,7 @@ import { Scorecard } from './components/Scorecard'
 import { EquityPanel } from './components/EquityPanel'
 import { DataPanel, FacilityTable, ProvenancePanel, RoadmapPanel, SeasonPanel, ServicesPanel } from './components/Panels'
 import { ConnectionsPanel } from './components/ConnectionsPanel'
+import { FacilityEditor } from './components/FacilityEditor'
 import { Tour } from './components/Tour'
 import { TOUR_STORAGE_KEY, buildTour } from './tour'
 import type {
@@ -148,11 +149,15 @@ export default function App() {
 
   const [running, setRunning] = useState(false)
   const [tourOpen, setTourOpen] = useState(false)
+  // Placing a new facility: the next map click is a coordinate for the Data tab's form.
+  const [pickMode, setPickMode] = useState(false)
+  const [picked, setPicked] = useState<{ lat: number; lon: number } | null>(null)
   const [author, setAuthorState] = useState(getAuthor())
   const [error, setError] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(true)
 
   const selected = scenarios.find((s) => s.id === selectedId) ?? null
+  const selectedNode = selectedCode ? nodes.find((n) => n.code === selectedCode) ?? null : null
   const currency = overview?.country.currency ?? ''
 
   /* ---------------------------------------------------------------- load */
@@ -395,6 +400,26 @@ export default function App() {
     document.getElementById(`tab-${slug(TABS[next])}`)?.focus()
   }
 
+  /* ------------------------------------------------------------------ editing */
+
+  /** After any change made in the tool: the network, the ledger and the scenario
+      list are re-read. Results are left as they are -- they describe the network as
+      it was when they ran, and the interface says so until the scenario is re-run. */
+  const reloadAfterEdit = useCallback(() => {
+    if (countryId === null) return
+    void loadNetwork(countryId)
+    void loadScenarios(countryId)
+  }, [countryId, loadNetwork, loadScenarios])
+
+  async function revertEntry(entryId: number) {
+    try {
+      await api.revertAudit(entryId)
+      reloadAfterEdit()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
   /* ------------------------------------------------------------------ signing */
 
   /*
@@ -612,6 +637,12 @@ export default function App() {
               if (code) setTab('Facilities')
             }}
             center={overview?.country.config.center}
+            pickMode={pickMode}
+            onPick={(lat, lon) => {
+              setPicked({ lat, lon })
+              setPickMode(false)
+              setTab('Data')
+            }}
           />
 
           <div className="season-bar">
@@ -725,12 +756,31 @@ export default function App() {
               />
             )}
             {tab === 'Facilities' && (
-              <FacilityTable
-                result={result}
-                selectedCode={selectedCode}
-                onSelect={setSelectedCode}
-                currency={currency}
-              />
+              <>
+                {selectedNode && (
+                  <FacilityEditor
+                    node={selectedNode}
+                    edges={edges}
+                    currency={currency}
+                    onChanged={reloadAfterEdit}
+                    onRetired={() => {
+                      setSelectedCode(null)
+                      reloadAfterEdit()
+                    }}
+                  />
+                )}
+                {!selectedNode && (
+                  <div className="lever-note" style={{ padding: '8px 12px 0' }}>
+                    Click a facility on the map or in the table to edit it here.
+                  </div>
+                )}
+                <FacilityTable
+                  result={result}
+                  selectedCode={selectedCode}
+                  onSelect={setSelectedCode}
+                  currency={currency}
+                />
+              </>
             )}
             {tab === 'Services' && <ServicesPanel overview={overview} edges={edges} result={result} />}
             {tab === 'Season' && (
@@ -747,10 +797,11 @@ export default function App() {
                 countryId={countryId}
                 overview={overview}
                 nodes={nodes}
-                onImported={() => {
-                  void loadNetwork(countryId)
-                  void loadScenarios(countryId)
-                }}
+                onImported={reloadAfterEdit}
+                pickMode={pickMode}
+                onPickMode={setPickMode}
+                picked={picked}
+                onPickedUsed={() => setPicked(null)}
               />
             )}
             {tab === 'Live' && countryId !== null && (
@@ -762,7 +813,9 @@ export default function App() {
                 }}
               />
             )}
-            {tab === 'Provenance' && <ProvenancePanel overview={overview} audit={audit} edges={edges} />}
+            {tab === 'Provenance' && (
+              <ProvenancePanel overview={overview} audit={audit} edges={edges} onRevert={revertEntry} />
+            )}
             {tab === 'Roadmap' && (
               <RoadmapPanel
                 roadmap={roadmap}

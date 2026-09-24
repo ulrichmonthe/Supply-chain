@@ -223,8 +223,13 @@ export function buildTour({ setTab, setColourBy }: TourActions): TourStep[] {
         <>
           <p>
             Download the blank template, fill it in, upload it. Nothing is saved until you
-            say so — the tool checks the file first and lists what is wrong, and you can
-            correct a flagged row right here without reopening the spreadsheet.
+            say so — the tool checks the file first, lists what is wrong, and shows what
+            would change: what is new, what moves, what would be retired, and where the
+            file disagrees with a correction somebody made here. Nothing is ever deleted.
+          </p>
+          <p>
+            One number wrong? Click the facility and edit it in the <b>Facilities</b> tab
+            instead. Each change asks how sure you are and is signed with your name.
           </p>
           <p>
             Export gives you back a file the same shape as the one that went in, so your

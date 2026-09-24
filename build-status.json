@@ -192,6 +192,13 @@
           "state": "idea",
           "env": null,
           "unsure": "Tags make scenarios findable; they do not freeze one. Saying 'this is what we showed the minister in March' still needs the input data versioned alongside the run, which it is not."
+        },
+        {
+          "id": "f2s7",
+          "title": "Type a lever value instead of dragging to it",
+          "state": "done",
+          "env": null,
+          "note": "Weights and switched-on constraints accept a typed number: 90%, 0.6, 2.5M."
         }
       ],
       "decisions": [
@@ -593,9 +600,9 @@
         {
           "id": "f10s4",
           "title": "Edit a facility's population, demand, volume or capacity in place",
-          "state": "building",
+          "state": "done",
           "env": null,
-          "note": "Next. Every edit will carry a sourced / inferred / unverified marker at the moment of typing."
+          "note": "Click a facility and edit its population, demand, capacity, coordinates and status in place. Every save declares sourced / inferred / unverified and is signed."
         },
         {
           "id": "f10s5",
@@ -603,9 +610,34 @@
           "state": "idea",
           "env": null,
           "unsure": "Planned after editing: dataset, ledger position, scenarios, results and report frozen together under a name."
+        },
+        {
+          "id": "f10s6",
+          "title": "Upload a new master list without losing corrections made here",
+          "state": "done",
+          "env": null,
+          "note": "An import shows what it would add, update, retire and restore before applying, and where the file disagrees with a correction it asks. Nothing is deleted."
+        },
+        {
+          "id": "f10s7",
+          "title": "Add a facility by clicking the map, or retire one and bring it back",
+          "state": "done",
+          "env": null,
+          "note": "Retiring keeps the history and takes the lanes and demand along; the Data tab lists retired facilities with Restore."
+        },
+        {
+          "id": "f10s8",
+          "title": "Undo a hand-made change",
+          "state": "done",
+          "env": null,
+          "note": "Revert from the Provenance tab. The original stays in the ledger marked reverted; the reversal names it."
         }
       ],
       "decisions": [
+        {
+          "at": "2026-09-24T00:00:00Z",
+          "what": "Where a file disagrees with a correction made in the tool, the correction wins unless the person applying says otherwise, and the ledger records the choice either way."
+        },
         {
           "at": "2026-09-24T00:00:00Z",
           "what": "Editing and saved sessions come before user accounts. Every change carries a typed author claim so accounts can inherit the history later by migration."
@@ -619,6 +651,11 @@
         "A claim is a name, not a login: anyone can type any name until accounts exist."
       ],
       "activity": [
+        {
+          "at": "2026-09-24T00:00:00Z",
+          "kind": "work",
+          "what": "Imports became a three-way diff with retire/restore instead of delete; in-place editing of facilities, demand and lane capacity with confidence markers; revert"
+        },
         {
           "at": "2026-09-24T00:00:00Z",
           "kind": "work",

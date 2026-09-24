@@ -63,9 +63,87 @@ class NodeOut(BaseModel):
     hub_open_capex: float
     hub_throughput_m3: float
     external_ids: dict
+    retired_at: Optional[datetime] = None
+    retired_reason: str = ""
 
     class Config:
         from_attributes = True
+
+
+class NodePatch(BaseModel):
+    """An edit made in the tool. Only the fields a person can defend are here; distances
+    the cascade computed and ids a connector merged are not theirs to type over."""
+
+    name: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    level: Optional[int] = None
+    type: Optional[str] = None
+    admin1: Optional[str] = None
+    admin2: Optional[str] = None
+    terrain_class: Optional[str] = None
+    catchment_population: Optional[float] = None
+    operating_status: Optional[str] = None
+    capacity: Optional[dict] = None
+    hub_capable: Optional[bool] = None
+    hub_fixed_cost: Optional[float] = None
+    hub_open_capex: Optional[float] = None
+    hub_throughput_m3: Optional[float] = None
+    geocode_source: Optional[str] = None
+    geocode_confidence: Optional[float] = None
+    #: S = sourced, I = inferred, U = unverified -- declared at the moment of typing.
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class NodeCreate(BaseModel):
+    code: str
+    name: str
+    lat: float
+    lon: float
+    level: int = 3
+    type: str = "health_facility"
+    admin1: Optional[str] = None
+    admin2: Optional[str] = None
+    terrain_class: str = "mainland_road"
+    catchment_population: float = 0.0
+    operating_status: str = "operational"
+    capacity: dict = Field(default_factory=dict)
+    geocode_source: str = "manual"
+    geocode_confidence: float = 0.7
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class RetireIn(BaseModel):
+    reason: str = ""
+
+
+class DemandLine(BaseModel):
+    sku: str
+    quantity: float
+    period: int = 0
+    source: Literal["actual", "forecast", "proxy"] = "forecast"
+    confidence: float = 0.6
+
+
+class DemandSet(BaseModel):
+    lines: List[DemandLine]
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class DemandOut(BaseModel):
+    id: int
+    node_id: int
+    node_code: str
+    sku: str
+    product_name: str
+    period: int
+    quantity: float
+    source: str
+    confidence: float
+    unit: str = "units"
 
 
 class EdgeOut(BaseModel):

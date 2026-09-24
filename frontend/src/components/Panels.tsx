@@ -1,7 +1,10 @@
-import { useId, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type {
   AuditRow,
+  ChangeRow,
+  ConfidenceMarker,
   EdgeRow,
+  ImportChanges,
   NodeRow,
   Overview,
   Result,
@@ -11,6 +14,7 @@ import type {
   ValidationReport,
 } from '../types'
 import { api } from '../api'
+import { MarkerPicker } from './FacilityEditor'
 import { exact, fillColour, frequencyLabel, money, pct, riskColour } from '../format'
 
 /* ------------------------------------------------------------------ facilities */
@@ -573,11 +577,19 @@ export function DataPanel({
   overview,
   nodes,
   onImported,
+  pickMode,
+  onPickMode,
+  picked,
+  onPickedUsed,
 }: {
   countryId: number
   overview: Overview | null
   nodes: NodeRow[]
   onImported: () => void
+  pickMode?: boolean
+  onPickMode?: (on: boolean) => void
+  picked?: { lat: number; lon: number } | null
+  onPickedUsed?: () => void
 }) {
   const [report, setReport] = useState<ValidationReport | null>(null)
   const [busy, setBusy] = useState(false)
@@ -585,9 +597,43 @@ export function DataPanel({
   const [message, setMessage] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'error' | 'warning'>('all')
 
+  // The review step: what applying this file would do, and how to settle conflicts.
+  const [changes, setChanges] = useState<ImportChanges | null>(null)
+  const [fullRefresh, setFullRefresh] = useState(true)
+  const [policy, setPolicy] = useState<'keep' | 'take_file'>('keep')
+  const [takeFile, setTakeFile] = useState<string[]>([])
+
+  const [retired, setRetired] = useState<NodeRow[]>([])
+
+  const loadRetired = useCallback(() => {
+    api.retiredNodes(countryId).then(setRetired).catch(() => setRetired([]))
+  }, [countryId])
+  useEffect(() => {
+    loadRetired()
+  }, [loadRetired, nodes])
+
+  // A validated file is followed by its diff, re-read whenever the mode changes.
+  useEffect(() => {
+    if (!report || report.blocking) {
+      setChanges(null)
+      return
+    }
+    let cancelled = false
+    api
+      .importChanges(report.batch_id, fullRefresh)
+      .then((next) => {
+        if (!cancelled) setChanges(next)
+      })
+      .catch((error) => setMessage(String(error)))
+    return () => {
+      cancelled = true
+    }
+  }, [report?.batch_id, report?.blocking, fullRefresh]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function upload(file: File) {
     setBusy(true)
     setMessage(null)
+    setTakeFile([])
     try {
       setReport(await api.validateUpload(countryId, file))
     } catch (error) {
@@ -601,13 +647,33 @@ export function DataPanel({
     if (!report) return
     setBusy(true)
     try {
-      const outcome = await api.commitImport(report.batch_id, true)
+      const outcome = await api.commitImport(report.batch_id, fullRefresh, policy, takeFile)
+      const c = outcome.counts as Record<string, number>
+      const conflicts = outcome.counts.conflicts as Record<string, number> | undefined
       setMessage(
-        `Imported ${outcome.counts.nodes} facilities, ${outcome.counts.edges} lanes and ` +
-          `${outcome.counts.demand} demand rows. Re-run your scenarios — until you do, their ` +
-          `results describe the previous network.`,
+        `Applied: ${c.nodes_created} facilities added, ${c.nodes_updated} updated, ${c.nodes_retired} retired` +
+          (c.nodes_restored ? `, ${c.nodes_restored} restored` : '') +
+          `; ${c.edges} lanes and ${c.demand} demand rows.` +
+          (conflicts && conflicts.total
+            ? ` ${conflicts.kept} corrections made here were kept and ${conflicts.took_file} were replaced by the file.`
+            : '') +
+          ' Re-run your scenarios — until you do, their results describe the previous network.',
       )
       setReport(null)
+      setChanges(null)
+      onImported()
+    } catch (error) {
+      setMessage(String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function restore(node: NodeRow) {
+    setBusy(true)
+    try {
+      const outcome = await api.restoreNode(node.id, 'Restored from the Data tab.')
+      setMessage(`Restored ${node.code} with ${outcome.lanes} lanes and ${outcome.demand_rows} demand rows.`)
       onImported()
     } catch (error) {
       setMessage(String(error))
@@ -699,14 +765,25 @@ export function DataPanel({
               <span className="pill bad">{report.counts.error} errors</span>
               <span className="pill warn">{report.counts.warning} warnings</span>
               <span className="pill info">{report.counts.info} notes</span>
-              <button className="btn small primary" disabled={report.blocking || busy} onClick={() => void commit()}>
-                Apply this import
-              </button>
               <button className="btn small ghost" onClick={() => setReport(null)}>
                 Discard
               </button>
             </div>
           </div>
+
+          {!report.blocking && (
+            <ChangesReview
+              changes={changes}
+              fullRefresh={fullRefresh}
+              onFullRefresh={setFullRefresh}
+              policy={policy}
+              onPolicy={setPolicy}
+              takeFile={takeFile}
+              onTakeFile={setTakeFile}
+              busy={busy}
+              onApply={() => void commit()}
+            />
+          )}
           <div className="section">
             <div className="chips" role="group" aria-label="Filter validation issues">
               {(['all', 'error', 'warning'] as const).map((key) => (
@@ -739,6 +816,44 @@ export function DataPanel({
         </>
       )}
 
+      {!report && (
+        <AddFacility
+          countryId={countryId}
+          pickMode={Boolean(pickMode)}
+          onPickMode={onPickMode}
+          picked={picked ?? null}
+          onPickedUsed={onPickedUsed}
+          onCreated={(text) => {
+            setMessage(text)
+            onImported()
+          }}
+        />
+      )}
+
+      {!report && retired.length > 0 && (
+        <div className="section">
+          <h3>Retired facilities ({retired.length})</h3>
+          <div className="lever-note">
+            Retired by an import that no longer listed them, or by hand. Invisible to the solver and the
+            exports; their history is kept. Restore one and its lanes and demand come back with it.
+          </div>
+          {retired.slice(0, 50).map((node) => (
+            <div className="retired-row" key={node.id}>
+              <div>
+                {node.name}
+                <div className="row-note">
+                  {node.code} · {node.retired_reason || 'no reason given'}
+                </div>
+              </div>
+              <button type="button" className="btn small" disabled={busy} onClick={() => void restore(node)}>
+                Restore
+              </button>
+            </div>
+          ))}
+          {retired.length > 50 && <div className="tiny dim">…and {retired.length - 50} more.</div>}
+        </div>
+      )}
+
       {!report && overview && (
         <div className="callout">
           <h4>What is loaded</h4>
@@ -759,6 +874,329 @@ export function DataPanel({
   )
 }
 
+/* --------------------------------------------------------------- import review */
+
+const SHEET_LABELS: Record<string, string> = { nodes: 'Facilities', edges: 'Lanes', products: 'Products', demand: 'Demand' }
+
+function Count({ value, kind }: { value: number; kind?: string }) {
+  return <b className={value === 0 ? 'zero' : kind ?? ''}>{value}</b>
+}
+
+function ConflictRow({
+  sheet,
+  row,
+  taken,
+  onToggle,
+}: {
+  sheet: string
+  row: ChangeRow
+  taken: (key: string) => boolean
+  onToggle: (key: string, on: boolean) => void
+}) {
+  return (
+    <div className="conflict-row">
+      <b>{row.label}</b> <span className="dim">· {SHEET_LABELS[sheet]}</span>
+      {Object.entries(row.conflicts).map(([field, values]) => {
+        const key = `${sheet}:${row.key}:${field}`
+        return (
+          <div key={field} style={{ marginTop: 4 }}>
+            <code>{field}</code>
+            <div className="vals">
+              <span>in the tool</span>
+              <span>{String(values.model)}</span>
+              <span>in the file</span>
+              <span>{String(values.file)}</span>
+              <span>last import</span>
+              <span>{String(values.last_import)}</span>
+            </div>
+            <label className="checkbox">
+              <input type="checkbox" checked={taken(key)} onChange={(e) => onToggle(key, e.target.checked)} />
+              Take the file's value for this one
+            </label>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * What an import would do, before it does it.
+ *
+ * Add, update, retire, restore and conflict counts per sheet; every conflict listed,
+ * because each is a decision; and the policy for the ones not decided one by one.
+ */
+function ChangesReview({
+  changes,
+  fullRefresh,
+  onFullRefresh,
+  policy,
+  onPolicy,
+  takeFile,
+  onTakeFile,
+  busy,
+  onApply,
+}: {
+  changes: ImportChanges | null
+  fullRefresh: boolean
+  onFullRefresh: (on: boolean) => void
+  policy: 'keep' | 'take_file'
+  onPolicy: (policy: 'keep' | 'take_file') => void
+  takeFile: string[]
+  onTakeFile: (keys: string[]) => void
+  busy: boolean
+  onApply: () => void
+}) {
+  const sheets = ['nodes', 'edges', 'products', 'demand'] as const
+  const taken = (key: string) => takeFile.includes(key)
+  const toggle = (key: string, on: boolean) =>
+    onTakeFile(on ? [...takeFile, key] : takeFile.filter((k) => k !== key))
+  const conflictRows = changes ? sheets.flatMap((sheet) => changes[sheet].conflicts.map((row) => ({ sheet, row }))) : []
+  const retireRows = changes ? sheets.flatMap((sheet) => changes[sheet].retires.map((row) => ({ sheet, row }))) : []
+
+  return (
+    <div className="section changes">
+      <h3>What would change</h3>
+      <label className="checkbox" style={{ marginBottom: 8 }}>
+        <input type="checkbox" checked={fullRefresh} onChange={(e) => onFullRefresh(e.target.checked)} />
+        Full refresh: retire anything this file no longer lists (nothing is deleted)
+      </label>
+
+      {!changes ? (
+        <div className="lever-note">
+          <span className="spinner" aria-hidden="true" /> Comparing the file with the model…
+        </div>
+      ) : (
+        <>
+          <div className="lever-note" style={{ marginBottom: 8 }}>{changes.headline}</div>
+          <div className="changes-grid" role="table" aria-label="Changes by sheet">
+            <span className="h"></span>
+            <span className="h">new</span>
+            <span className="h">updated</span>
+            <span className="h">retired</span>
+            <span className="h">restored</span>
+            <span className="h">conflicts</span>
+            {sheets.map((sheet) => (
+              <span key={sheet} style={{ display: 'contents' }}>
+                <span className="k">{SHEET_LABELS[sheet]}</span>
+                <Count value={changes[sheet].counts.add} />
+                <Count value={changes[sheet].counts.update} />
+                <Count value={changes[sheet].counts.retire} kind="retire" />
+                <Count value={changes[sheet].counts.restore} />
+                <Count value={changes[sheet].counts.conflict} kind="conflict" />
+              </span>
+            ))}
+          </div>
+
+          {retireRows.length > 0 && (
+            <details className="list">
+              <summary>
+                {retireRows.length} would be retired — kept with their history, hidden from the solver
+              </summary>
+              <ul>
+                {retireRows.slice(0, 40).map(({ sheet, row }) => (
+                  <li key={`${sheet}-${row.key}`}>
+                    {row.label} <span className="dim">· {SHEET_LABELS[sheet]}</span>
+                  </li>
+                ))}
+                {retireRows.length > 40 && <li className="dim">…and {retireRows.length - 40} more.</li>}
+              </ul>
+            </details>
+          )}
+
+          {conflictRows.length > 0 && (
+            <>
+              <div className="lever-note" style={{ marginTop: 10 }}>
+                <b>{conflictRows.length} conflicts.</b> The file changed these values, and so did somebody here
+                since the last import. Each is a decision; the ledger records it either way.
+              </div>
+              <div className="policy" role="radiogroup" aria-label="How to settle conflicts">
+                <label>
+                  <input type="radio" name="policy" checked={policy === 'keep'} onChange={() => onPolicy('keep')} />
+                  <span>
+                    <b>Keep the corrections made here</b> — the file's value is noted but not applied
+                  </span>
+                </label>
+                <label>
+                  <input type="radio" name="policy" checked={policy === 'take_file'} onChange={() => onPolicy('take_file')} />
+                  <span>
+                    <b>Take the file's values</b> — the corrections are overwritten and recorded as such
+                  </span>
+                </label>
+              </div>
+              {policy === 'keep' &&
+                conflictRows.map(({ sheet, row }) => (
+                  <ConflictRow key={`${sheet}-${row.key}`} sheet={sheet} row={row} taken={taken} onToggle={toggle} />
+                ))}
+            </>
+          )}
+
+          <div style={{ marginTop: 10 }}>
+            <button type="button" className="btn small primary" disabled={busy} onClick={onApply}>
+              Apply this import
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Adding one facility from the tool, with the map as the coordinate picker. */
+function AddFacility({
+  countryId,
+  pickMode,
+  onPickMode,
+  picked,
+  onPickedUsed,
+  onCreated,
+}: {
+  countryId: number
+  pickMode: boolean
+  onPickMode?: (on: boolean) => void
+  picked: { lat: number; lon: number } | null
+  onPickedUsed?: () => void
+  onCreated: (message: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [lat, setLat] = useState('')
+  const [lon, setLon] = useState('')
+  const [population, setPopulation] = useState('')
+  const [admin1, setAdmin1] = useState('')
+  const [marker, setMarker] = useState<ConfidenceMarker>('I')
+  const [reason, setReason] = useState('')
+  const [issues, setIssues] = useState<ValidationIssue[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!picked) return
+    setLat(picked.lat.toFixed(5))
+    setLon(picked.lon.toFixed(5))
+    setOpen(true)
+    onPickedUsed?.()
+  }, [picked]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function create() {
+    setBusy(true)
+    setError(null)
+    setIssues([])
+    try {
+      const outcome = await api.createNode(countryId, {
+        code: code.trim(),
+        name: name.trim(),
+        lat: Number(lat),
+        lon: Number(lon),
+        catchment_population: Number(population || 0),
+        admin1: admin1.trim() || undefined,
+        confidence_marker: marker,
+        reason,
+      })
+      setIssues(outcome.issues)
+      onCreated(
+        `Added ${outcome.node.name} (${outcome.node.code}). It has no lanes yet — add them in the workbook, or ` +
+          `it will show as unreachable. Re-run scenarios for it to count.`,
+      )
+      setCode('')
+      setName('')
+      setLat('')
+      setLon('')
+      setPopulation('')
+      setAdmin1('')
+      setReason('')
+      setOpen(false)
+    } catch (e) {
+      const text = String(e)
+      // A blocked create carries the issues in its detail.
+      try {
+        const parsed = JSON.parse(text.replace(/^Error: /, ''))
+        if (parsed?.issues) setIssues(parsed.issues)
+        setError(parsed?.detail ?? text)
+      } catch {
+        setError(text)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const ready = code.trim() && name.trim() && lat.trim() !== '' && lon.trim() !== ''
+
+  return (
+    <div className="section">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <h3 style={{ margin: 0 }}>Add a facility</h3>
+        <button type="button" className="btn small" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? 'Close' : 'New facility…'}
+        </button>
+      </div>
+      {open && (
+        <div className="editor" style={{ margin: '8px 0 0' }}>
+          <div className="editor-grid">
+            <label className="field">
+              <span>Code</span>
+              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. WNB-HC-014" />
+            </label>
+            <label className="field">
+              <span>Name</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <label className="field">
+              <span>Latitude</span>
+              <input inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} />
+            </label>
+            <label className="field">
+              <span>Longitude</span>
+              <input inputMode="decimal" value={lon} onChange={(e) => setLon(e.target.value)} />
+            </label>
+            <label className="field">
+              <span>Catchment population</span>
+              <input inputMode="numeric" value={population} onChange={(e) => setPopulation(e.target.value)} />
+            </label>
+            <label className="field">
+              <span>Province</span>
+              <input value={admin1} onChange={(e) => setAdmin1(e.target.value)} />
+            </label>
+          </div>
+          <div className="editor-sign">
+            <button
+              type="button"
+              className={`btn small${pickMode ? ' primary' : ''}`}
+              onClick={() => onPickMode?.(!pickMode)}
+              aria-pressed={pickMode}
+            >
+              {pickMode ? 'Click the map…' : 'Pick on map'}
+            </button>
+            <MarkerPicker value={marker} onChange={setMarker} compact />
+            <input
+              className="editor-reason"
+              value={reason}
+              placeholder="Why is it being added?"
+              onChange={(e) => setReason(e.target.value)}
+              aria-label="Reason"
+            />
+            <button type="button" className="btn small primary" disabled={!ready || busy} onClick={() => void create()}>
+              Add facility
+            </button>
+          </div>
+          {error && <div className="callout bad" style={{ margin: '8px 0 0' }}>{error}</div>}
+          {issues.map((issue) => (
+            <div className={`issue ${issue.severity}`} key={issue.code}>
+              <div className="issue-head">
+                <span className={`pill ${issue.severity === 'error' ? 'bad' : 'warn'}`}>{issue.severity}</span>
+                <code>{issue.code}</code>
+              </div>
+              <p>{issue.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ provenance */
 
 /** "24 Sep, 14:05" -- the day and the minute, which is what "when was this changed" wants. */
@@ -768,14 +1206,26 @@ function when(iso: string): string {
   return date.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
+/** Which ledger rows can be put back by a click: hand-made value changes still standing. */
+function revertible(entry: AuditRow): boolean {
+  return (
+    entry.provenance === 'manual_override' &&
+    entry.status === 'applied' &&
+    ['node', 'edge', 'demand'].includes(entry.entity_type) &&
+    !['created', 'retired', 'restored', 'updated'].includes(entry.field)
+  )
+}
+
 export function ProvenancePanel({
   overview,
   audit,
   edges,
+  onRevert,
 }: {
   overview: Overview | null
   audit: AuditRow[]
   edges: EdgeRow[]
+  onRevert?: (entryId: number) => void
 }) {
   if (!overview) return <div className="empty">Loading…</div>
   const cascade = overview.distance_provenance
@@ -864,9 +1314,11 @@ export function ProvenancePanel({
         </div>
       </div>
       {audit.map((entry) => (
-        <div className="issue info" key={entry.id}>
+        <div className={`issue info${entry.status === 'reverted' ? ' reverted' : ''}`} key={entry.id}>
           <div className="issue-head">
             <span className="pill">{entry.provenance.replace(/_/g, ' ')}</span>
+            {entry.status === 'reverted' && <span className="pill">reverted</span>}
+            {entry.reverts_id && <span className="pill">undoes #{entry.reverts_id}</span>}
             <span className={`pill ${entry.confidence_marker === 'S' ? 'good' : entry.confidence_marker === 'U' ? 'bad' : 'warn'}`}>
               {entry.confidence_marker}
             </span>
@@ -897,6 +1349,16 @@ export function ProvenancePanel({
               </>
             )}
             <span className="dim"> · {when(entry.created_at)}</span>
+            {onRevert && revertible(entry) && (
+              <button
+                type="button"
+                className="btn small ghost revert"
+                onClick={() => onRevert(entry.id)}
+                title="Put the previous value back. The change stays in the ledger, marked reverted."
+              >
+                Revert
+              </button>
+            )}
           </p>
         </div>
       ))}

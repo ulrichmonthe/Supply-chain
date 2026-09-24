@@ -613,7 +613,9 @@ function Slider({
     <div className="lever">
       <div className="lever-head">
         <label htmlFor={id}>{label}</label>
-        <b>{format(value)}</b>
+        {/* The number is typeable as well as slideable: "0.6" is a value somebody
+            defends in a meeting, and dragging until it reads 0.6 is not how they type it. */}
+        <TypedValue value={value} min={min} max={max} step={step} format={format} onChange={onChange} label={label} />
       </div>
       <input
         id={id}
@@ -627,6 +629,91 @@ function Slider({
       {note && <div className="lever-note">{note}</div>}
     </div>
   )
+}
+
+/**
+ * A figure that reads as text and edits as a number.
+ *
+ * Accepts what people type: "90%", "0.9", "2.5M", "14". Commits on Enter or blur,
+ * clamps to the slider's range, and reverts on Escape.
+ */
+function TypedValue({
+  value,
+  min,
+  max,
+  step,
+  format,
+  onChange,
+  label,
+  percent,
+}: {
+  value: number
+  min: number
+  max: number
+  step: number
+  format: (value: number) => string
+  onChange: (value: number) => void
+  label: string
+  percent?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  const commit = () => {
+    setEditing(false)
+    const parsed = parseTyped(draft, { percent })
+    if (parsed === null) return
+    const clamped = Math.min(max, Math.max(min, parsed))
+    const snapped = Math.round(clamped / step) * step
+    if (Math.abs(snapped - value) > 1e-9) onChange(Number(snapped.toFixed(6)))
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="typed-value"
+        title="Click to type a value"
+        aria-label={`${label}: ${format(value)}. Click to type a value.`}
+        onClick={() => {
+          setDraft(percent ? String(Math.round(value * 1000) / 10) : String(value))
+          setEditing(true)
+        }}
+      >
+        {format(value)}
+      </button>
+    )
+  }
+  return (
+    <input
+      className="typed-input"
+      autoFocus
+      aria-label={label}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit()
+        if (event.key === 'Escape') setEditing(false)
+      }}
+    />
+  )
+}
+
+/** "90%" -> 0.9 when percent; "2.5M" -> 2500000; "1,200" -> 1200. null when not a number. */
+export function parseTyped(text: string, options: { percent?: boolean } = {}): number | null {
+  const cleaned = text.trim().replace(/,/g, '').toLowerCase()
+  if (!cleaned) return null
+  const match = cleaned.match(/^(-?\d*\.?\d+)\s*(%|k|m|bn|b)?$/)
+  if (!match) return null
+  let number = Number(match[1])
+  const suffix = match[2]
+  if (suffix === '%') number /= 100
+  else if (suffix === 'k') number *= 1e3
+  else if (suffix === 'm') number *= 1e6
+  else if (suffix === 'bn' || suffix === 'b') number *= 1e9
+  else if (options.percent && number > 1) number /= 100
+  return Number.isFinite(number) ? number : null
 }
 
 function OptionalSlider({
@@ -651,7 +738,20 @@ function OptionalSlider({
           />
           {label}
         </label>
-        <b>{value === null || value === undefined ? 'off' : pct(value, 0)}</b>
+        {value === null || value === undefined ? (
+          <b>off</b>
+        ) : (
+          <TypedValue
+            value={value}
+            min={0.5}
+            max={1}
+            step={0.01}
+            percent
+            format={(v) => pct(v, 0)}
+            onChange={(v) => onChange(v)}
+            label={label}
+          />
+        )}
       </div>
       {value !== null && value !== undefined && (
         <input

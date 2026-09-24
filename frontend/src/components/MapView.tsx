@@ -20,6 +20,9 @@ type Props = {
   selectedCode: string | null
   onSelect: (code: string | null) => void
   center?: { lat: number; lon: number; zoom: number }
+  /** When set, the next click on the map hands back a coordinate instead of selecting. */
+  pickMode?: boolean
+  onPick?: (lat: number, lon: number) => void
 }
 
 type Hover = { x: number; y: number; html: ReactNode } | null
@@ -324,6 +327,12 @@ export function MapView(props: Props) {
     }
 
     const onClick = (event: maplibregl.MapMouseEvent) => {
+      // Placing a new facility: the click is a coordinate, not a selection. Read
+      // through a ref so the handler registered once sees the current mode.
+      if (pickRef.current.on && pickRef.current.pick) {
+        pickRef.current.pick(event.lngLat.lat, event.lngLat.lng)
+        return
+      }
       const hits = instance.queryRenderedFeatures(event.point, { layers: ['nodes'] })
       props.onSelect(hits.length ? String(hits[0].properties?.code) : null)
     }
@@ -434,8 +443,16 @@ export function MapView(props: Props) {
     )
   }
 
+  const pickRef = useRef<{ on: boolean; pick?: (lat: number, lon: number) => void }>({ on: false })
+  pickRef.current = { on: Boolean(props.pickMode), pick: props.onPick }
+  useEffect(() => {
+    const instance = map.current
+    if (!instance) return
+    instance.getCanvas().style.cursor = props.pickMode ? 'crosshair' : ''
+  }, [props.pickMode])
+
   return (
-    <div className="map-wrap">
+    <div className={`map-wrap${props.pickMode ? ' picking' : ''}`}>
       {/* The canvas itself carries no text. The map is named here, and the
           facility table under the Facilities tab is the accessible equivalent of
           what it shows — the numbers behind every dot, in a real table. */}

@@ -113,6 +113,16 @@ class Node(Base):
     external_ids: Mapped[dict] = mapped_column(JSON, default=dict)
     attributes: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    # --- soft delete and the memory of the last import ---------------------------------
+    #: Set instead of deleting. A retired row is invisible to every query unless it asks
+    #: (see app.db: the retired filter), keeps its history, and can be restored.
+    retired_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    retired_reason: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    #: The tracked fields exactly as the last import or sync set them. A current value
+    #: that differs from this was changed by hand since -- which is what makes the next
+    #: import's differing value a conflict to decide rather than an update to apply.
+    last_import: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
+
     country: Mapped[Country] = relationship(back_populates="nodes")
 
 
@@ -170,6 +180,16 @@ class Edge(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     attributes: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    # --- soft delete and the memory of the last import ---------------------------------
+    #: Set instead of deleting. A retired row is invisible to every query unless it asks
+    #: (see app.db: the retired filter), keeps its history, and can be restored.
+    retired_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    retired_reason: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    #: The tracked fields exactly as the last import or sync set them. A current value
+    #: that differs from this was changed by hand since -- which is what makes the next
+    #: import's differing value a conflict to decide rather than an update to apply.
+    last_import: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
+
     country: Mapped[Country] = relationship(back_populates="edges")
     from_node: Mapped[Node] = relationship(foreign_keys=[from_node_id])
     to_node: Mapped[Node] = relationship(foreign_keys=[to_node_id])
@@ -189,6 +209,16 @@ class Product(Base):
     volume_per_unit_cm3: Mapped[float] = mapped_column(Float, default=1.0)
     unit_cost: Mapped[float] = mapped_column(Float, default=0.0)
     shelf_life_days: Mapped[int] = mapped_column(Integer, default=730)
+
+    # --- soft delete and the memory of the last import ---------------------------------
+    #: Set instead of deleting. A retired row is invisible to every query unless it asks
+    #: (see app.db: the retired filter), keeps its history, and can be restored.
+    retired_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    retired_reason: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    #: The tracked fields exactly as the last import or sync set them. A current value
+    #: that differs from this was changed by hand since -- which is what makes the next
+    #: import's differing value a conflict to decide rather than an update to apply.
+    last_import: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
 
     country: Mapped[Country] = relationship(back_populates="products")
 
@@ -212,6 +242,15 @@ class Demand(Base):
     source: Mapped[str] = mapped_column(String(16), default="proxy")
     confidence: Mapped[float] = mapped_column(Float, default=0.5)
 
+    # --- soft delete and the memory of the last import ---------------------------------
+    #: Set instead of deleting. A retired row is invisible to every query unless it asks
+    #: (see app.db: the retired filter), keeps its history, and can be restored.
+    retired_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    retired_reason: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    #: The tracked fields exactly as the last import or sync set them. A current value
+    #: that differs from this was changed by hand since -- which is what makes the next
+    #: import's differing value a conflict to decide rather than an update to apply.
+    last_import: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
 
 class Scenario(Base):
     __tablename__ = "scenario"
@@ -305,7 +344,8 @@ class AuditEntry(Base):
     author_claim: Mapped[str] = mapped_column(String(96), default="anonymous", server_default="anonymous")
     #: One id per request or import, so "what did that upload change" is one query.
     batch_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
-    #: applied | reverted. Undo is a row that reverses this one, never a delete.
+    #: applied | reverted | superseded. Undo is a row that reverses this one, never a
+    #: delete; superseded means an import was told to override this correction.
     status: Mapped[str] = mapped_column(String(12), default="applied", server_default="applied")
     #: The entry this one reverses, when status of that one became "reverted".
     reverts_id: Mapped[Optional[int]] = mapped_column(
