@@ -324,6 +324,10 @@ export type AuditRow = {
   confidence_marker: string
   rationale: string
   actor: string
+  author_claim: string
+  batch_id: string | null
+  status: string
+  reverts_id: number | null
   created_at: string
 }
 

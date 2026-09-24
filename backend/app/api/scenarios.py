@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import ledger
 from ..db import SessionLocal, get_session
+from .deps import author_claim, new_batch_id
 from ..engine import kpis as kpi_mod
 from ..engine.roadmap import build_roadmap
 from ..engine.runner import run_scenario
@@ -69,7 +71,12 @@ def list_scenarios(
 
 
 @router.post("/countries/{country_id}/scenarios", response_model=ScenarioOut, status_code=201)
-def create_scenario(country_id: int, payload: ScenarioIn, session: Session = Depends(get_session)):
+def create_scenario(
+    country_id: int,
+    payload: ScenarioIn,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     if not session.get(Country, country_id):
         raise HTTPException(404, f"No country with id {country_id}.")
     if session.scalar(
@@ -81,6 +88,18 @@ def create_scenario(country_id: int, payload: ScenarioIn, session: Session = Dep
     fields["tags"] = normalise_tags(fields.get("tags"))
     scenario = Scenario(country_id=country_id, **fields)
     session.add(scenario)
+    session.flush()
+    ledger.record(
+        session,
+        country_id=country_id,
+        entity_type="scenario",
+        entity_ref=scenario.name,
+        field="created",
+        new_value="A new scenario.",
+        provenance="assumption",
+        author_claim=author,
+        batch_id=new_batch_id(),
+    )
     session.commit()
     session.refresh(scenario)
     return _to_out(session, scenario)
@@ -92,30 +111,70 @@ def get_scenario(scenario_id: int, session: Session = Depends(get_session)):
 
 
 @router.patch("/scenarios/{scenario_id}", response_model=ScenarioOut)
-def update_scenario(scenario_id: int, payload: ScenarioPatch, session: Session = Depends(get_session)):
+def update_scenario(
+    scenario_id: int,
+    payload: ScenarioPatch,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     scenario = _scenario_or_404(session, scenario_id)
+    batch = new_batch_id()
     for field, value in payload.model_dump(exclude_unset=True).items():
         if value is None:
             continue
         # An empty list is a real instruction -- "remove every tag" -- and survives
         # because the check above is against None, not against falsiness.
-        setattr(scenario, field, normalise_tags(value) if field == "tags" else value)
+        value = normalise_tags(value) if field == "tags" else value
+        before = getattr(scenario, field)
+        setattr(scenario, field, value)
+        common = dict(
+            country_id=scenario.country_id,
+            entity_type="scenario",
+            entity_ref=scenario.name,
+            provenance="assumption",
+            author_claim=author,
+            batch_id=batch,
+            # A slider fires a request per notch. The ledger keeps one row per sitting.
+            coalesce=True,
+        )
+        if isinstance(value, dict):
+            ledger.record_dict_changes(session, before=before, after=value, field_prefix=field, **common)
+        elif before != value:
+            ledger.record(session, field=field, old_value=before, new_value=value, **common)
     session.commit()
     session.refresh(scenario)
     return _to_out(session, scenario)
 
 
 @router.delete("/scenarios/{scenario_id}", status_code=204)
-def delete_scenario(scenario_id: int, session: Session = Depends(get_session)):
+def delete_scenario(
+    scenario_id: int, session: Session = Depends(get_session), author: str = Depends(author_claim)
+):
     scenario = _scenario_or_404(session, scenario_id)
     if scenario.is_baseline:
         raise HTTPException(400, "The baseline cannot be deleted; every comparison is made against it.")
+    ledger.record(
+        session,
+        country_id=scenario.country_id,
+        entity_type="scenario",
+        entity_ref=scenario.name,
+        field="deleted",
+        old_value=f"{scenario.name} and its results",
+        provenance="assumption",
+        author_claim=author,
+        batch_id=new_batch_id(),
+    )
     session.delete(scenario)
     session.commit()
 
 
 @router.post("/scenarios/{scenario_id}/clone", response_model=ScenarioOut, status_code=201)
-def clone_scenario(scenario_id: int, payload: Optional[ScenarioIn] = None, session: Session = Depends(get_session)):
+def clone_scenario(
+    scenario_id: int,
+    payload: Optional[ScenarioIn] = None,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     source = _scenario_or_404(session, scenario_id)
     name = (payload.name if payload and payload.name else f"{source.name} (copy)")
     suffix = 2
@@ -145,6 +204,18 @@ def clone_scenario(scenario_id: int, payload: Optional[ScenarioIn] = None, sessi
             clone.objective_weights = {**clone.objective_weights, **payload.objective_weights}
 
     session.add(clone)
+    session.flush()
+    ledger.record(
+        session,
+        country_id=clone.country_id,
+        entity_type="scenario",
+        entity_ref=clone.name,
+        field="created",
+        new_value=f"Duplicated from {source.name}.",
+        provenance="assumption",
+        author_claim=author,
+        batch_id=new_batch_id(),
+    )
     session.commit()
     session.refresh(clone)
     return _to_out(session, clone)

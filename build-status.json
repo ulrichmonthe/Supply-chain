@@ -3,7 +3,7 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic \u2014 by road, boat and plane, month by month \u2014 and who gets left out when money is saved."
   },
-  "updated": "2026-09-14T00:00:00Z",
+  "updated": "2026-09-24T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -561,6 +561,68 @@
           "at": "2026-08-21T14:00:00Z",
           "kind": "ok",
           "what": "Wrote up what to build and what the market looks like, with the honest version of both"
+        }
+      ]
+    },
+    {
+      "id": "f10",
+      "name": "A record of every change",
+      "oneLiner": "Who changed what, when, and how sure they were - kept as the model is edited, imported and re-run, and safe across upgrades.",
+      "stories": [
+        {
+          "id": "f10s1",
+          "title": "Upgrade the app without losing or deleting the database",
+          "state": "done",
+          "env": null,
+          "note": "Schema changes are versioned migrations now. A database from before them is adopted at startup, not thrown away."
+        },
+        {
+          "id": "f10s2",
+          "title": "See who made each change",
+          "state": "done",
+          "env": null,
+          "note": "A name typed once per browser is written beside every change. Blank shows as \"anonymous\" on purpose."
+        },
+        {
+          "id": "f10s3",
+          "title": "Read a lever change as one line, not forty slider notches",
+          "state": "done",
+          "env": null,
+          "note": "Moves on the same lever in one sitting fold into a single row; sliding back to the start leaves none."
+        },
+        {
+          "id": "f10s4",
+          "title": "Edit a facility's population, demand, volume or capacity in place",
+          "state": "building",
+          "env": null,
+          "note": "Next. Every edit will carry a sourced / inferred / unverified marker at the moment of typing."
+        },
+        {
+          "id": "f10s5",
+          "title": "Save a named session and reopen it exactly",
+          "state": "idea",
+          "env": null,
+          "unsure": "Planned after editing: dataset, ledger position, scenarios, results and report frozen together under a name."
+        }
+      ],
+      "decisions": [
+        {
+          "at": "2026-09-24T00:00:00Z",
+          "what": "Editing and saved sessions come before user accounts. Every change carries a typed author claim so accounts can inherit the history later by migration."
+        },
+        {
+          "at": "2026-09-24T00:00:00Z",
+          "what": "The column stopgap survives only to adopt old databases; every schema change from here is a migration."
+        }
+      ],
+      "unsure": [
+        "A claim is a name, not a login: anyone can type any name until accounts exist."
+      ],
+      "activity": [
+        {
+          "at": "2026-09-24T00:00:00Z",
+          "kind": "work",
+          "what": "Alembic migrations with automatic adoption of pre-migration databases; the audit trail became a ledger with author claims and batch ids"
         }
       ]
     }

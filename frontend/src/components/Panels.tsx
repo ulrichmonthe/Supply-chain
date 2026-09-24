@@ -761,6 +761,13 @@ export function DataPanel({
 
 /* ------------------------------------------------------------------ provenance */
 
+/** "24 Sep, 14:05" -- the day and the minute, which is what "when was this changed" wants. */
+function when(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
 export function ProvenancePanel({
   overview,
   audit,
@@ -878,6 +885,19 @@ export function ProvenancePanel({
             )}
           </p>
           {entry.rationale && <p className="suggestion">{entry.rationale}</p>}
+          {/* Seeded rows were written by the loader, not a person; calling them
+              "anonymous" would nag about a signature nobody could have given. */}
+          <p className="ledger-by">
+            {entry.actor === 'seed' ? (
+              <span className="dim">seed dataset</span>
+            ) : (
+              <>
+                <span className={entry.author_claim === 'anonymous' ? 'unsigned' : ''}>{entry.author_claim}</span>
+                <span className="dim"> · {entry.actor}</span>
+              </>
+            )}
+            <span className="dim"> · {when(entry.created_at)}</span>
+          </p>
         </div>
       ))}
     </div>

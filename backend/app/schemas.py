@@ -192,6 +192,10 @@ class AuditOut(BaseModel):
     confidence_marker: str
     rationale: str
     actor: str
+    author_claim: str = "anonymous"
+    batch_id: Optional[str] = None
+    status: str = "applied"
+    reverts_id: Optional[int] = None
     created_at: datetime
 
     class Config:

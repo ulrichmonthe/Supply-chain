@@ -294,7 +294,23 @@ class AuditEntry(Base):
     #: S = sourced, I = inferred, U = unverified -- the marker system from the brief.
     confidence_marker: Mapped[str] = mapped_column(String(2), default="I")
     rationale: Mapped[str] = mapped_column(Text, default="")
+    #: What produced the change: "seed", "analyst", a connector name. Kept for the
+    #: system-side story; the person is author_claim.
     actor: Mapped[str] = mapped_column(String(96), default="system")
+
+    # --- the ledger: who, in which sitting, and whether it still stands ---------------
+    #: The name a person gave for the record ("Ulrich, JSI"). Typed once per browser and
+    #: sent with every write; "anonymous" when nobody has. When accounts exist, each
+    #: claim maps to a user by migration -- which is why it is a column, not a guess.
+    author_claim: Mapped[str] = mapped_column(String(96), default="anonymous", server_default="anonymous")
+    #: One id per request or import, so "what did that upload change" is one query.
+    batch_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
+    #: applied | reverted. Undo is a row that reverses this one, never a delete.
+    status: Mapped[str] = mapped_column(String(12), default="applied", server_default="applied")
+    #: The entry this one reverses, when status of that one became "reverted".
+    reverts_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("audit_entry.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

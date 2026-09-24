@@ -17,11 +17,39 @@ import type {
 
 const BASE = '/api'
 
+/*
+ * Who is making this change, as they chose to be recorded.
+ *
+ * Not authentication -- there are no accounts yet -- and not pretending to be. It is
+ * the "signed" line on a hand-filled form: typed once per browser, sent with every
+ * write, and shown beside the change in the ledger. Reads carry it too; it is harmless
+ * there and one code path is simpler than two.
+ */
+const AUTHOR_KEY = 'hscn.author'
+
+export function getAuthor(): string {
+  try {
+    return window.localStorage.getItem(AUTHOR_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function setAuthor(name: string): void {
+  try {
+    if (name.trim()) window.localStorage.setItem(AUTHOR_KEY, name.trim())
+    else window.localStorage.removeItem(AUTHOR_KEY)
+  } catch {
+    /* private browsing: the name lasts for this page only */
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, {
-    headers: init?.body instanceof FormData ? undefined : { 'Content-Type': 'application/json' },
-    ...init,
-  })
+  const headers: Record<string, string> = {}
+  if (!(init?.body instanceof FormData)) headers['Content-Type'] = 'application/json'
+  const author = getAuthor()
+  if (author) headers['X-Author'] = author
+  const response = await fetch(`${BASE}${path}`, { ...init, headers: { ...headers, ...(init?.headers as Record<string, string>) } })
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`
     try {
@@ -43,7 +71,12 @@ export const api = {
   edges: (countryId: number) => request<EdgeRow[]>(`/countries/${countryId}/edges`),
   basemap: (countryId: number) => request<GeoJSON.FeatureCollection>(`/countries/${countryId}/basemap.geojson`),
   season: (countryId: number, month: number) => request<SeasonView>(`/countries/${countryId}/season/${month}`),
-  audit: (countryId: number) => request<AuditRow[]>(`/countries/${countryId}/audit`),
+  audit: (countryId: number, params: { entity_type?: string; entity_ref?: string; author?: string; limit?: number } = {}) => {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== '') query.set(key, String(value))
+    const suffix = query.toString()
+    return request<AuditRow[]>(`/countries/${countryId}/audit${suffix ? `?${suffix}` : ''}`)
+  },
 
   scenarios: (countryId: number) => request<Scenario[]>(`/countries/${countryId}/scenarios`),
   updateScenario: (id: number, patch: Partial<Scenario>) =>

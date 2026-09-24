@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type React from 'react'
-import { api } from './api'
+import { api, getAuthor, setAuthor } from './api'
 import { MapView } from './components/MapView'
 import type { ColourBy } from './components/MapView'
 import { ScenarioPanel } from './components/ScenarioPanel'
@@ -148,6 +148,7 @@ export default function App() {
 
   const [running, setRunning] = useState(false)
   const [tourOpen, setTourOpen] = useState(false)
+  const [author, setAuthorState] = useState(getAuthor())
   const [error, setError] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(true)
 
@@ -394,6 +395,24 @@ export default function App() {
     document.getElementById(`tab-${slug(TABS[next])}`)?.focus()
   }
 
+  /* ------------------------------------------------------------------ signing */
+
+  /*
+   * Who the ledger records. Not a login -- there are no accounts yet -- but the
+   * "signed" line on a form: a name typed once per browser and sent with every change.
+   * Leaving it blank is allowed and visible: the ledger shows "anonymous", which is
+   * the nudge that works when a colleague's name sits in the row above.
+   */
+  function sign() {
+    const name = window.prompt(
+      'Your name for the record. It is written beside every change you make, so a reviewer can ask you rather than guess.',
+      author,
+    )
+    if (name === null) return
+    setAuthor(name)
+    setAuthorState(getAuthor())
+  }
+
   /* ------------------------------------------------------------------ guide */
 
   const tourSteps = useMemo(
@@ -477,6 +496,19 @@ export default function App() {
         )}
 
         <div className="topbar-right">
+          <button
+            className={`btn small ghost signed${author ? '' : ' unsigned'}`}
+            onClick={sign}
+            title={author ? 'Change the name written beside your changes' : 'Changes are recorded as anonymous until you sign'}
+          >
+            {author ? (
+              <>
+                <span className="dim">Signed as</span> {author}
+              </>
+            ) : (
+              'Sign your work'
+            )}
+          </button>
           <button className="btn small ghost" onClick={() => setTourOpen(true)}>
             Guide
           </button>

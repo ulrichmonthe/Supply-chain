@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import math
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .. import ledger
 from ..db import get_session
+from .deps import author_claim, new_batch_id
 from ..engine import geo, seasonality, service
 from ..engine.distance import cascade_summary
 from ..engine.equity import compute_vulnerability
@@ -61,7 +65,9 @@ def list_countries(session: Session = Depends(get_session)):
 
 
 @router.post("/countries", response_model=CountryOut, status_code=201)
-def create_country(payload: CountryIn, session: Session = Depends(get_session)):
+def create_country(
+    payload: CountryIn, session: Session = Depends(get_session), author: str = Depends(author_claim)
+):
     """Open a workspace for a new country.
 
     This is the step that used to require editing Python. The coarse land mask, the
@@ -86,23 +92,28 @@ def create_country(payload: CountryIn, session: Session = Depends(get_session)):
     session.add(country)
     session.flush()
 
-    session.add(
-        AuditEntry(
-            country_id=country.id,
-            entity_type="global",
-            entity_ref=code,
-            field="created",
-            new_value=f"Workspace opened for {country.name}",
-            rationale="A new country workspace.",
-            actor="analyst",
-        )
+    ledger.record(
+        session,
+        country_id=country.id,
+        entity_type="global",
+        entity_ref=code,
+        field="created",
+        new_value=f"Workspace opened for {country.name}",
+        rationale="A new country workspace.",
+        author_claim=author,
+        batch_id=new_batch_id(),
     )
     session.commit()
     return _as_out(country)
 
 
 @router.patch("/countries/{country_id}", response_model=CountryOut)
-def update_country(country_id: int, payload: CountryPatch, session: Session = Depends(get_session)):
+def update_country(
+    country_id: int,
+    payload: CountryPatch,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     """Change a country's settings — its name, currency, bounding box, terrain factors,
     seasonal profiles or land mask.
 
@@ -116,22 +127,23 @@ def update_country(country_id: int, payload: CountryPatch, session: Session = De
     if not changes:
         raise HTTPException(400, "No settings to change.")
 
+    batch = new_batch_id()
     for field, value in changes.items():
         if value is None:
             continue
         old = getattr(country, field)
         setattr(country, field, value)
-        session.add(
-            AuditEntry(
-                country_id=country.id,
-                entity_type="global",
-                entity_ref=country.code,
-                field=field,
-                old_value=("(a land mask)" if field == "boundary" else str(old))[:2000],
-                new_value=("(a land mask)" if field == "boundary" else str(value))[:2000],
-                rationale="Country settings changed.",
-                actor="analyst",
-            )
+        ledger.record(
+            session,
+            country_id=country.id,
+            entity_type="global",
+            entity_ref=country.code,
+            field=field,
+            old_value="(a land mask)" if field == "boundary" else old,
+            new_value="(a land mask)" if field == "boundary" else value,
+            rationale="Country settings changed.",
+            author_claim=author,
+            batch_id=batch,
         )
     session.commit()
     return _as_out(country)
@@ -383,7 +395,12 @@ def season_view(country_id: int, month: int, session: Session = Depends(get_sess
 
 
 @router.patch("/edges/{edge_id}", response_model=EdgeOut)
-def override_edge(edge_id: int, payload: EdgeOverride, session: Session = Depends(get_session)):
+def override_edge(
+    edge_id: int,
+    payload: EdgeOverride,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     """Operator override of a lane, with the change written to the audit trail.
 
     This is the answer to "that road takes six hours, not two". The override is made
@@ -397,6 +414,7 @@ def override_edge(edge_id: int, payload: EdgeOverride, session: Session = Depend
     if not changes:
         raise HTTPException(400, "No fields to change.")
 
+    batch = new_batch_id()
     for field, value in changes.items():
         if value is None:
             continue
@@ -406,19 +424,20 @@ def override_edge(edge_id: int, payload: EdgeOverride, session: Session = Depend
             edge.distance_method = "manual"
             edge.distance_confidence = 0.95
             edge.distance_note = payload.rationale or "Operator override."
-        session.add(
-            AuditEntry(
-                country_id=edge.country_id,
-                entity_type="edge",
-                entity_ref=edge.code,
-                field=field,
-                old_value=str(old),
-                new_value=str(value),
-                provenance="manual_override",
-                confidence_marker="S" if payload.rationale else "I",
-                rationale=payload.rationale,
-                actor=payload.actor,
-            )
+        ledger.record(
+            session,
+            country_id=edge.country_id,
+            entity_type="edge",
+            entity_ref=edge.code,
+            field=field,
+            old_value=old,
+            new_value=value,
+            provenance="manual_override",
+            confidence_marker="S" if payload.rationale else "I",
+            rationale=payload.rationale,
+            actor=payload.actor,
+            author_claim=author,
+            batch_id=batch,
         )
 
     session.commit()
@@ -435,13 +454,27 @@ def override_edge(edge_id: int, payload: EdgeOverride, session: Session = Depend
 
 
 @router.get("/countries/{country_id}/audit", response_model=list[AuditOut])
-def list_audit(country_id: int, limit: int = 200, session: Session = Depends(get_session)):
+def list_audit(
+    country_id: int,
+    limit: int = Query(200, ge=1, le=1000),
+    before: Optional[int] = Query(None, description="Only entries with an id below this one: the cursor for paging back."),
+    entity_type: Optional[str] = None,
+    entity_ref: Optional[str] = None,
+    batch_id: Optional[str] = Query(None, description="Everything one upload, sync or request changed."),
+    author: Optional[str] = Query(None, description="Entries claimed by this name, ignoring case."),
+    session: Session = Depends(get_session),
+):
+    """The ledger, newest first. Every filter narrows; none is required."""
     _country_or_404(session, country_id)
-    return list(
-        session.scalars(
-            select(AuditEntry)
-            .where(AuditEntry.country_id == country_id)
-            .order_by(AuditEntry.id.desc())
-            .limit(limit)
-        )
-    )
+    query = select(AuditEntry).where(AuditEntry.country_id == country_id)
+    if before is not None:
+        query = query.where(AuditEntry.id < before)
+    if entity_type:
+        query = query.where(AuditEntry.entity_type == entity_type)
+    if entity_ref:
+        query = query.where(AuditEntry.entity_ref == entity_ref)
+    if batch_id:
+        query = query.where(AuditEntry.batch_id == batch_id)
+    if author:
+        query = query.where(func.lower(AuditEntry.author_claim) == author.casefold())
+    return list(session.scalars(query.order_by(AuditEntry.id.desc()).limit(limit)))

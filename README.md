@@ -237,6 +237,22 @@ kilometres, which is the error class that actually occurs in master lists. The s
 geometry is what the map draws as its offline basemap, so what you see is exactly what
 the validator believes.
 
+### The ledger
+
+Every change to the model is one row in the audit trail: what changed, from what, to
+what, why, how sure, and — since there are no accounts yet — *who claims it*. The
+interface asks for a name once per browser ("Sign your work" in the top bar) and sends
+it with every write as an `X-Author` header. Leaving it blank is allowed and visible:
+the row says "anonymous", which beside a colleague's name is the nudge that works. When
+accounts arrive, each claim maps to a user by migration rather than a rewrite.
+
+Two details keep the ledger readable. A lever is a slider, and a slider fires a request
+per notch; moves on the same field by the same person within ninety seconds fold into
+one row — first old value, last new value — and sliding back to where you started
+leaves no row at all. And every request or import carries one `batch_id`, so "what did
+that upload change" is a single query: `GET /countries/{id}/audit?batch_id=…`, which
+also filters by `entity_type`, `entity_ref`, `author` and pages back with `before`.
+
 ### Live LMIS integration
 
 Connectors for **DHIS2**, **OpenLMIS v3** and **Open mSupply**, plus the Excel path,
@@ -487,13 +503,9 @@ building, and no inventory optimisation.
   conditions held all year?". It is not a monthly budget. The UI labels it as such.
 * Stockout risk is analytic, not simulated. It responds correctly to frequency,
   storage, reliability and season, but it does not model wastage, expiry or queueing.
-* There are no migrations. `create_all` makes missing tables and ignores tables that
-  already exist, so a new column never reaches a database that predates it — which
-  arrives as `no such column` on the first query, an outage rather than a warning.
-  `add_missing_columns` in `app/db.py` closes that one gap at startup: it adds columns
-  the models declare and the database lacks, and fills new JSON columns with an empty
-  object or list rather than leaving existing rows NULL. It is a stopgap and nothing
-  more. It cannot rename a column, drop one, change a type, add a constraint, or
-  backfill a value it cannot derive. Anything beyond adding a column still needs a real
-  migration tool, and this should be Alembic before the first instance holds data
-  somebody would mind losing.
+* Schema changes are Alembic revisions under `backend/migrations/versions`, applied by
+  the app at startup. A database from before migrations existed is adopted rather than
+  abandoned: the revision it most resembles is worked out from its columns, the column
+  stopgap in `app/db.py` brings it exactly to that shape, it is stamped there, and the
+  remaining revisions run on top. That stopgap now exists only for adoption. Edit the
+  models, run `make revision m="what changed"`, read the file it writes, commit it.

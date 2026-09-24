@@ -23,6 +23,7 @@ help:
 	@echo "make backend   API with autoreload, for frontend development"
 	@echo "make frontend  Vite dev server on :5173, proxying to the API"
 	@echo "make test      run the test suite"
+	@echo "make revision m=\"what changed\"   write a schema migration from the models"
 	@echo "make a11y      audit the running app for accessibility  (needs Node)"
 	@echo "               start 'make run' in another terminal first"
 	@echo "make demo      rebuild the static demo published at docs/app  (needs Node)"
@@ -76,6 +77,13 @@ frontend:
 
 test:
 	cd backend && ../$(PY) -m pytest -q
+
+## Schema changes are revisions under backend/migrations/versions. Edit the models,
+## then run this: Alembic writes the difference as a migration for you to read and
+## keep. The app applies pending revisions itself at startup.
+revision:
+	@test -n "$(m)" || { echo 'Say what changed:  make revision m="add tags to scenarios"'; exit 1; }
+	cd backend && ../$(VENV)/bin/alembic revision --autogenerate -m "$(m)"
 
 ## Runs axe-core over every tab of the running app, then checks the things axe cannot
 ## see: keyboard reach, focus rings, hit sizes, and horizontal scroll at six widths.

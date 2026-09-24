@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..db import get_session
+from .deps import author_claim, new_batch_id
 from ..engine import seasonality
 from ..io import excel_in, excel_out
 from ..io.apply import apply_payload
@@ -117,6 +118,7 @@ def correct_import_row(
     batch_id: int,
     payload: ImportRowPatch,
     session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
 ):
     """Correct a row inside an import that has not been committed, and re-check it.
 
@@ -176,6 +178,7 @@ def correct_import_row(
             "before": before,
             "after": payload.values,
             "reason": payload.reason or "Corrected during review.",
+            "author": author,
         }
     )
 
@@ -196,7 +199,12 @@ def correct_import_row(
 
 
 @router.post("/imports/{batch_id}/commit")
-def commit_import(batch_id: int, replace: bool = True, session: Session = Depends(get_session)):
+def commit_import(
+    batch_id: int,
+    replace: bool = True,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
     """Apply a validated import.
 
     ``replace`` wipes the country's network first. That is the honest default for a
@@ -227,6 +235,8 @@ def commit_import(batch_id: int, replace: bool = True, session: Session = Depend
         mode=mode,
         source=batch.source or "excel",
         reference=batch.filename,
+        author_claim=author,
+        batch_id=new_batch_id(),
     )
 
     batch.committed = True

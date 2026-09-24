@@ -623,6 +623,13 @@ button.tag:focus-visible, .tag-x:focus-visible {
   .tag-x { padding: 4px; margin: -4px -2px -4px 0; }
 }
 
+/* ---------- the signed line ---------- */
+
+.btn.signed .dim { font-weight: 400; }
+.btn.signed.unsigned { border-style: dashed; color: var(--warn); }
+.ledger-by { margin: 4px 0 0; font-size: var(--fs-micro); color: var(--muted); }
+.ledger-by .unsigned { color: var(--warn); font-style: italic; }
+
 /* ---------- guided tour ---------- */
 
 .tour { position: fixed; inset: 0; z-index: var(--z-tour); }

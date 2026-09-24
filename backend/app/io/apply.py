@@ -38,6 +38,8 @@ def apply_payload(
     source: str = "excel",
     reference: str = "",
     actor: str = "analyst",
+    author_claim: str = "anonymous",
+    batch_id: Optional[str] = None,
 ) -> dict:
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}, not {mode!r}")
@@ -72,6 +74,8 @@ def apply_payload(
                 )
             ),
             actor=actor,
+            author_claim=author_claim,
+            batch_id=batch_id,
         )
     )
     return counts
