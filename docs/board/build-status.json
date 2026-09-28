@@ -512,6 +512,27 @@
           "state": "done",
           "env": null,
           "note": "One self-contained HTML page that prints to PDF. Leads with the trade-off, names the people, states what it rests on."
+        },
+        {
+          "id": "f8s20",
+          "title": "A decision page a minister can read on page one",
+          "state": "done",
+          "env": null,
+          "note": "The recommendation, a map with the stores named, the stores table with capacity and facilities served, three numbers against today, the equity line, the confidence line. Every number links into the evidence."
+        },
+        {
+          "id": "f8s21",
+          "title": "An assumptions annex written from the ledger",
+          "state": "done",
+          "env": null,
+          "note": "How each value entered the model, counted; then the recent assumptions, corrections and estimates with who and why."
+        },
+        {
+          "id": "f8s22",
+          "title": "A study report and a Decision view in the app",
+          "state": "done",
+          "env": null,
+          "note": "The question over the backed option's decision page and the options considered. In the app, Decision hides levers and tabs and shows the options as cards."
         }
       ],
       "decisions": [
@@ -524,6 +545,11 @@
         "How long each phase takes is an estimate, not drawn from how long this work actually takes in practice."
       ],
       "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Decision page on every report, study report, assumptions annex, Decision view toggle"
+        },
         {
           "at": "2026-09-11T13:32:46Z",
           "kind": "work",

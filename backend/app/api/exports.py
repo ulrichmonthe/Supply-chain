@@ -13,7 +13,7 @@ from ..engine import kpis as kpi_mod
 from ..engine.roadmap import build_roadmap
 from ..engine.distance import cascade_summary
 from ..io import excel_out, report as report_mod
-from ..models import Edge, Node, Result, Scenario
+from ..models import AuditEntry, Edge, Node, Result, Scenario
 
 router = APIRouter(tags=["exports"])
 
@@ -108,6 +108,14 @@ def export_report(scenario_id: int, session: Session = Depends(get_session)):
 
     edges = list(session.scalars(select(Edge).where(Edge.country_id == country.id)))
     nodes = list(session.scalars(select(Node).where(Node.country_id == country.id)))
+    ledger_entries = list(
+        session.scalars(
+            select(AuditEntry)
+            .where(AuditEntry.country_id == country.id, AuditEntry.status == "applied")
+            .order_by(AuditEntry.id.desc())
+            .limit(2000)
+        )
+    )
 
     html_doc = report_mod.render_report(
         country=country,
@@ -121,6 +129,8 @@ def export_report(scenario_id: int, session: Session = Depends(get_session)):
             "facilities": sum(1 for n in nodes if n.level >= 2),
             "scheduled_services": len({e.service_name for e in edges if e.service_name}),
         },
+        nodes=nodes,
+        ledger_entries=ledger_entries,
     )
     safe_name = "".join(c if c.isalnum() or c in "-_ " else "-" for c in scenario.name).strip()[:60]
     return Response(

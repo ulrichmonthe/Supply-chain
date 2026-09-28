@@ -18,6 +18,7 @@ import { ConnectionsPanel } from './components/ConnectionsPanel'
 import { FacilityEditor } from './components/FacilityEditor'
 import { SessionsShelf } from './components/SessionsShelf'
 import { StudiesPanel } from './components/StudiesPanel'
+import { DecisionView } from './components/DecisionView'
 import { Tour } from './components/Tour'
 import { TOUR_STORAGE_KEY, buildTour } from './tour'
 import type {
@@ -172,6 +173,22 @@ export default function App() {
   const [dataVersion, setDataVersion] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
   const [diff, setDiff] = useState<DiffMap | null>(null)
+  // Expert is today's screen; Decision hides the levers and tabs and keeps the map,
+  // the options as cards, and the three numbers a decision-maker reads.
+  const [view, setView] = useState<'expert' | 'decision'>(() => {
+    try {
+      return localStorage.getItem('hscn.view') === 'decision' ? 'decision' : 'expert'
+    } catch {
+      return 'expert'
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('hscn.view', view)
+    } catch {
+      /* private mode: the choice simply does not persist */
+    }
+  }, [view])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [compareIds, setCompareIds] = useState<number[]>([])
   const [result, setResult] = useState<Result | null>(null)
@@ -577,6 +594,25 @@ export default function App() {
         )}
 
         <div className="topbar-right">
+          <div className="segmented" role="group" aria-label="View">
+            <button
+              type="button"
+              className={`btn small${view === 'expert' ? ' on' : ' ghost'}`}
+              aria-pressed={view === 'expert'}
+              onClick={() => setView('expert')}
+            >
+              Expert
+            </button>
+            <button
+              type="button"
+              className={`btn small${view === 'decision' ? ' on' : ' ghost'}`}
+              aria-pressed={view === 'decision'}
+              onClick={() => setView('decision')}
+              title="Levers and tabs hidden: the map, the options as cards, and the three numbers a decision-maker reads"
+            >
+              Decision
+            </button>
+          </div>
           <button
             className={`btn small ghost signed${author ? '' : ' unsigned'}`}
             onClick={sign}
@@ -681,42 +717,44 @@ export default function App() {
       </div>
 
       <div className="body">
-        <ScenarioPanel
-          shelf={
-            countryId !== null ? (
-              <SessionsShelf
-                countryId={countryId}
-                refreshKey={dataVersion}
-                onOpened={async (message) => {
-                  setResult(null)
-                  setRoadmap(null)
-                  setSelectedCode(null)
-                  await Promise.all([loadNetwork(countryId), loadScenarios(countryId)])
-                  setNotice(message)
-                }}
-                onError={(message) => setError(message)}
-              />
-            ) : null
-          }
-          scenarios={scenarios}
-          selectedId={selectedId}
-          compareIds={compareIds}
-          currency={currency}
-          services={overview?.services ?? []}
-          running={running}
-          kpiByScenario={kpiByScenario}
-          onSelect={setSelectedId}
-          onToggleCompare={(id) =>
-            setCompareIds((current) =>
-              current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
-            )
-          }
-          onPatch={patchScenario}
-          onClone={cloneScenario}
-          onDelete={deleteScenario}
-          onRun={runOne}
-          onRunSet={runSet}
-        />
+        {view === 'expert' && (
+          <ScenarioPanel
+            shelf={
+              countryId !== null ? (
+                <SessionsShelf
+                  countryId={countryId}
+                  refreshKey={dataVersion}
+                  onOpened={async (message) => {
+                    setResult(null)
+                    setRoadmap(null)
+                    setSelectedCode(null)
+                    await Promise.all([loadNetwork(countryId), loadScenarios(countryId)])
+                    setNotice(message)
+                  }}
+                  onError={(message) => setError(message)}
+                />
+              ) : null
+            }
+            scenarios={scenarios}
+            selectedId={selectedId}
+            compareIds={compareIds}
+            currency={currency}
+            services={overview?.services ?? []}
+            running={running}
+            kpiByScenario={kpiByScenario}
+            onSelect={setSelectedId}
+            onToggleCompare={(id) =>
+              setCompareIds((current) =>
+                current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
+              )
+            }
+            onPatch={patchScenario}
+            onClone={cloneScenario}
+            onDelete={deleteScenario}
+            onRun={runOne}
+            onRunSet={runSet}
+          />
+        )}
 
         <div className="centre">
           <MapView
@@ -806,180 +844,191 @@ export default function App() {
           </div>
         </div>
 
-        <aside className="inspector" id="results" aria-label="Results">
-          {headlineKpis.length > 0 && (
-            <div className="kpi-grid">
-              {headlineKpis.map((kpi) => (
-                <div className="kpi" key={kpi.key}>
-                  <span className="kpi-label">{kpi.label}</span>
-                  <b>{formatKpi(kpi.value, kpi.unit, kpi.key === 'total_cost' ? currency : '')}</b>
-                  {kpi.comparison &&
-                    kpi.comparison.delta_pct !== null &&
-                    Math.abs(kpi.comparison.delta) > 1e-9 && (
-                      <span className={`delta ${kpi.comparison.direction}`}>
-                        {signedPct(kpi.comparison.delta_pct)} vs baseline
-                      </span>
-                    )}
-                </div>
-              ))}
-            </div>
-          )}
+        {view === 'decision' && countryId !== null && (
+          <DecisionView
+            countryId={countryId}
+            scorecard={scorecard}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            currency={currency}
+          />
+        )}
+        {view === 'expert' && (
+          <aside className="inspector" id="results" aria-label="Results">
+            {headlineKpis.length > 0 && (
+              <div className="kpi-grid">
+                {headlineKpis.map((kpi) => (
+                  <div className="kpi" key={kpi.key}>
+                    <span className="kpi-label">{kpi.label}</span>
+                    <b>{formatKpi(kpi.value, kpi.unit, kpi.key === 'total_cost' ? currency : '')}</b>
+                    {kpi.comparison &&
+                      kpi.comparison.delta_pct !== null &&
+                      Math.abs(kpi.comparison.delta) > 1e-9 && (
+                        <span className={`delta ${kpi.comparison.direction}`}>
+                          {signedPct(kpi.comparison.delta_pct)} vs baseline
+                        </span>
+                      )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {result?.status === 'infeasible' && (
-            <div className="callout bad">
-              <h4>No feasible plan</h4>
-              {result.error}
-            </div>
-          )}
+            {result?.status === 'infeasible' && (
+              <div className="callout bad">
+                <h4>No feasible plan</h4>
+                {result.error}
+              </div>
+            )}
 
-          {/* A tablist is one tab stop, not eight: Tab reaches the selected tab,
+            {/* A tablist is one tab stop, not eight: Tab reaches the selected tab,
               arrows move between them. That is the APG pattern and it is what a
               screen reader user expects when the role says tablist. */}
-          <div className="tabs" role="tablist" aria-label="Result views" onKeyDown={onTabKeyDown}>
-            {TABS.map((name) => (
-              <button
-                type="button"
-                key={name}
-                id={`tab-${slug(name)}`}
-                role="tab"
-                aria-selected={tab === name}
-                aria-controls="tab-body"
-                tabIndex={tab === name ? 0 : -1}
-                className={`tab${tab === name ? ' on' : ''}`}
-                onClick={() => setTab(name)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
+            <div className="tabs" role="tablist" aria-label="Result views" onKeyDown={onTabKeyDown}>
+              {TABS.map((name) => (
+                <button
+                  type="button"
+                  key={name}
+                  id={`tab-${slug(name)}`}
+                  role="tab"
+                  aria-selected={tab === name}
+                  aria-controls="tab-body"
+                  tabIndex={tab === name ? 0 : -1}
+                  className={`tab${tab === name ? ' on' : ''}`}
+                  onClick={() => setTab(name)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
 
-          <div
-            className="tab-body"
-            id="tab-body"
-            role="tabpanel"
-            aria-labelledby={`tab-${slug(tab)}`}
-            tabIndex={0}
-          >
-            {tab === 'Scorecard' && (
-              <Scorecard
-                data={scorecard}
-                currency={currency}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-              />
-            )}
-            {tab === 'Studies' && countryId !== null && (
-              <StudiesPanel
-                countryId={countryId}
-                scenarios={scenarios}
-                currency={currency}
-                diff={diff}
-                onDiff={setDiff}
-                onScenariosChanged={async () => {
-                  await loadScenarios(countryId)
-                }}
-                onError={(message) => setError(message)}
-                onSelectScenario={setSelectedId}
-              />
-            )}
-            {tab === 'Equity' && (
-              <EquityPanel
-                result={result}
-                baselineRow={baselineRow}
-                currency={currency}
-                equityDefinition={overview?.country.config.equity_definition}
-              />
-            )}
-            {tab === 'Facilities' && (
-              <>
-                {selectedNode && (
-                  <FacilityEditor
-                    node={selectedNode}
-                    edges={edges}
-                    products={products}
-                    countryId={countryId ?? 0}
-                    currency={currency}
-                    onChanged={reloadAfterEdit}
-                    onRetired={() => {
-                      setSelectedCode(null)
-                      reloadAfterEdit()
-                    }}
-                  />
-                )}
-                {!selectedNode && (
-                  <div className="lever-note" style={{ padding: '8px 12px 0' }}>
-                    Click a facility on the map or in the table to edit it here.
-                  </div>
-                )}
-                <FacilityTable
+            <div
+              className="tab-body"
+              id="tab-body"
+              role="tabpanel"
+              aria-labelledby={`tab-${slug(tab)}`}
+              tabIndex={0}
+            >
+              {tab === 'Scorecard' && (
+                <Scorecard
+                  data={scorecard}
+                  currency={currency}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                />
+              )}
+              {tab === 'Studies' && countryId !== null && (
+                <StudiesPanel
+                  countryId={countryId}
+                  scenarios={scenarios}
+                  currency={currency}
+                  diff={diff}
+                  onDiff={setDiff}
+                  onScenariosChanged={async () => {
+                    await loadScenarios(countryId)
+                  }}
+                  onError={(message) => setError(message)}
+                  onSelectScenario={setSelectedId}
+                />
+              )}
+              {tab === 'Equity' && (
+                <EquityPanel
                   result={result}
-                  selectedCode={selectedCode}
-                  onSelect={setSelectedCode}
+                  baselineRow={baselineRow}
+                  currency={currency}
+                  equityDefinition={overview?.country.config.equity_definition}
+                />
+              )}
+              {tab === 'Facilities' && (
+                <>
+                  {selectedNode && (
+                    <FacilityEditor
+                      node={selectedNode}
+                      edges={edges}
+                      products={products}
+                      countryId={countryId ?? 0}
+                      currency={currency}
+                      onChanged={reloadAfterEdit}
+                      onRetired={() => {
+                        setSelectedCode(null)
+                        reloadAfterEdit()
+                      }}
+                    />
+                  )}
+                  {!selectedNode && (
+                    <div className="lever-note" style={{ padding: '8px 12px 0' }}>
+                      Click a facility on the map or in the table to edit it here.
+                    </div>
+                  )}
+                  <FacilityTable
+                    result={result}
+                    selectedCode={selectedCode}
+                    onSelect={setSelectedCode}
+                    currency={currency}
+                  />
+                </>
+              )}
+              {tab === 'Services' && <ServicesPanel overview={overview} edges={edges} result={result} />}
+              {tab === 'Season' && (
+                <SeasonPanel
+                  season={season}
+                  month={month}
+                  result={result}
+                  baselineCost={baselineCost}
                   currency={currency}
                 />
-              </>
-            )}
-            {tab === 'Services' && <ServicesPanel overview={overview} edges={edges} result={result} />}
-            {tab === 'Season' && (
-              <SeasonPanel
-                season={season}
-                month={month}
-                result={result}
-                baselineCost={baselineCost}
-                currency={currency}
-              />
-            )}
-            {tab === 'Data' && countryId !== null && (
-              <DataPanel
-                countryId={countryId}
-                overview={overview}
-                nodes={nodes}
-                onImported={reloadAfterEdit}
-                pickMode={pickMode}
-                onPickMode={setPickMode}
-                picked={picked}
-                onPickedUsed={() => setPicked(null)}
-              />
-            )}
-            {tab === 'Live' && countryId !== null && (
-              <ConnectionsPanel
-                countryId={countryId}
-                onApplied={() => {
-                  void loadNetwork(countryId)
-                  void loadScenarios(countryId)
-                }}
-              />
-            )}
-            {tab === 'Provenance' && (
-              <ProvenancePanel overview={overview} audit={audit} edges={edges} onRevert={revertEntry} />
-            )}
-            {tab === 'Roadmap' && (
-              <RoadmapPanel
-                roadmap={roadmap}
-                currency={currency}
-                error={roadmapError}
-                exportUrl={selected && !selected.is_baseline ? api.resultsExportUrl(selected.id) : null}
-              />
-            )}
-          </div>
-
-          {selected && (
-            <div
-              className="section"
-              style={{
-                borderTop: '1px solid var(--line)',
-                borderBottom: 'none',
-              }}
-            >
-              <div className="tiny dim">
-                {selected.name}
-                {baselineCost && result?.status === 'ok' && !selected.is_baseline && (
-                  <> · {money(result.kpi_set.total_cost - baselineCost, currency)} against baseline</>
-                )}
-              </div>
+              )}
+              {tab === 'Data' && countryId !== null && (
+                <DataPanel
+                  countryId={countryId}
+                  overview={overview}
+                  nodes={nodes}
+                  onImported={reloadAfterEdit}
+                  pickMode={pickMode}
+                  onPickMode={setPickMode}
+                  picked={picked}
+                  onPickedUsed={() => setPicked(null)}
+                />
+              )}
+              {tab === 'Live' && countryId !== null && (
+                <ConnectionsPanel
+                  countryId={countryId}
+                  onApplied={() => {
+                    void loadNetwork(countryId)
+                    void loadScenarios(countryId)
+                  }}
+                />
+              )}
+              {tab === 'Provenance' && (
+                <ProvenancePanel overview={overview} audit={audit} edges={edges} onRevert={revertEntry} />
+              )}
+              {tab === 'Roadmap' && (
+                <RoadmapPanel
+                  roadmap={roadmap}
+                  currency={currency}
+                  error={roadmapError}
+                  exportUrl={selected && !selected.is_baseline ? api.resultsExportUrl(selected.id) : null}
+                />
+              )}
             </div>
-          )}
-        </aside>
+
+            {selected && (
+              <div
+                className="section"
+                style={{
+                  borderTop: '1px solid var(--line)',
+                  borderBottom: 'none',
+                }}
+              >
+                <div className="tiny dim">
+                  {selected.name}
+                  {baselineCost && result?.status === 'ok' && !selected.is_baseline && (
+                    <> · {money(result.kpi_set.total_cost - baselineCost, currency)} against baseline</>
+                  )}
+                </div>
+              </div>
+            )}
+          </aside>
+        )}
       </div>
 
       <Tour steps={tourSteps} open={tourOpen} onClose={closeTour} />

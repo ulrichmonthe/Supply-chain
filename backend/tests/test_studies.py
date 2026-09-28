@@ -139,3 +139,34 @@ def test_the_diff_map_names_what_only_one_network_uses(client: TestClient):
     lost = [f for f in diff["facilities"] if f["change"] == "lost"]
     assert lost and lost[0]["name"] and lost[0]["hub_a_name"]
     assert client.get("/api/scenarios/1/diff-map/999").status_code == 409
+
+
+def test_the_report_opens_on_a_decision_page(client: TestClient):
+    client.post("/api/scenarios/1/run")
+    client.post("/api/scenarios/2/run")
+    page = client.get("/api/scenarios/2/report.html").text
+    assert 'id="decision"' in page and page.index('id="decision"') < page.index('id="figures"')
+    assert '<svg class="map"' in page and "Badili National Medical Store" in page
+    assert "Stores under this plan" in page and "Facilities served" in page
+    assert "people no longer supplied in full" in page or "people newly supplied" in page or "no change" in page
+    assert "Who carries it." in page and "How sure this is." in page
+    assert 'href="#equity"' in page and 'href="#confidence"' in page and 'href="#figures"' in page
+    assert "Assumptions annex" in page and page.index("Assumptions annex") > page.index("What this rests on")
+    # Still one self-contained file.
+    for marker in ("<script", "https://", "http://"):
+        assert marker not in page
+
+
+def test_a_study_report_leads_with_the_question_and_the_backed_option(client: TestClient):
+    study = client.post("/api/countries/1/studies", json={"question": "Can we spend less without abandoning anyone?", "preset": "cost"}, headers=AUTHOR).json()
+    client.post(f"/api/studies/{study['id']}/run")
+    unbacked = client.get(f"/api/studies/{study['id']}/report.html").text
+    assert "Can we spend less without abandoning anyone?" in unbacked
+    assert "The options considered" in unbacked and "No option is backed yet" in unbacked
+    option_id = study["scenarios"][1]["id"]
+    client.patch(f"/api/studies/{study['id']}", json={"recommended_scenario_id": option_id}, headers=AUTHOR)
+    page = client.get(f"/api/studies/{study['id']}/report.html").text
+    assert "<span class=tag>recommended</span>" in page
+    assert "The analyst backs" in page
+    assert "What each option changes" in page and "stores free to open or close" in page
+    assert page.index('id="decision"') < page.index('id="options"') < page.index('id="figures"')

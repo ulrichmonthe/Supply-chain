@@ -374,6 +374,17 @@ function StudyView(props: {
           <button type="button" className="btn small" onClick={props.onAdd} disabled={props.addId === ''}>
             Add
           </button>
+          {withResults.length > 0 && (
+            <a
+              className="btn small"
+              href={api.studyReportUrl(study.id)}
+              target="_blank"
+              rel="noreferrer"
+              title="The question, the backed option's decision page, the options considered, and the evidence"
+            >
+              Study report
+            </a>
+          )}
           <button type="button" className="btn small ghost" onClick={props.onDelete}>
             Delete study
           </button>

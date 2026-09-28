@@ -217,6 +217,7 @@ export const api = {
 
   templateUrl: () => `${BASE}/template.xlsx`,
   reportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/report.html`,
+  studyReportUrl: (studyId: number) => `${BASE}/studies/${studyId}/report.html`,
   networkExportUrl: (countryId: number) => `${BASE}/countries/${countryId}/export/network.xlsx`,
   resultsExportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/export/results.xlsx`,
 }

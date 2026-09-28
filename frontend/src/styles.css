@@ -842,3 +842,33 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .study-levers { margin: 4px 0 4px; padding-left: 18px; color: var(--dim); }
 .study-facilities { margin: 4px 0 0; padding-left: 4px; list-style: none; }
 .study-facilities li { margin-bottom: 2px; }
+
+/* ---------- the decision view ---------- */
+
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.segmented .btn { border: 0; border-radius: 0; }
+.segmented .btn.on { background: var(--panel-3); color: var(--text); font-weight: 600; }
+.decision {
+  width: 520px; flex: 0 0 520px; background: var(--panel); border-left: 1px solid var(--line);
+  overflow-y: auto; display: flex; flex-direction: column; min-height: 0;
+}
+.decision-question { font-size: var(--fs-base); font-weight: 600; }
+.decision-verdict { margin: 10px 0 0; font-size: var(--fs-base); line-height: 1.55; max-width: 66ch; }
+.decision-cards { display: flex; flex-direction: column; gap: 8px; }
+.decision-card {
+  text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; cursor: pointer; color: var(--text); font: inherit; display: flex; flex-direction: column; gap: 6px;
+}
+.decision-card:hover { border-color: var(--accent-dim); }
+.decision-card.on { border-color: var(--accent); background: #10202f; }
+.decision-card.backed { box-shadow: inset 3px 0 0 var(--good); }
+.decision-card-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-base); font-weight: 600; }
+.decision-card-numbers { display: flex; gap: 18px; flex-wrap: wrap; font-size: var(--fs-small); }
+.decision-card-numbers b { font-size: var(--fs-base); font-variant-numeric: tabular-nums; }
+.decision-card .row-note.holds { color: var(--good); }
+.decision-card .row-note.flips { color: var(--warn); }
+.kpi-grid.decision-three { grid-template-columns: repeat(3, 1fr); padding: 0; margin-bottom: 6px; }
+.decision-line { font-size: var(--fs-base); line-height: 1.55; margin: 8px 0 0; max-width: 66ch; }
+.decision-line.good b { color: var(--good); }
+.decision-line.warn b { color: var(--warn); }
+@media (max-width: 1100px) { .decision { width: 420px; flex-basis: 420px; } }

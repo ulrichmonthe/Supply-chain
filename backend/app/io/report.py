@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from ..engine import confidence as confidence_mod
+from . import decision as decision_mod
 
 
 def _e(value) -> str:
@@ -73,8 +74,14 @@ def render_report(
     roadmap: Optional[dict] = None,
     provenance: Optional[dict] = None,
     counts: Optional[dict] = None,
+    nodes: Optional[list] = None,
+    ledger_entries: Optional[list] = None,
+    question: Optional[str] = None,
+    options_html: str = "",
 ) -> str:
     currency = country.currency or "USD"
+    nodes = nodes or []
+    ledger_entries = ledger_entries or []
     kpi = result.kpi_set or {}
     base_kpi = (baseline_result.kpi_set or {}) if baseline_result else {}
     equity = result.equity_detail or {}
@@ -171,7 +178,7 @@ def render_report(
             range_rows += f"<tr><td>{_e(label)}</td>{cells}</tr>"
     if assessment.get("share", 0) <= 0:
         confidence_html = (
-            '<section><h2>How sure this is</h2>'
+            '<section id="confidence"><h2>How sure this is</h2>'
             f'<p class="lede">{_e(assessment.get("sentence"))}</p></section>'
         )
     else:
@@ -186,7 +193,7 @@ def render_report(
             else ""
         )
         confidence_html = (
-            '<section><h2>How sure this is</h2><p class="lede">'
+            '<section id="confidence"><h2>How sure this is</h2><p class="lede">'
             f'{_e(_pct(assessment.get("share"), 0))} of the demand this plan was solved on is an estimate '
             f'from a rule rather than a recorded figure, at '
             f'{_exact(assessment.get("facilities_with_estimated_demand"))} of '
@@ -290,6 +297,18 @@ def render_report(
     )
     caveats_html = "".join(f"<li>{c}</li>" for c in caveats)
 
+    page_one_html = decision_mod.page_one(
+        country=country,
+        scenario=scenario,
+        result=result,
+        baseline_result=baseline_result,
+        nodes=nodes,
+        verdict=verdict,
+        verdict_tone=verdict_tone,
+        question=question,
+    )
+    annex_html = decision_mod.assumptions_annex(ledger_entries)
+
     generated = datetime.now(timezone.utc).strftime("%d %B %Y")
     base_name = getattr(baseline_scenario, "name", None) or "the current network"
 
@@ -374,6 +393,18 @@ def render_report(
   .changes {{ margin: 12px 0 14px; padding-left: 20px; color: var(--muted); }}
   .changes li {{ margin-bottom: 6px; }}
   section .verdict {{ font-size: 16px; margin-top: 6px; }}
+  .page-one {{ margin-top: 24px; }}
+  .page-one .question {{ font-size: 24px; margin: 0 0 8px; letter-spacing: -0.01em; }}
+  .page-one .map {{ display: block; width: 100%; height: auto; margin: 22px 0 6px; border: 1px solid var(--rule); border-radius: 6px; }}
+  .page-one h3 {{ font-size: 15px; margin: 18px 0 8px; }}
+  .figures.three {{ grid-template-columns: repeat(3, 1fr); margin-top: 20px; }}
+  .fig {{ text-decoration: none; color: inherit; }}
+  .fig:hover {{ background: #f6f8f9; }}
+  .line {{ margin: 14px 0 0; font-size: 15px; line-height: 1.55; }}
+  .line a {{ color: var(--accent); text-decoration: none; }}
+  .line.good b {{ color: var(--good); }} .line.warn b {{ color: #b0620f; }}
+  .tag {{ font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-left: 6px; }}
+  .page-break {{ break-before: page; }}
   .caveats {{ background: #fafbfb; border: 1px solid var(--rule); border-radius: 6px; padding: 18px 24px; }}
   .caveats ul {{ margin: 0; padding-left: 18px; }}
   .caveats li {{ margin-bottom: 8px; color: var(--muted); }}
@@ -406,13 +437,19 @@ def render_report(
     </div>
   </header>
 
-  <div class="verdict {verdict_tone}">{verdict}</div>
+  {page_one_html}
 
-  <div class="figures">{headline_html}</div>
+  {options_html}
+
+  <section class="page-break" id="figures">
+    <h2>The figures</h2>
+    <p class="lede">Page one in numbers. Everything below is the evidence for it.</p>
+    <div class="figures">{headline_html}</div>
+  </section>
 
   {confidence_html}
 
-  <section>
+  <section id="equity">
     <h2>Who carries this plan</h2>
     <p class="lede">
       Every facility is ranked by how hard it is to reach, then grouped into five bands of
@@ -431,7 +468,7 @@ def render_report(
     </div>
   </section>
 
-  <section>
+  <section id="facilities">
     <h2>Facilities that would not be fully supplied</h2>
     <p class="lede">
       Named, because a percentage is not a decision. Ordered by how badly they are served,
@@ -459,6 +496,8 @@ def render_report(
     </p>
     <div class="caveats"><ul>{caveats_html}</ul></div>
   </section>
+
+  {annex_html}
 
   <footer class="doc">
     {_e(counts.get("facilities") or "")} facilities ·

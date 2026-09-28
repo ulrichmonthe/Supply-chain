@@ -316,6 +316,30 @@ only the first uses red, only the second green, both grey; facilities that chang
 supplier amber, that gain supply green, that lose it red. No solver work; the answer was
 already there in `per_edge_flow`.
 
+### The decision page
+
+Page one of every report is now the page a minister reads, in this order: the
+recommendation in a sentence; a map with the plan's stores named and every facility
+coloured by how well it is supplied (inline SVG drawn from the result, so the file
+still opens with no internet); a table of the stores with dry and cold capacity, the
+facilities each serves and the volume through it; three numbers against today (annual
+cost, demand met, and the people newly supplied or no longer supplied, counted facility
+by facility); the equity line; and the confidence line. Every number is a link into the
+evidence that follows, which is the report as it was. An **assumptions annex** written
+from the ledger closes it: how each value entered the model, counted, then the recent
+assumptions, corrections and estimates with who made them and why.
+
+A study has its own report: the question on page one over the backed option's decision
+page, then "the options considered" (the verdict, the comparison table with holds or
+depends at ±30%, and what each option changes), then the evidence. Without a
+recommendation it leads with today's network and says no option is backed yet.
+
+In the app, **Decision** beside **Expert** in the top bar hides the levers and the
+tabs: the map stays, the study's options become large cards to click between, and
+beside them the three numbers, the equity line and the confidence line. Same data,
+one-tenth of the surface, and the front door a shared read-only session will open on
+later.
+
 ### Sessions: a save file that cannot lie
 
 A session is the whole working state under a name: every facility, lane, product and

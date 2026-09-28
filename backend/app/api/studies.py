@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import ledger
 from .. import studies as studies_mod
 from ..db import get_session
-from ..models import Country, Scenario, Study
+from ..engine.distance import cascade_summary
+from ..engine.roadmap import build_roadmap
+from ..io import decision as decision_mod
+from ..io import report as report_mod
+from ..models import AuditEntry, Country, Edge, Node, Scenario, Study
 from ..schemas import ResultSummary, StudyIn, StudyPatch, StudyScenarioIn
 from .deps import author_claim, new_batch_id
 
@@ -175,3 +180,64 @@ def diff_map(scenario_a: int, scenario_b: int, session: Session = Depends(get_se
     if not result_a or not result_b:
         raise HTTPException(409, "Both scenarios need a result before their networks can be compared.")
     return studies_mod.diff_map(result_a, result_b)
+
+
+@router.get("/studies/{study_id}/report.html")
+def study_report(study_id: int, session: Session = Depends(get_session)):
+    """The study as a document: the question, the backed option's decision page, the
+    options considered, and the evidence. Without a recommendation it is today's
+    network on page one and the options beside it."""
+    study = _study_or_404(session, study_id)
+    country = _country_or_404(session, study.country_id)
+    compare = studies_mod.compare(session, study)
+    baseline = studies_mod.baseline_for(session, country.id)
+    if baseline is None:
+        raise HTTPException(409, "This country has no baseline scenario.")
+    chosen = session.get(Scenario, study.recommended_scenario_id) if study.recommended_scenario_id else baseline
+    result = studies_mod.latest_ok(session, chosen.id)
+    if result is None:
+        raise HTTPException(409, f"Run “{chosen.name}” before producing the study's report.")
+    baseline_result = studies_mod.latest_ok(session, baseline.id)
+    nodes = list(session.scalars(select(Node).where(Node.country_id == country.id)))
+    edges = list(session.scalars(select(Edge).where(Edge.country_id == country.id)))
+    roadmap = None
+    if baseline_result and chosen.id != baseline.id:
+        roadmap = build_roadmap(
+            baseline_scenario=baseline,
+            baseline_result=baseline_result,
+            scenario=chosen,
+            result=result,
+            nodes_by_code={n.code: n for n in nodes},
+            currency=country.currency,
+        )
+    ledger_entries = list(
+        session.scalars(
+            select(AuditEntry)
+            .where(AuditEntry.country_id == country.id, AuditEntry.status == "applied")
+            .order_by(AuditEntry.id.desc())
+            .limit(2000)
+        )
+    )
+    html_doc = report_mod.render_report(
+        country=country,
+        scenario=chosen,
+        result=result,
+        baseline_scenario=baseline,
+        baseline_result=baseline_result,
+        roadmap=roadmap,
+        provenance=cascade_summary(edges),
+        counts={
+            "facilities": sum(1 for n in nodes if n.level >= 2),
+            "scheduled_services": len({e.service_name for e in edges if e.service_name}),
+        },
+        nodes=nodes,
+        ledger_entries=ledger_entries,
+        question=study.question,
+        options_html=decision_mod.options_section(compare, country.currency or "USD"),
+    )
+    safe_name = "".join(c if c.isalnum() or c in "-_ " else "-" for c in study.question).strip()[:60]
+    return Response(
+        content=html_doc,
+        media_type="text/html; charset=utf-8",
+        headers={"Content-Disposition": f'inline; filename="{country.code} - study - {safe_name}.html"'},
+    )
