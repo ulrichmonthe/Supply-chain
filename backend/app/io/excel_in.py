@@ -76,7 +76,17 @@ def parse_workbook(data: bytes) -> dict:
     demand_raw = _read_sheet(workbook, "Demand")
 
     missing = [name for name in SHEETS if name not in workbook.sheetnames]
+    workbook.close()
+    return assemble(nodes_raw, edges_raw, products_raw, demand_raw, missing)
 
+
+def assemble(nodes_raw: list, edges_raw: list, products_raw: list, demand_raw: list, missing: list) -> dict:
+    """Normalised records from raw rows keyed by our column names.
+
+    Shared by the workbook reader and the CSV column mapper, so a value typed into a
+    mapped CSV is coerced by exactly the code that coerces the same column in the
+    workbook: one definition of what "level" or "hub_capable" means on the way in.
+    """
     nodes = []
     for record in nodes_raw:
         nodes.append(
@@ -188,7 +198,6 @@ def parse_workbook(data: bytes) -> dict:
             }
         )
 
-    workbook.close()
     return {
         "nodes": nodes,
         "edges": edges,

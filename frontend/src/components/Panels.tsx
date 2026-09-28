@@ -17,6 +17,7 @@ import type {
 } from '../types'
 import { api } from '../api'
 import { MarkerPicker } from './FacilityEditor'
+import { CsvImport } from './CsvImport'
 import { exact, fillColour, frequencyLabel, money, pct, riskColour } from '../format'
 
 /* ------------------------------------------------------------------ facilities */
@@ -37,16 +38,17 @@ export function FacilityTable({
   const rows = useMemo(() => {
     const detail = [...(result?.per_node_detail ?? [])]
     const comparators = {
-      risk: (a: typeof detail[0], b: typeof detail[0]) => b.stockout_risk - a.stockout_risk,
-      cost: (a: typeof detail[0], b: typeof detail[0]) => b.cost - a.cost,
-      fill: (a: typeof detail[0], b: typeof detail[0]) => a.fill_rate - b.fill_rate,
-      vulnerability: (a: typeof detail[0], b: typeof detail[0]) => b.vulnerability - a.vulnerability,
-      name: (a: typeof detail[0], b: typeof detail[0]) => a.name.localeCompare(b.name),
+      risk: (a: (typeof detail)[0], b: (typeof detail)[0]) => b.stockout_risk - a.stockout_risk,
+      cost: (a: (typeof detail)[0], b: (typeof detail)[0]) => b.cost - a.cost,
+      fill: (a: (typeof detail)[0], b: (typeof detail)[0]) => a.fill_rate - b.fill_rate,
+      vulnerability: (a: (typeof detail)[0], b: (typeof detail)[0]) => b.vulnerability - a.vulnerability,
+      name: (a: (typeof detail)[0], b: (typeof detail)[0]) => a.name.localeCompare(b.name),
     }
     return detail.sort(comparators[sort])
   }, [result, sort])
 
-  if (!result || result.status !== 'ok') return <div className="empty">Run this scenario to see facility detail.</div>
+  if (!result || result.status !== 'ok')
+    return <div className="empty">Run this scenario to see facility detail.</div>
 
   return (
     <div>
@@ -104,13 +106,14 @@ export function FacilityTable({
                   {node.name}
                 </button>
                 <div className="row-note">
-                  {node.admin1} · {exact(node.population)} people ·{' '}
-                  {node.storage_days.toFixed(0)}d storage
+                  {node.admin1} · {exact(node.population)} people · {node.storage_days.toFixed(0)}d storage
                   {node.storage_binding && <span style={{ color: 'var(--warn)' }}> (binding)</span>}
                 </div>
               </td>
               <td>
-                <div>{node.served_by[0]?.hub_name ?? <span style={{ color: 'var(--bad)' }}>nothing</span>}</div>
+                <div>
+                  {node.served_by[0]?.hub_name ?? <span style={{ color: 'var(--bad)' }}>nothing</span>}
+                </div>
                 <div className="row-note">
                   {node.service_name ?? node.primary_mode ?? '—'} · {frequencyLabel(node.service_frequency)}
                 </div>
@@ -158,11 +161,10 @@ export function ServicesPanel({
   return (
     <div>
       <div className="callout">
-        <h4>Timetabled services</h4>
-        A road lane is on demand: if a truck is full you send another. A vessel or an aircraft leaves on
-        a day, carries a hold, and if you miss it the next one is a fortnight away. Modelling that as a
-        frequency rather than a capacity is what lets you change one number here and watch stockout risk
-        move at the facilities on that run, with nothing else in the network touched.
+        <h4>Timetabled services</h4>A road lane is on demand: if a truck is full you send another. A vessel or
+        an aircraft leaves on a day, carries a hold, and if you miss it the next one is a fortnight away.
+        Modelling that as a frequency rather than a capacity is what lets you change one number here and watch
+        stockout risk move at the facilities on that run, with nothing else in the network touched.
       </div>
       <table>
         <thead>
@@ -190,7 +192,9 @@ export function ServicesPanel({
                 </td>
                 <td className="n">{service.interval_days.toFixed(0)}d</td>
                 <td className="n">
-                  {service.capacity_per_trip_m3 > 0 ? `${service.capacity_per_trip_m3.toFixed(1)} m³` : 'charter'}
+                  {service.capacity_per_trip_m3 > 0
+                    ? `${service.capacity_per_trip_m3.toFixed(1)} m³`
+                    : 'charter'}
                 </td>
                 <td className="n">{service.facilities}</td>
                 <td className="n" style={{ color: meanRisk !== null ? riskColour(meanRisk) : undefined }}>
@@ -204,10 +208,10 @@ export function ServicesPanel({
       <div className="callout">
         <h4>Where these come from</h4>
         Every frequency, hold and reliability figure in this table is an assumption, not a timetable.
-        Confirming whether digitised maritime and air schedules exist for medical distribution is the
-        single most important open question about this dataset: it decides whether this capability has
-        real data behind it. Until then, treat the shape of the answers as informative and the levels as
-        placeholders. {edges.length} lanes loaded.
+        Confirming whether digitised maritime and air schedules exist for medical distribution is the single
+        most important open question about this dataset: it decides whether this capability has real data
+        behind it. Until then, treat the shape of the answers as informative and the levels as placeholders.{' '}
+        {edges.length} lanes loaded.
       </div>
     </div>
   )
@@ -232,10 +236,9 @@ export function SeasonPanel({
     return (
       <div className="callout">
         <h4>Annualised view</h4>
-        Lanes are using their mean access across the year. Pick a month on the slider below the map to
-        see the network under that month's conditions — the answer is what a year would cost and reach
-        if those conditions held all year, which is the question a provincial health adviser is actually
-        asking.
+        Lanes are using their mean access across the year. Pick a month on the slider below the map to see the
+        network under that month's conditions — the answer is what a year would cost and reach if those
+        conditions held all year, which is the question a provincial health adviser is actually asking.
       </div>
     )
   }
@@ -257,8 +260,8 @@ export function SeasonPanel({
         )}
         {season.summary.facilities_losing_surface_access > 0 && (
           <>
-            A further <b>{season.summary.facilities_losing_surface_access}</b> lose their road or river
-            and fall back onto air freight, covering{' '}
+            A further <b>{season.summary.facilities_losing_surface_access}</b> lose their road or river and
+            fall back onto air freight, covering{' '}
             <b>{exact(season.summary.population_losing_surface_access)}</b> people.
           </>
         )}
@@ -266,8 +269,7 @@ export function SeasonPanel({
           <>
             {' '}
             Holding the same level of supply through this month costs{' '}
-            <b>{money(Math.abs(extra), currency)}</b> {extra > 0 ? 'more' : 'less'} a year than the
-            baseline.
+            <b>{money(Math.abs(extra), currency)}</b> {extra > 0 ? 'more' : 'less'} a year than the baseline.
           </>
         )}
       </div>
@@ -352,7 +354,8 @@ export function RoadmapPanel({
   error: string | null
 }) {
   if (error) return <div className="empty">{error}</div>
-  if (!roadmap) return <div className="empty">Select a non-baseline scenario and run it to build a roadmap.</div>
+  if (!roadmap)
+    return <div className="empty">Select a non-baseline scenario and run it to build a roadmap.</div>
 
   const summary = roadmap.summary
   return (
@@ -387,7 +390,9 @@ export function RoadmapPanel({
             <div className="phase-head">
               <b>{phase.label}</b>
               <span className="pill">{phase.window}</span>
-              {phase.one_off_cost > 0 && <span className="pill warn">{money(phase.one_off_cost, currency)}</span>}
+              {phase.one_off_cost > 0 && (
+                <span className="pill warn">{money(phase.one_off_cost, currency)}</span>
+              )}
             </div>
             {roadmap.steps
               .filter((step) => step.phase === phase.phase)
@@ -430,42 +435,88 @@ export function RoadmapPanel({
  * fields that would answer it.
  */
 const FIXABLE: Record<string, { fields: { name: string; label: string; hint?: string }[] }> = {
-  'node.offshore': { fields: [
-    { name: 'lat', label: 'Latitude', hint: 'Southern hemisphere is negative.' },
-    { name: 'lon', label: 'Longitude' },
-  ] },
-  'node.near_offshore': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
-  'node.null_island': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
-  'node.swapped_coordinates': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
-  'node.outside_country': { fields: [{ name: 'lat', label: 'Latitude' }, { name: 'lon', label: 'Longitude' }] },
-  'node.province_outlier': { fields: [
-    { name: 'lat', label: 'Latitude' },
-    { name: 'lon', label: 'Longitude' },
-    { name: 'admin1', label: 'Province', hint: 'Or correct the province if the coordinate is right.' },
-  ] },
-  'node.low_precision': { fields: [
-    { name: 'lat', label: 'Latitude' },
-    { name: 'lon', label: 'Longitude' },
-    { name: 'geocode_source', label: 'Where it came from', hint: 'mfl · gps · town_centroid · estimated' },
-    { name: 'geocode_confidence', label: 'Confidence 0-1' },
-  ] },
+  'node.offshore': {
+    fields: [
+      { name: 'lat', label: 'Latitude', hint: 'Southern hemisphere is negative.' },
+      { name: 'lon', label: 'Longitude' },
+    ],
+  },
+  'node.near_offshore': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+    ],
+  },
+  'node.null_island': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+    ],
+  },
+  'node.swapped_coordinates': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+    ],
+  },
+  'node.outside_country': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+    ],
+  },
+  'node.province_outlier': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+      { name: 'admin1', label: 'Province', hint: 'Or correct the province if the coordinate is right.' },
+    ],
+  },
+  'node.low_precision': {
+    fields: [
+      { name: 'lat', label: 'Latitude' },
+      { name: 'lon', label: 'Longitude' },
+      { name: 'geocode_source', label: 'Where it came from', hint: 'mfl · gps · town_centroid · estimated' },
+      { name: 'geocode_confidence', label: 'Confidence 0-1' },
+    ],
+  },
   'node.no_population': { fields: [{ name: 'catchment_population', label: 'People served' }] },
-  'node.unknown_terrain': { fields: [
-    { name: 'terrain_class', label: 'Terrain', hint: 'mainland_road · coastal_road · highlands_road · island · riverine · remote_air_only' },
-  ] },
+  'node.unknown_terrain': {
+    fields: [
+      {
+        name: 'terrain_class',
+        label: 'Terrain',
+        hint: 'mainland_road · coastal_road · highlands_road · island · riverine · remote_air_only',
+      },
+    ],
+  },
   'node.hub_without_capacity': { fields: [{ name: 'hub_throughput_m3', label: 'Annual throughput m³' }] },
   'product.no_volume': { fields: [{ name: 'volume_per_unit_cm3', label: 'Packed volume per unit, cm³' }] },
-  'product.bad_temperature_band': { fields: [
-    { name: 'temperature_band', label: 'Temperature band', hint: 'ambient · +2-8 · -20 · -70' },
-  ] },
-  'edge.unknown_mode': { fields: [{ name: 'mode', label: 'Mode', hint: 'road · sea · air · river · foot · drone' }] },
-  'edge.unknown_frequency': { fields: [
-    { name: 'service_frequency', label: 'How often it runs', hint: 'WEEKLY · FORTNIGHTLY · MONTHLY · QUARTERLY' },
-  ] },
-  'edge.scheduled_without_capacity': { fields: [
-    { name: 'capacity_per_trip_m3', label: 'Hold per trip, m³' },
-    { name: 'cost_per_m3', label: 'Or a quoted rate per m³', hint: 'A charter needs a rate rather than a hold.' },
-  ] },
+  'product.bad_temperature_band': {
+    fields: [{ name: 'temperature_band', label: 'Temperature band', hint: 'ambient · +2-8 · -20 · -70' }],
+  },
+  'edge.unknown_mode': {
+    fields: [{ name: 'mode', label: 'Mode', hint: 'road · sea · air · river · foot · drone' }],
+  },
+  'edge.unknown_frequency': {
+    fields: [
+      {
+        name: 'service_frequency',
+        label: 'How often it runs',
+        hint: 'WEEKLY · FORTNIGHTLY · MONTHLY · QUARTERLY',
+      },
+    ],
+  },
+  'edge.scheduled_without_capacity': {
+    fields: [
+      { name: 'capacity_per_trip_m3', label: 'Hold per trip, m³' },
+      {
+        name: 'cost_per_m3',
+        label: 'Or a quoted rate per m³',
+        hint: 'A charter needs a rate rather than a hold.',
+      },
+    ],
+  },
 }
 
 //: Which sheets can be addressed by a single business key. Demand rows are keyed by a
@@ -534,8 +585,8 @@ function IssueFix({
   return (
     <div className="fix-form">
       <p className="tiny dim" style={{ margin: '0 0 8px' }}>
-        Correcting <b>{issue.entity}</b> in this upload. Nothing is written to the model until you
-        apply the import.
+        Correcting <b>{issue.entity}</b> in this upload. Nothing is written to the model until you apply the
+        import.
       </p>
       {spec.fields.map((field) => (
         <div className="lever" key={field.name}>
@@ -561,7 +612,11 @@ function IssueFix({
           onChange={(event) => setReason(event.target.value)}
         />
       </div>
-      {error && <div className="lever-note" style={{ color: 'var(--bad)' }}>{error}</div>}
+      {error && (
+        <div className="lever-note" style={{ color: 'var(--bad)' }}>
+          {error}
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         <button className="btn small primary" disabled={busy} aria-busy={busy} onClick={() => void save()}>
           {busy ? <span className="spinner" aria-hidden="true" /> : 'Save and re-check'}
@@ -608,7 +663,10 @@ export function DataPanel({
   const [retired, setRetired] = useState<NodeRow[]>([])
 
   const loadRetired = useCallback(() => {
-    api.retiredNodes(countryId).then(setRetired).catch(() => setRetired([]))
+    api
+      .retiredNodes(countryId)
+      .then(setRetired)
+      .catch(() => setRetired([]))
   }, [countryId])
   useEffect(() => {
     loadRetired()
@@ -622,7 +680,7 @@ export function DataPanel({
     }
     let cancelled = false
     api
-      .importChanges(report.batch_id, fullRefresh)
+      .importChanges(report.batch_id, report.source === 'csv' ? false : fullRefresh)
       .then((next) => {
         if (!cancelled) setChanges(next)
       })
@@ -649,7 +707,12 @@ export function DataPanel({
     if (!report) return
     setBusy(true)
     try {
-      const outcome = await api.commitImport(report.batch_id, fullRefresh, policy, takeFile)
+      const outcome = await api.commitImport(
+        report.batch_id,
+        report.source === 'csv' ? false : fullRefresh,
+        policy,
+        takeFile,
+      )
       const c = outcome.counts as Record<string, number>
       const conflicts = outcome.counts.conflicts as Record<string, number> | undefined
       setMessage(
@@ -700,8 +763,8 @@ export function DataPanel({
           </a>
         </div>
         <div className="lever-note" style={{ marginTop: 7 }}>
-          The export and the template have identical columns, so whatever comes out can go back in. That
-          round trip is the durability claim: the model does not need this application to survive.
+          The export and the template have identical columns, so whatever comes out can go back in. That round
+          trip is the durability claim: the model does not need this application to survive.
         </div>
       </div>
 
@@ -757,6 +820,23 @@ export function DataPanel({
         />
       </div>
 
+      <CsvImport
+        countryId={countryId}
+        busy={busy}
+        onBusy={setBusy}
+        onValidated={(next) => {
+          setTakeFile([])
+          setReport(next)
+          setMessage(
+            `${next.rows ?? 0} rows read as ${next.sheet}. ` +
+              (next.blocking
+                ? 'Fix the errors below, then validate again.'
+                : 'Review the changes below, then apply.'),
+          )
+        }}
+        onMessage={setMessage}
+      />
+
       <div aria-live="polite">{message && <div className="callout">{message}</div>}</div>
 
       {report && (
@@ -776,8 +856,9 @@ export function DataPanel({
           {!report.blocking && (
             <ChangesReview
               changes={changes}
-              fullRefresh={fullRefresh}
+              fullRefresh={report.source === 'csv' ? false : fullRefresh}
               onFullRefresh={setFullRefresh}
+              locked={report.source === 'csv'}
               policy={policy}
               onPolicy={setPolicy}
               takeFile={takeFile}
@@ -804,7 +885,9 @@ export function DataPanel({
           {issues.map((issue, index) => (
             <div className={`issue ${issue.severity}`} key={`${issue.code}-${index}`}>
               <div className="issue-head">
-                <span className={`pill ${issue.severity === 'error' ? 'bad' : issue.severity === 'warning' ? 'warn' : 'info'}`}>
+                <span
+                  className={`pill ${issue.severity === 'error' ? 'bad' : issue.severity === 'warning' ? 'warn' : 'info'}`}
+                >
                   {issue.sheet || 'data'}
                   {issue.row ? ` row ${issue.row}` : ''}
                 </span>
@@ -868,10 +951,13 @@ export function DataPanel({
           {overview.estimated && overview.estimated.demand_rows > 0 && (
             <>
               {' '}
-              <b>{Math.round(overview.estimated.demand_share * 100)}%</b> of the demand rows are estimates from a rule
-              rather than records
+              <b>{Math.round(overview.estimated.demand_share * 100)}%</b> of the demand rows are estimates
+              from a rule rather than records
               {overview.estimated.facilities_with_estimated_storage > 0 && (
-                <>, and {overview.estimated.facilities_with_estimated_storage} facilities have storage sized by a rule</>
+                <>
+                  , and {overview.estimated.facilities_with_estimated_storage} facilities have storage sized
+                  by a rule
+                </>
               )}
               .
             </>
@@ -891,10 +977,15 @@ export function DataPanel({
 
 /* --------------------------------------------------------------- import review */
 
-const SHEET_LABELS: Record<string, string> = { nodes: 'Facilities', edges: 'Lanes', products: 'Products', demand: 'Demand' }
+const SHEET_LABELS: Record<string, string> = {
+  nodes: 'Facilities',
+  edges: 'Lanes',
+  products: 'Products',
+  demand: 'Demand',
+}
 
 function Count({ value, kind }: { value: number; kind?: string }) {
-  return <b className={value === 0 ? 'zero' : kind ?? ''}>{value}</b>
+  return <b className={value === 0 ? 'zero' : (kind ?? '')}>{value}</b>
 }
 
 function ConflictRow({
@@ -945,6 +1036,7 @@ function ChangesReview({
   changes,
   fullRefresh,
   onFullRefresh,
+  locked,
   policy,
   onPolicy,
   takeFile,
@@ -955,6 +1047,8 @@ function ChangesReview({
   changes: ImportChanges | null
   fullRefresh: boolean
   onFullRefresh: (on: boolean) => void
+  /** A CSV is one sheet: it merges, and the full-refresh choice is not offered. */
+  locked?: boolean
   policy: 'keep' | 'take_file'
   onPolicy: (policy: 'keep' | 'take_file') => void
   takeFile: string[]
@@ -966,16 +1060,26 @@ function ChangesReview({
   const taken = (key: string) => takeFile.includes(key)
   const toggle = (key: string, on: boolean) =>
     onTakeFile(on ? [...takeFile, key] : takeFile.filter((k) => k !== key))
-  const conflictRows = changes ? sheets.flatMap((sheet) => changes[sheet].conflicts.map((row) => ({ sheet, row }))) : []
-  const retireRows = changes ? sheets.flatMap((sheet) => changes[sheet].retires.map((row) => ({ sheet, row }))) : []
+  const conflictRows = changes
+    ? sheets.flatMap((sheet) => changes[sheet].conflicts.map((row) => ({ sheet, row })))
+    : []
+  const retireRows = changes
+    ? sheets.flatMap((sheet) => changes[sheet].retires.map((row) => ({ sheet, row })))
+    : []
 
   return (
     <div className="section changes">
       <h3>What would change</h3>
-      <label className="checkbox" style={{ marginBottom: 8 }}>
-        <input type="checkbox" checked={fullRefresh} onChange={(e) => onFullRefresh(e.target.checked)} />
-        Full refresh: retire anything this file no longer lists (nothing is deleted)
-      </label>
+      {locked ? (
+        <div className="lever-note" style={{ marginBottom: 8 }}>
+          A CSV is one sheet, so it is merged: rows it does not mention are left alone, never retired.
+        </div>
+      ) : (
+        <label className="checkbox" style={{ marginBottom: 8 }}>
+          <input type="checkbox" checked={fullRefresh} onChange={(e) => onFullRefresh(e.target.checked)} />
+          Full refresh: retire anything this file no longer lists (nothing is deleted)
+        </label>
+      )}
 
       {!changes ? (
         <div className="lever-note">
@@ -983,7 +1087,9 @@ function ChangesReview({
         </div>
       ) : (
         <>
-          <div className="lever-note" style={{ marginBottom: 8 }}>{changes.headline}</div>
+          <div className="lever-note" style={{ marginBottom: 8 }}>
+            {changes.headline}
+          </div>
           <div className="changes-grid" role="table" aria-label="Changes by sheet">
             <span className="h"></span>
             <span className="h">new</span>
@@ -1022,18 +1128,28 @@ function ChangesReview({
           {conflictRows.length > 0 && (
             <>
               <div className="lever-note" style={{ marginTop: 10 }}>
-                <b>{conflictRows.length} conflicts.</b> The file changed these values, and so did somebody here
-                since the last import. Each is a decision; the ledger records it either way.
+                <b>{conflictRows.length} conflicts.</b> The file changed these values, and so did somebody
+                here since the last import. Each is a decision; the ledger records it either way.
               </div>
               <div className="policy" role="radiogroup" aria-label="How to settle conflicts">
                 <label>
-                  <input type="radio" name="policy" checked={policy === 'keep'} onChange={() => onPolicy('keep')} />
+                  <input
+                    type="radio"
+                    name="policy"
+                    checked={policy === 'keep'}
+                    onChange={() => onPolicy('keep')}
+                  />
                   <span>
                     <b>Keep the corrections made here</b> — the file's value is noted but not applied
                   </span>
                 </label>
                 <label>
-                  <input type="radio" name="policy" checked={policy === 'take_file'} onChange={() => onPolicy('take_file')} />
+                  <input
+                    type="radio"
+                    name="policy"
+                    checked={policy === 'take_file'}
+                    onChange={() => onPolicy('take_file')}
+                  />
                   <span>
                     <b>Take the file's values</b> — the corrections are overwritten and recorded as such
                   </span>
@@ -1041,7 +1157,13 @@ function ChangesReview({
               </div>
               {policy === 'keep' &&
                 conflictRows.map(({ sheet, row }) => (
-                  <ConflictRow key={`${sheet}-${row.key}`} sheet={sheet} row={row} taken={taken} onToggle={toggle} />
+                  <ConflictRow
+                    key={`${sheet}-${row.key}`}
+                    sheet={sheet}
+                    row={row}
+                    taken={taken}
+                    onToggle={toggle}
+                  />
                 ))}
             </>
           )}
@@ -1192,15 +1314,26 @@ function AddFacility({
               onChange={(e) => setReason(e.target.value)}
               aria-label="Reason"
             />
-            <button type="button" className="btn small primary" disabled={!ready || busy} onClick={() => void create()}>
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={!ready || busy}
+              onClick={() => void create()}
+            >
               Add facility
             </button>
           </div>
-          {error && <div className="callout bad" style={{ margin: '8px 0 0' }}>{error}</div>}
+          {error && (
+            <div className="callout bad" style={{ margin: '8px 0 0' }}>
+              {error}
+            </div>
+          )}
           {issues.map((issue) => (
             <div className={`issue ${issue.severity}`} key={issue.code}>
               <div className="issue-head">
-                <span className={`pill ${issue.severity === 'error' ? 'bad' : 'warn'}`}>{issue.severity}</span>
+                <span className={`pill ${issue.severity === 'error' ? 'bad' : 'warn'}`}>
+                  {issue.severity}
+                </span>
                 <code>{issue.code}</code>
               </div>
               <p>{issue.message}</p>
@@ -1221,14 +1354,31 @@ function AddFacility({
  * would use and where that rate came from. Preview says what would be written; Apply
  * writes it, each value a ledger row with its arithmetic, live until typed over.
  */
-function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: NodeRow[]; onChanged: () => void }) {
+function Estimates({
+  countryId,
+  nodes,
+  onChanged,
+}: {
+  countryId: number
+  nodes: NodeRow[]
+  onChanged: () => void
+}) {
   const [info, setInfo] = useState<EstimatorInfo | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [preview, setPreview] = useState<{ sku?: string; rule: EstimateRule; count: number; sample: string; skipped: number } | null>(null)
+  const [preview, setPreview] = useState<{
+    sku?: string
+    rule: EstimateRule
+    count: number
+    sample: string
+    skipped: number
+  } | null>(null)
 
   const load = useCallback(() => {
-    api.estimators(countryId).then(setInfo).catch(() => setInfo(null))
+    api
+      .estimators(countryId)
+      .then(setInfo)
+      .catch(() => setInfo(null))
   }, [countryId])
   useEffect(() => {
     load()
@@ -1239,7 +1389,13 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
     setMessage(null)
     try {
       const out = await api.previewEstimate(countryId, { rule, sku })
-      setPreview({ sku, rule, count: out.count, sample: out.proposals[0]?.formula ?? '', skipped: out.skipped_count })
+      setPreview({
+        sku,
+        rule,
+        count: out.count,
+        sample: out.proposals[0]?.formula ?? '',
+        skipped: out.skipped_count,
+      })
     } catch (error) {
       setMessage(String(error))
     } finally {
@@ -1251,7 +1407,11 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
     if (!preview) return
     setBusy(true)
     try {
-      const out = await api.applyEstimate(countryId, { rule: preview.rule, sku: preview.sku, reason: 'Filled from the Data tab.' })
+      const out = await api.applyEstimate(countryId, {
+        rule: preview.rule,
+        sku: preview.sku,
+        reason: 'Filled from the Data tab.',
+      })
       setMessage(
         `Estimated ${out.applied} value${out.applied === 1 ? '' : 's'}` +
           (out.recomputed ? ` and re-sized ${out.recomputed} that depend on them` : '') +
@@ -1271,7 +1431,11 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
     setBusy(true)
     try {
       const out = await api.recomputeEstimates(countryId)
-      setMessage(out.recomputed ? `Recomputed ${out.recomputed} estimates against current inputs.` : 'Every estimate was already current.')
+      setMessage(
+        out.recomputed
+          ? `Recomputed ${out.recomputed} estimates against current inputs.`
+          : 'Every estimate was already current.',
+      )
       load()
       onChanged()
     } catch (error) {
@@ -1288,12 +1452,15 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
     <div className="section">
       <h3>Estimates</h3>
       <div className="estimate-summary">
-        <b>{Math.round(info.demand.share * 100)}%</b> of demand rows ({info.demand.estimated} of {info.demand.rows}) are estimates
-        from a rule. They follow their inputs — a population, a cover — until somebody types over them.
+        <b>{Math.round(info.demand.share * 100)}%</b> of demand rows ({info.demand.estimated} of{' '}
+        {info.demand.rows}) are estimates from a rule. They follow their inputs — a population, a cover —
+        until somebody types over them.
       </div>
 
       {blankProducts.length === 0 && info.capacity.blank === 0 ? (
-        <div className="lever-note">No blank demand or storage right now. Add a facility, and its rows appear here.</div>
+        <div className="lever-note">
+          No blank demand or storage right now. Add a facility, and its rows appear here.
+        </div>
       ) : (
         <>
           {blankProducts.map((product) => (
@@ -1308,10 +1475,20 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
                 </div>
               </div>
               <span className="estimate-menu">
-                <button type="button" className="btn small" disabled={busy || !product.population_rate.available} onClick={() => void look('population_rate', product.sku)}>
+                <button
+                  type="button"
+                  className="btn small"
+                  disabled={busy || !product.population_rate.available}
+                  onClick={() => void look('population_rate', product.sku)}
+                >
                   From population
                 </button>
-                <button type="button" className="btn small ghost" disabled={busy} onClick={() => void look('peer_median', product.sku)}>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  disabled={busy}
+                  onClick={() => void look('peer_median', product.sku)}
+                >
                   Like peers
                 </button>
               </span>
@@ -1322,10 +1499,16 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
               <div>
                 Storage
                 <div className="row-note">
-                  {info.capacity.blank} {info.capacity.blank === 1 ? 'facility' : 'facilities'} without capacity · {info.capacity.cover_days} cover days
+                  {info.capacity.blank} {info.capacity.blank === 1 ? 'facility' : 'facilities'} without
+                  capacity · {info.capacity.cover_days} cover days
                 </div>
               </div>
-              <button type="button" className="btn small" disabled={busy} onClick={() => void look('capacity_cover')}>
+              <button
+                type="button"
+                className="btn small"
+                disabled={busy}
+                onClick={() => void look('capacity_cover')}
+              >
                 Size from demand
               </button>
             </div>
@@ -1339,9 +1522,18 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
             Would fill {preview.count} {preview.count === 1 ? 'value' : 'values'}
             {preview.skipped ? ` (${preview.skipped} skipped: nothing to work from)` : ''}
           </h4>
-          {preview.sample && <div className="tiny" style={{ marginBottom: 6 }}>e.g. {preview.sample}</div>}
+          {preview.sample && (
+            <div className="tiny" style={{ marginBottom: 6 }}>
+              e.g. {preview.sample}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 6 }}>
-            <button type="button" className="btn small primary" disabled={busy || preview.count === 0} onClick={() => void fill()}>
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={busy || preview.count === 0}
+              onClick={() => void fill()}
+            >
               Apply
             </button>
             <button type="button" className="btn small ghost" onClick={() => setPreview(null)}>
@@ -1352,11 +1544,21 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
       )}
 
       <div style={{ marginTop: 8 }}>
-        <button type="button" className="btn small ghost" disabled={busy} onClick={() => void recompute()} title="Edits and imports do this on their own; this is the honest answer to 'are these numbers current?'">
+        <button
+          type="button"
+          className="btn small ghost"
+          disabled={busy}
+          onClick={() => void recompute()}
+          title="Edits and imports do this on their own; this is the honest answer to 'are these numbers current?'"
+        >
           Recompute estimates
         </button>
       </div>
-      {message && <div className="lever-note" role="status" style={{ marginTop: 6 }}>{message}</div>}
+      {message && (
+        <div className="lever-note" role="status" style={{ marginTop: 6 }}>
+          {message}
+        </div>
+      )}
     </div>
   )
 }
@@ -1367,7 +1569,12 @@ function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: 
 function when(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 /** Which ledger rows can be put back by a click: hand-made value changes still standing. */
@@ -1411,8 +1618,8 @@ export function ProvenancePanel({
     <div>
       <div className={`callout ${cascade.osrm_configured ? 'good' : ''}`}>
         <h4>Where the distances came from</h4>
-        Every distance in the model carries the method that produced it, so any number can be defended
-        or overwritten in a workshop.{' '}
+        Every distance in the model carries the method that produced it, so any number can be defended or
+        overwritten in a workshop.{' '}
         {cascade.osrm_configured
           ? 'A self-hosted OSRM instance is configured and used for road lanes.'
           : 'No OSRM instance is configured here, so road distances are estimates from a great-circle distance and a terrain-specific detour factor. Standing one up on a regional extract is the single largest available improvement in accuracy.'}
@@ -1473,8 +1680,8 @@ export function ProvenancePanel({
       <div className="section">
         <h3>Assumption log</h3>
         <div className="lever-note">
-          Every assumption that entered the model, and who put it there. When a reviewer asks where a
-          number came from, the answer is a row here rather than a memory.
+          Every assumption that entered the model, and who put it there. When a reviewer asks where a number
+          came from, the answer is a row here rather than a memory.
         </div>
       </div>
       {audit.map((entry) => (
@@ -1483,7 +1690,9 @@ export function ProvenancePanel({
             <span className="pill">{entry.provenance.replace(/_/g, ' ')}</span>
             {entry.status === 'reverted' && <span className="pill">reverted</span>}
             {entry.reverts_id && <span className="pill">undoes #{entry.reverts_id}</span>}
-            <span className={`pill ${entry.confidence_marker === 'S' ? 'good' : entry.confidence_marker === 'U' ? 'bad' : 'warn'}`}>
+            <span
+              className={`pill ${entry.confidence_marker === 'S' ? 'good' : entry.confidence_marker === 'U' ? 'bad' : 'warn'}`}
+            >
               {entry.confidence_marker}
             </span>
             <code>
@@ -1508,7 +1717,9 @@ export function ProvenancePanel({
               <span className="dim">seed dataset</span>
             ) : (
               <>
-                <span className={entry.author_claim === 'anonymous' ? 'unsigned' : ''}>{entry.author_claim}</span>
+                <span className={entry.author_claim === 'anonymous' ? 'unsigned' : ''}>
+                  {entry.author_claim}
+                </span>
                 <span className="dim"> · {entry.actor}</span>
               </>
             )}

@@ -7,7 +7,10 @@ tell afterwards which half of the data is real.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+import json
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,7 +19,7 @@ from ..config import settings
 from ..db import get_session
 from .deps import author_claim, new_batch_id
 from ..engine import seasonality
-from ..io import excel_in, excel_out
+from ..io import excel_in, excel_out, mapper
 from ..io.apply import CONFLICT_POLICIES, apply_payload
 from ..io.diff import compute_changes
 from ..io.validation import validate_dataset
@@ -349,3 +352,150 @@ def seasonality_profiles():
         "access": seasonality.PROFILES,
         "cost": seasonality.COST_PROFILES,
     }
+
+
+# --- the column mapper -------------------------------------------------------------------
+
+
+def _csv_bytes(data: bytes, filename: str) -> None:
+    if len(data) > settings.max_upload_mb * 1024 * 1024:
+        raise HTTPException(413, f"File is larger than {settings.max_upload_mb} MB.")
+    if filename.lower().endswith((".xlsx", ".xls")):
+        raise HTTPException(400, "That is a workbook. Drop it on the workbook target above; this door is for CSV files.")
+
+
+@router.post("/countries/{country_id}/imports/csv/inspect")
+async def inspect_csv(country_id: int, file: UploadFile = File(...), session: Session = Depends(get_session)):
+    """What is in the file, which of our sheets it resembles, and a first guess at the
+    mapping -- plus any mapping saved for this country whose columns are all present."""
+    country = _country_or_404(session, country_id)
+    data = await file.read()
+    _csv_bytes(data, file.filename or "")
+    try:
+        columns, rows, delimiter = mapper.read_csv(data)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+    sheet = mapper.guess_sheet(columns)
+    saved = mapper.matching_saved(country, columns)
+    guesses = {name: mapper.guess_mapping(columns, name) for name in mapper.COLUMNS}
+    if saved:
+        sheet = saved["sheet"]
+        guesses[sheet] = {**guesses[sheet], **saved["mapping"]}
+    return {
+        "filename": file.filename,
+        "columns": columns,
+        "row_count": len(rows),
+        "sample": [{k: v for k, v in row.items() if k != "_row"} for row in rows[:5]],
+        "delimiter": delimiter,
+        "sheet": sheet,
+        "guesses": guesses,
+        "fields": {name: mapper.our_fields(name) for name in mapper.COLUMNS},
+        "matched_saved": saved["name"] if saved else None,
+        "saved": mapper.saved_mappings(country),
+    }
+
+
+@router.post("/countries/{country_id}/imports/csv")
+async def import_csv(
+    country_id: int,
+    file: UploadFile = File(...),
+    sheet: str = Form(...),
+    mapping: str = Form(..., description="JSON: our field -> the file's column."),
+    save_as: str = Form("", description="Keep this mapping under a name for next time."),
+    session: Session = Depends(get_session),
+):
+    """Map the file's columns to ours and validate it as a partial import.
+
+    Partial, because a CSV is one sheet: a facility list carries no lanes by design and
+    must not be rejected for it. The batch it produces goes through the same preview
+    and commit as a workbook, in merge mode -- rows the file does not mention are left
+    alone, never retired."""
+    country = _country_or_404(session, country_id)
+    if sheet not in mapper.COLUMNS:
+        raise HTTPException(400, f"sheet must be one of {', '.join(mapper.COLUMNS)}.")
+    try:
+        chosen = json.loads(mapping or "{}")
+        if not isinstance(chosen, dict):
+            raise ValueError
+    except ValueError:
+        raise HTTPException(400, "mapping must be a JSON object of our field -> the file's column.")
+    data = await file.read()
+    _csv_bytes(data, file.filename or "")
+    try:
+        columns, rows, _ = mapper.read_csv(data)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+    unknown = [column for column in chosen.values() if column and column not in columns]
+    if unknown:
+        raise HTTPException(400, f"The file has no column called {', '.join(repr(c) for c in unknown)}.")
+    missing = mapper.missing_required(sheet, chosen)
+    if missing:
+        raise HTTPException(400, f"A {sheet} file needs a column for {', '.join(missing)}. Map them and try again.")
+
+    raw = mapper.apply_mapping(rows, chosen)
+    parsed = excel_in.assemble(
+        raw if sheet == "Nodes" else [],
+        raw if sheet == "Edges" else [],
+        raw if sheet == "Products" else [],
+        raw if sheet == "Demand" else [],
+        [name for name in mapper.COLUMNS if name != sheet],
+    )
+    mapped_keys = [field for field, column in chosen.items() if column]
+    sheet_key = {"Nodes": "nodes", "Edges": "edges", "Products": "products", "Demand": "demand"}[sheet]
+    parsed[sheet_key] = mapper.prune(parsed[sheet_key], sheet, mapped_keys)
+    existing_nodes = {n.code for n in session.scalars(select(Node).where(Node.country_id == country.id))}
+    existing_products = {p.sku for p in session.scalars(select(Product).where(Product.country_id == country.id))}
+    report = validate_dataset(
+        country_code=country.code,
+        bbox=(country.config or {}).get("bbox", WORLD_BBOX),
+        boundary=country.boundary or {},
+        nodes=parsed["nodes"],
+        edges=parsed["edges"],
+        products=parsed["products"],
+        demand=parsed["demand"],
+        partial=True,
+        existing_node_codes=existing_nodes,
+        existing_product_skus=existing_products,
+    )
+    if save_as.strip():
+        mapper.save_mapping(
+            country,
+            name=" ".join(save_as.split()).strip()[:80],
+            sheet=sheet,
+            mapping=chosen,
+            columns=columns,
+            saved_at=datetime.now(timezone.utc).isoformat(),
+        )
+    batch = ImportBatch(
+        country_id=country_id,
+        filename=file.filename or "upload.csv",
+        source="csv",
+        mode="merge",
+        status="blocked" if report.blocking else "validated",
+        committed=False,
+        report={**report.as_dict(), "missing_sheets": parsed["missing_sheets"], "parsed": parsed, "sheet": sheet, "mapping": chosen},
+    )
+    session.add(batch)
+    session.commit()
+    session.refresh(batch)
+    payload = report.as_dict()
+    payload["batch_id"] = batch.id
+    payload["missing_sheets"] = parsed["missing_sheets"]
+    payload["source"] = "csv"
+    payload["sheet"] = sheet
+    payload["rows"] = len(raw)
+    payload["preview"] = {key: parsed[key][:5] for key in ("nodes", "edges", "products", "demand")}
+    payload["saved"] = mapper.saved_mappings(country)
+    return payload
+
+
+@router.get("/countries/{country_id}/column-mappings")
+def list_column_mappings(country_id: int, session: Session = Depends(get_session)):
+    return mapper.saved_mappings(_country_or_404(session, country_id))
+
+
+@router.delete("/countries/{country_id}/column-mappings/{name}", status_code=204)
+def delete_column_mapping(country_id: int, name: str, session: Session = Depends(get_session)):
+    country = _country_or_404(session, country_id)
+    mapper.delete_mapping(country, name)
+    session.commit()

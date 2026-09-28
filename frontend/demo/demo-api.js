@@ -80,6 +80,7 @@
       if (path.match(/^\/countries\/\d+\/sessions$/)) return file('sessions.json')
       if (path.match(/^\/countries\/\d+\/studies$/)) return file('studies.json')
       if (path === '/study-presets') return file('study-presets.json')
+      if (path.match(/^\/countries\/\d+\/column-mappings$/)) return file('column-mappings.json')
       if ((m = path.match(/^\/nodes\/(\d+)\/demand$/))) return file('demand/' + m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/basemap\.geojson$/)) return file('basemap.json')
       if ((m = path.match(/^\/countries\/\d+\/season\/(\d+)$/))) return file('season/' + m[1] + '.json')
@@ -135,6 +136,8 @@
     if (path.match(/\/sessions(\/|$)/))
       return refuse('Saving and opening sessions needs the server. Download the tool to keep your work.')
     // ---- everything that would change the model -----------------------------
+    if (path.match(/\/imports\/csv/))
+      return refuse('Mapping a CSV needs the validator, which runs on the server. Download the tool to try it.')
     if (path.match(/\/validate$/) || path.match(/^\/imports\//))
       return refuse('Uploading a workbook needs the validator, which runs on the server. Download the tool to try it.')
     if (path.match(/^\/connections/) || path.match(/\/connections$/))

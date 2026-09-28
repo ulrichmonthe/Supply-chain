@@ -104,8 +104,8 @@ def apply_changes(
     now = datetime.now(timezone.utc)
     reason = f"Not in {reference or source}"
     common = dict(country_id=country.id, actor=actor, author_claim=author_claim, batch_id=batch_id)
-    provenance = "import" if source == "excel" else "lmis_sync"
-    node_fields = NODE_FIELDS if source == "excel" else SYNC_NODE_FIELDS
+    provenance = "import" if source in ("excel", "csv") else "lmis_sync"
+    node_fields = NODE_FIELDS if source in ("excel", "csv") else SYNC_NODE_FIELDS
 
     resolved_conflicts = {"kept": 0, "took_file": 0}
 

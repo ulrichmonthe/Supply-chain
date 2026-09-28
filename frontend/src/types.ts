@@ -396,6 +396,33 @@ export type ValidationReport = {
   batch_id: number
   missing_sheets: string[]
   stats: Record<string, number>
+  /** 'csv' when the batch came through the column mapper: one sheet, merge only. */
+  source?: string
+  sheet?: string
+  rows?: number
+}
+
+export type MappingField = { key: string; description: string; required: boolean }
+
+export type SavedMapping = {
+  name: string
+  sheet: string
+  mapping: Record<string, string>
+  columns: string[]
+  saved_at: string
+}
+
+export type CsvInspection = {
+  filename: string
+  columns: string[]
+  row_count: number
+  sample: Record<string, string>[]
+  delimiter: string
+  sheet: string
+  guesses: Record<string, Record<string, string | null>>
+  fields: Record<string, MappingField[]>
+  matched_saved: string | null
+  saved: SavedMapping[]
 }
 
 export type RoadmapStep = {

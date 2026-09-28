@@ -362,6 +362,22 @@ Kokopo run: month blank → 3, equity 0.5 → 0.9, annual cost 11.2M → 13.8M".
 records every save and open with the author's claim, and the shelf says how many
 changes have been made since the session you are working from.
 
+### The column mapper: any CSV, through the same hallway
+
+WMS and ERP data arrives as one-off CSV exports far more often than through a live
+API: a facility register from the ministry, a consumption extract from the warehouse
+system, a product catalogue from procurement. The Data tab's **Import a CSV** reads
+any of them (comma, semicolon, tab or pipe; UTF-8 with or without a BOM), guesses
+which of our sheets it is and which of its headers mean which of our columns
+("Facility Code" → code, "orgunit" → node, "qty" → quantity, a synonym table in
+`app/io/mapper.py`), and shows the mapping as a table with the first row's values
+beside it. Fix what it got wrong, name the mapping to keep it per country, and the
+rows are coerced by the same record builders as the workbook, validated in partial
+mode (a facility list carries no lanes by design and is not rejected for it), and go
+through the same preview and apply as a workbook, in merge mode: a CSV is one sheet,
+so it can update and add but never retire what it does not mention. The next file
+with those headers is matched to the saved mapping automatically.
+
 ### An import is a diff, not a wipe
 
 A full refresh used to delete every facility, lane, product and demand row and reload

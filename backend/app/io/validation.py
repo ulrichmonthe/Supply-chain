@@ -170,7 +170,9 @@ def validate_dataset(
     _validate_nodes(report, country_code, bbox, boundary, nodes, node_by_code, partial=partial)
     _validate_products(report, products, partial=partial, known_products=known_products)
     _validate_edges(report, edges, node_by_code)
-    _validate_demand(report, demand, node_by_code, products, partial=partial, known_products=known_products)
+    _validate_demand(
+        report, demand, node_by_code, products, partial=partial, known_products=known_products, known_nodes=known_nodes
+    )
     _validate_coverage(
         report, nodes, edges, demand, node_by_code, partial=partial, known_nodes=known_nodes
     )
@@ -706,10 +708,14 @@ def _validate_demand(
     *,
     partial: bool = False,
     known_products: set = frozenset(),
+    known_nodes: set = frozenset(),
 ) -> None:
     product_codes = {str(p.get("sku") or "").strip() for p in products} | (
         known_products if partial else set()
     )
+    # A consumption extract names facilities that are already loaded, not ones it
+    # carries itself; in partial mode those count as known.
+    node_codes = set(node_by_code) | (set(known_nodes) if partial else set())
     proxy_rows = 0
 
     for row_data in demand:
@@ -717,7 +723,7 @@ def _validate_demand(
         node_code = str(row_data.get("node") or "").strip()
         sku = str(row_data.get("product") or "").strip()
 
-        if node_code not in node_by_code:
+        if node_code not in node_codes:
             report.add(
                 Issue(
                     ERROR,

@@ -382,6 +382,20 @@
           "state": "done",
           "env": null,
           "note": "Correct it in the upload, it is re-checked immediately, and nothing is written until you apply."
+        },
+        {
+          "id": "f5s20",
+          "title": "Import a CSV from another system by mapping its columns once",
+          "state": "done",
+          "env": null,
+          "note": "Guesses the sheet and the headers, shows the mapping with the first row beside it, keeps the mapping per country under a name, and recognises it on the next file."
+        },
+        {
+          "id": "f5s21",
+          "title": "A one-sheet file is merged, validated partially, never a wipe",
+          "state": "done",
+          "env": null,
+          "note": "A facility list without lanes is not rejected; rows the file does not mention are left alone. Same preview and apply as a workbook."
         }
       ],
       "decisions": [
@@ -402,6 +416,11 @@
         "Only Excel files are accepted. No CSV, and no older .xls."
       ],
       "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Column mapper for CSV imports: inspect, guess, map, save, validate partially, merge through the import pipeline"
+        },
         {
           "at": "2026-09-11T13:32:46Z",
           "kind": "work",

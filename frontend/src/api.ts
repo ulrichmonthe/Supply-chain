@@ -21,7 +21,9 @@ import type {
   SyncPreview,
   ValidationIssue,
   ValidationReport,
+  CsvInspection,
   DiffMap,
+  SavedMapping,
   SessionDiff,
   SessionShelf,
   Study,
@@ -124,6 +126,23 @@ export const api = {
       { method: 'POST' },
     )
   },
+  /* --- the column mapper --- */
+  inspectCsv: (countryId: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request<CsvInspection>(`/countries/${countryId}/imports/csv/inspect`, { method: 'POST', body: form })
+  },
+  importCsv: (countryId: number, file: File, sheet: string, mapping: Record<string, string | null>, saveAs = '') => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('sheet', sheet)
+    form.append('mapping', JSON.stringify(mapping))
+    form.append('save_as', saveAs)
+    return request<ValidationReport>(`/countries/${countryId}/imports/csv`, { method: 'POST', body: form })
+  },
+  columnMappings: (countryId: number) => request<SavedMapping[]>(`/countries/${countryId}/column-mappings`),
+  deleteColumnMapping: (countryId: number, name: string) =>
+    request<void>(`/countries/${countryId}/column-mappings/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   importChanges: (batchId: number, replace: boolean) => request<ImportChanges>(`/imports/${batchId}/changes?replace=${replace}`),
   /* --- editing in the tool --- */
   retiredNodes: (countryId: number) => request<NodeRow[]>(`/countries/${countryId}/nodes/retired`),

@@ -264,7 +264,8 @@ def compute_changes(session: Session, country: Country, parsed: dict, *, mode: s
     """What applying ``parsed`` in ``mode`` would do. Reads only."""
     changes = Changes(mode=mode)
     full_refresh = mode == "replace"
-    node_fields = NODE_FIELDS if source == "excel" else SYNC_NODE_FIELDS
+    # A workbook or a mapped CSV may carry any column; a connector sync carries the few it owns.
+    node_fields = NODE_FIELDS if source in ("excel", "csv") else SYNC_NODE_FIELDS
     hand_made = standing_hand_changes(session, country.id)
 
     # Retired rows are included here on purpose: a facility that comes back must be

@@ -872,3 +872,12 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .decision-line.good b { color: var(--good); }
 .decision-line.warn b { color: var(--warn); }
 @media (max-width: 1100px) { .decision { width: 420px; flex-basis: 420px; } }
+
+/* ---------- the column mapper ---------- */
+
+.csv-import .btn input[type='file'] { display: none; }
+.mapping-table { width: 100%; font-size: var(--fs-small); }
+.mapping-table th, .mapping-table td { padding: 5px 8px 5px 0; vertical-align: top; }
+.mapping-table td label { font-weight: 600; }
+.mapping-table tr.missing td:first-child label { color: var(--warn); }
+.mapping-table select { max-width: 220px; }
