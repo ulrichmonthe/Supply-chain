@@ -297,6 +297,25 @@ longer be met". The scorecard carries the share and holds/depends per scenario w
 sentence and the range for the selected one; the report has a "How sure this is"
 section before the equity table; the spreadsheet's Scorecard sheet has the rows.
 
+### Studies: comparison as the workflow
+
+A study is a question and the ordered scenarios that answer it, the baseline always
+first: "Can we close Wewak?", "Land, air or sea?". The **Studies** tab starts one from a
+question and a preset (baseline vs cost-optimised; cost-optimised with and without a 90%
+equity floor; road, surface and air from one baseline; the baseline held at the wettest
+month), each preset a set of ordinary scenarios cloned from the baseline with one thing
+changed, tagged for the study and recorded in the ledger. Run the study and the view
+shows a verdict in a paragraph (cheapest, best for the bottom band, and which option the
+analyst backs), a **lever diff** per option ("only the equity weight and the month
+differ"), the facilities that gained or lost supply by name with the people who move from
+supplied to not supplied, and the five vulnerability bands side by side. **Recommend**
+marks the option the decision page will carry.
+
+The **diff map** draws two answers as one network from the two stored flow sets: lanes
+only the first uses red, only the second green, both grey; facilities that change
+supplier amber, that gain supply green, that lose it red. No solver work; the answer was
+already there in `per_edge_flow`.
+
 ### Sessions: a save file that cannot lie
 
 A session is the whole working state under a name: every facility, lane, product and

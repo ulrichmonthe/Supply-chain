@@ -368,6 +368,27 @@ class WorkSession(Base):
     snapshot: Mapped[DatasetSnapshot] = relationship()
 
 
+class Study(Base):
+    """A question, the ordered scenarios that answer it, and the one the analyst backs.
+
+    Comparison as a workflow rather than a tab: "Can we close Wewak?" owns its
+    scenarios, its compare view, its diff map and the decision page of its report.
+    """
+
+    __tablename__ = "study"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    question: Mapped[str] = mapped_column(String(240))
+    note: Mapped[str] = mapped_column(Text, default="")
+    #: Ordered; the baseline is always first.
+    scenario_ids: Mapped[list] = mapped_column(JSON, default=list)
+    recommended_scenario_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    author_claim: Mapped[str] = mapped_column(String(96), default="anonymous")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
 class AuditEntry(Base):
     """Every assumption that entered the model, and who put it there.
 

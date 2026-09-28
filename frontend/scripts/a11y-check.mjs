@@ -97,7 +97,7 @@ await page.keyboard.press('ArrowRight')
 const selected = await page.evaluate(
   () => document.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim(),
 )
-check(selected === 'Facilities', `two ArrowRight moves the tablist two tabs (got ${selected})`)
+check(selected === 'Equity', `two ArrowRight moves the tablist two tabs (got ${selected})`)
 
 // --- a month can be chosen without a mouse ---------------------------------
 await page.getByRole('tab', { name: 'Scorecard', exact: true }).click()

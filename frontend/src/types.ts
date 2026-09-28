@@ -575,3 +575,109 @@ export type SessionDiff = {
   sentences: string[]
   detail: Record<string, unknown>
 }
+
+/** A study: a question, its ordered scenarios (baseline first), and the one the analyst backs. */
+export type Study = {
+  id: number
+  country_id: number
+  question: string
+  note: string
+  scenario_ids: number[]
+  scenarios: { id: number; name: string; is_baseline: boolean; has_result: boolean }[]
+  recommended_scenario_id: number | null
+  author_claim: string
+  created_at: string
+  updated_at: string
+}
+
+export type StudyPreset = { key: string; label: string; description: string }
+
+export type LeverDifference = {
+  group: string
+  key: string
+  label: string
+  baseline: unknown
+  value: unknown
+  text: string
+}
+
+export type MovedFacility = {
+  code: string
+  name: string
+  admin1: string | null
+  population: number
+  fill_before: number
+  fill_after: number
+  served_delta_m3: number
+  from_hub?: string
+  to_hub?: string
+}
+
+export type StudyCompare = {
+  study: Study
+  baseline_scenario_id: number | null
+  rows: (ScorecardRow & {
+    tags: string[]
+    hubs_open_codes: string[]
+    confidence: ConfidenceAssessment | null
+    recommended: boolean
+  })[]
+  lever_diff: Record<string, { differences: LeverDifference[]; sentence: string }>
+  equity: {
+    scenario_id: number
+    name: string
+    strata: { label: string; fill_rate: number; cost_per_capita: number; population: number }[]
+  }[]
+  facilities: Record<
+    string,
+    {
+      gained: MovedFacility[]
+      lost: MovedFacility[]
+      gained_count: number
+      lost_count: number
+      resupplied: MovedFacility[]
+      resupplied_count: number
+      people_lost: number
+    }
+  >
+  verdict: string
+  kpi_meta: KpiMeta
+}
+
+export type DiffMap = {
+  a: { result_id: number; scenario_id: number; scenario_name: string; hubs_open: string[] }
+  b: { result_id: number; scenario_id: number; scenario_name: string; hubs_open: string[] }
+  lanes: {
+    edge_id: number
+    edge_code: string
+    hub_code: string
+    facility_code: string
+    mode: string
+    status: 'a' | 'b' | 'both'
+    volume_a: number
+    volume_b: number
+  }[]
+  facilities: {
+    code: string
+    name: string
+    admin1: string | null
+    population: number
+    hub_a: string | null
+    hub_b: string | null
+    hub_a_name: string | null
+    hub_b_name: string | null
+    fill_a: number
+    fill_b: number
+    change: 'supplier' | 'gained' | 'lost'
+  }[]
+  summary: {
+    lanes_only_a: number
+    lanes_only_b: number
+    lanes_shared: number
+    facilities_changed_supplier: number
+    facilities_gained: number
+    facilities_lost: number
+    hubs_only_a: string[]
+    hubs_only_b: string[]
+  }
+}

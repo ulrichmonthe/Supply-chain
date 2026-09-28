@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { EdgeRow, NodeRow, Result, SeasonView } from '../types'
+import type { EdgeRow, NodeRow, Result, SeasonView, DiffMap } from '../types'
 import { exact, fillColour, frequencyLabel, modeColour, pct, riskColour } from '../format'
 
 export type ColourBy = 'fill' | 'risk' | 'vulnerability' | 'mode'
@@ -23,6 +23,8 @@ type Props = {
   /** When set, the next click on the map hands back a coordinate instead of selecting. */
   pickMode?: boolean
   onPick?: (lat: number, lon: number) => void
+  /** Two answers as one network: lanes only A uses, only B uses, or both; facilities whose supply changed. */
+  diff?: DiffMap | null
 }
 
 type Hover = { x: number; y: number; html: ReactNode } | null
@@ -60,6 +62,15 @@ export function MapView(props: Props) {
   // Lanes are drawn as gentle arcs rather than straight lines. On a map with several
   // hundred overlapping hub-to-facility legs, straight lines converge into an
   // unreadable star; an arc lets you see that two hubs both reach the same island.
+  const diffByEdge = useMemo(
+    () => new Map((props.diff?.lanes ?? []).map((l) => [l.edge_id, l])),
+    [props.diff],
+  )
+  const diffByFacility = useMemo(
+    () => new Map((props.diff?.facilities ?? []).map((f) => [f.code, f])),
+    [props.diff],
+  )
+
   const laneData = useMemo<GeoJSON.FeatureCollection>(() => {
     if (!props.edges.length) return EMPTY
     return {
@@ -70,6 +81,33 @@ export function MapView(props: Props) {
           const flow = flowByEdge.get(edge.id)
           const closed = closedEdges.has(edge.code)
           const degraded = degradedEdges.has(edge.code)
+          if (props.diff) {
+            // One network, two answers. Red is what only A uses, green only B, grey both.
+            const lane = diffByEdge.get(edge.id)
+            const volume = lane ? Math.max(lane.volume_a, lane.volume_b) : 0
+            return {
+              type: 'Feature' as const,
+              properties: {
+                code: edge.code,
+                mode: edge.mode,
+                colour: !lane
+                  ? '#3c5372'
+                  : lane.status === 'a'
+                    ? '#ef6b6b'
+                    : lane.status === 'b'
+                      ? '#5fd39a'
+                      : '#9fb0c4',
+                used: lane ? 1 : 0,
+                volume,
+                width: lane ? Math.min(4.6, 0.9 + Math.sqrt(volume) * 0.22) : 0.5,
+                opacity: !lane ? 0.08 : lane.status === 'both' ? 0.45 : 0.9,
+                dashed: 0,
+                scheduled: edge.service_frequency && edge.mode !== 'road' ? 1 : 0,
+                diff: lane?.status ?? 'none',
+              },
+              geometry: { type: 'LineString' as const, coordinates: arc(edge) },
+            }
+          }
           return {
             type: 'Feature' as const,
             properties: {
@@ -87,7 +125,7 @@ export function MapView(props: Props) {
           }
         }),
     }
-  }, [props.edges, flowByEdge, closedEdges, degradedEdges])
+  }, [props.edges, flowByEdge, closedEdges, degradedEdges, props.diff, diffByEdge])
 
   const nodeData = useMemo<GeoJSON.FeatureCollection>(() => {
     const cutOff = new Set((props.season?.facilities_cut_off ?? []).map((f) => f.code))
@@ -105,6 +143,11 @@ export function MapView(props: Props) {
 
         const isHub = node.hub_capable
         const isCentral = node.level === 0
+        const changed = diffByFacility.get(node.code)
+        if (changed)
+          colour =
+            changed.change === 'supplier' ? '#f2c14e' : changed.change === 'gained' ? '#5fd39a' : '#ef6b6b'
+        else if (props.diff) colour = '#3c4f66'
         return {
           type: 'Feature' as const,
           properties: {
@@ -113,6 +156,7 @@ export function MapView(props: Props) {
             level: node.level,
             hub: isHub || isCentral ? 1 : 0,
             open: node.operating_status === 'operational' ? 1 : 0,
+            changed: changed ? 1 : 0,
             colour: isCentral ? '#ffffff' : isHub ? '#4da3ff' : colour,
             radius: isCentral ? 8 : isHub ? 6.5 : 3 + Math.min(4, Math.sqrt(node.catchment_population) / 130),
             cutOff: cutOff.has(node.code) ? 1 : 0,
@@ -123,7 +167,15 @@ export function MapView(props: Props) {
         }
       }),
     }
-  }, [props.nodes, detailByCode, props.colourBy, props.season, props.selectedCode])
+  }, [
+    props.nodes,
+    detailByCode,
+    props.colourBy,
+    props.season,
+    props.selectedCode,
+    props.diff,
+    diffByFacility,
+  ])
 
   // --- map lifecycle ------------------------------------------------------------------
   useEffect(() => {
@@ -199,7 +251,12 @@ export function MapView(props: Props) {
         id: 'node-halo',
         type: 'circle',
         source: 'nodes',
-        filter: ['any', ['==', ['get', 'cutOff'], 1], ['==', ['get', 'selected'], 1]],
+        filter: [
+          'any',
+          ['==', ['get', 'cutOff'], 1],
+          ['==', ['get', 'selected'], 1],
+          ['==', ['get', 'changed'], 1],
+        ],
         paint: {
           'circle-radius': ['+', ['get', 'radius'], 5],
           'circle-color': 'transparent',
@@ -208,6 +265,8 @@ export function MapView(props: Props) {
             'case',
             ['==', ['get', 'cutOff'], 1],
             '#ef6b6b',
+            ['==', ['get', 'changed'], 1],
+            ['get', 'colour'],
             '#ffffff',
           ],
         },
@@ -355,8 +414,8 @@ export function MapView(props: Props) {
       <>
         <b>{node.name}</b>
         <div className="dim tiny" style={{ marginBottom: 5 }}>
-          {node.admin1 ?? '—'} · {node.terrain_class.replace(/_/g, ' ')} ·{' '}
-          {exact(node.catchment_population)} people
+          {node.admin1 ?? '—'} · {node.terrain_class.replace(/_/g, ' ')} · {exact(node.catchment_population)}{' '}
+          people
         </div>
         {detail ? (
           <>
@@ -464,7 +523,27 @@ export function MapView(props: Props) {
       />
 
       <div className="map-overlay map-legend">
-        <h4>Lanes</h4>
+        {props.diff && (
+          <>
+            <h4>Two answers</h4>
+            <div className="legend-row">
+              <span aria-hidden="true" className="legend-swatch" style={{ background: '#ef6b6b' }} /> only{' '}
+              {props.diff.a.scenario_name}
+            </div>
+            <div className="legend-row">
+              <span aria-hidden="true" className="legend-swatch" style={{ background: '#5fd39a' }} /> only{' '}
+              {props.diff.b.scenario_name}
+            </div>
+            <div className="legend-row">
+              <span aria-hidden="true" className="legend-swatch" style={{ background: '#9fb0c4' }} /> both
+            </div>
+            <div className="legend-row">
+              <span aria-hidden="true" className="legend-dot" style={{ background: '#f2c14e' }} /> changes
+              supplier
+            </div>
+          </>
+        )}
+        <h4 style={props.diff ? { marginTop: 9 } : undefined}>Lanes</h4>
         {['road', 'sea', 'air', 'river'].map((mode) => (
           <div className="legend-row" key={mode}>
             <span aria-hidden="true" className="legend-swatch" style={{ background: modeColour(mode) }} />
@@ -486,10 +565,15 @@ export function MapView(props: Props) {
           <span aria-hidden="true" className="legend-dot" style={{ background: '#ffffff' }} /> national store
         </div>
         <div className="legend-row">
-          <span aria-hidden="true" className="legend-dot" style={{ background: '#4da3ff' }} /> area medical store
+          <span aria-hidden="true" className="legend-dot" style={{ background: '#4da3ff' }} /> area medical
+          store
         </div>
         <div className="legend-row">
-          <span aria-hidden="true" className="legend-dot" style={{ background: colourScaleHint(props.colourBy) }} />
+          <span
+            aria-hidden="true"
+            className="legend-dot"
+            style={{ background: colourScaleHint(props.colourBy) }}
+          />
           {colourByLabel(props.colourBy)}
         </div>
       </div>

@@ -158,6 +158,24 @@ class SessionPatch(BaseModel):
     note: Optional[str] = Field(None, max_length=4000)
 
 
+class StudyIn(BaseModel):
+    question: str = Field(..., max_length=240)
+    note: str = Field("", max_length=4000)
+    preset: Optional[str] = None
+    scenario_ids: List[int] = Field(default_factory=list)
+
+
+class StudyPatch(BaseModel):
+    question: Optional[str] = Field(None, max_length=240)
+    note: Optional[str] = Field(None, max_length=4000)
+    scenario_ids: Optional[List[int]] = None
+    recommended_scenario_id: Optional[int] = None
+
+
+class StudyScenarioIn(BaseModel):
+    scenario_id: int
+
+
 class EstimateRequest(BaseModel):
     """One estimate: a rule, and what to apply it to.
 

@@ -199,6 +199,27 @@
           "state": "done",
           "env": null,
           "note": "Weights and switched-on constraints accept a typed number: 90%, 0.6, 2.5M."
+        },
+        {
+          "id": "f2s20",
+          "title": "Start a study from a question and a preset",
+          "state": "done",
+          "env": null,
+          "note": "Baseline vs cost-optimised, the equity floor pair, road/surface/air, wet season stress. Each is ordinary scenarios cloned from the baseline with one thing changed."
+        },
+        {
+          "id": "f2s21",
+          "title": "Read what differs between the options and what it did",
+          "state": "done",
+          "env": null,
+          "note": "A verdict paragraph, a lever diff per option, the facilities that gained or lost supply by name, the five bands side by side. Recommend marks the option the decision page carries."
+        },
+        {
+          "id": "f2s22",
+          "title": "See two answers as one network on the map",
+          "state": "done",
+          "env": null,
+          "note": "Lanes only the first uses red, only the second green, both grey; facilities that change supplier amber. Built from the stored flows, no solver work."
         }
       ],
       "decisions": [
@@ -215,6 +236,11 @@
         "The costs, demand and boat timetables in the demo are illustrative, not the ministry's real figures. The clinic locations and the shape of the network are real."
       ],
       "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Studies: presets, ordered scenarios, verdict, lever diff, facilities moved, equity side by side, recommend, diff map; migration 0007"
+        },
         {
           "at": "2026-09-14T00:00:00Z",
           "kind": "work",
@@ -746,9 +772,9 @@
         {
           "id": "f11s5",
           "title": "Studies: a question, its scenarios, its verdict, and the diff map",
-          "state": "planned",
+          "state": "done",
           "env": null,
-          "note": "Next. Comparison as a workflow rather than a tab, built on the scorecard and the sessions."
+          "note": "Built under 'Comparing plans side by side'."
         }
       ],
       "decisions": [

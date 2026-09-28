@@ -21,8 +21,12 @@ import type {
   SyncPreview,
   ValidationIssue,
   ValidationReport,
+  DiffMap,
   SessionDiff,
   SessionShelf,
+  Study,
+  StudyCompare,
+  StudyPreset,
   WorkSession,
 } from './types'
 
@@ -184,6 +188,23 @@ export const api = {
   deleteSession: (sessionId: number) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
   sessionDiff: (sessionId: number, against: 'current' | number = 'current') =>
     request<SessionDiff>(`/sessions/${sessionId}/diff?against=${against}`),
+  /* --- studies --- */
+  studyPresets: () => request<StudyPreset[]>('/study-presets'),
+  studies: (countryId: number) => request<Study[]>(`/countries/${countryId}/studies`),
+  createStudy: (countryId: number, payload: { question: string; note?: string; preset?: string | null; scenario_ids?: number[] }) =>
+    request<Study>(`/countries/${countryId}/studies`, { method: 'POST', body: JSON.stringify(payload) }),
+  patchStudy: (
+    studyId: number,
+    payload: { question?: string; note?: string; scenario_ids?: number[]; recommended_scenario_id?: number | null },
+  ) => request<Study>(`/studies/${studyId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteStudy: (studyId: number) => request<void>(`/studies/${studyId}`, { method: 'DELETE' }),
+  addStudyScenario: (studyId: number, scenarioId: number) =>
+    request<Study>(`/studies/${studyId}/scenarios`, { method: 'POST', body: JSON.stringify({ scenario_id: scenarioId }) }),
+  removeStudyScenario: (studyId: number, scenarioId: number) =>
+    request<Study>(`/studies/${studyId}/scenarios/${scenarioId}`, { method: 'DELETE' }),
+  runStudy: (studyId: number) => request<{ ran: number }>(`/studies/${studyId}/run`, { method: 'POST' }),
+  compareStudy: (studyId: number) => request<StudyCompare>(`/studies/${studyId}/compare`),
+  diffMap: (scenarioA: number, scenarioB: number) => request<DiffMap>(`/scenarios/${scenarioA}/diff-map/${scenarioB}`),
   revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
   createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
     request<{ id: number; code: string; name: string }>('/countries', {

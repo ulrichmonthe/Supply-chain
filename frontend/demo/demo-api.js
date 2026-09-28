@@ -78,6 +78,8 @@
         return file(m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/nodes\/retired$/)) return file('retired.json')
       if (path.match(/^\/countries\/\d+\/sessions$/)) return file('sessions.json')
+      if (path.match(/^\/countries\/\d+\/studies$/)) return file('studies.json')
+      if (path === '/study-presets') return file('study-presets.json')
       if ((m = path.match(/^\/nodes\/(\d+)\/demand$/))) return file('demand/' + m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/basemap\.geojson$/)) return file('basemap.json')
       if ((m = path.match(/^\/countries\/\d+\/season\/(\d+)$/))) return file('season/' + m[1] + '.json')
@@ -128,6 +130,8 @@
 
     if (path.match(/\/estimates\/(preview|apply|recompute)$/))
       return refuse('Estimating needs the rules on the server. Download the tool to fill blank rows.')
+    if (path.match(/\/studies(\/|$)/) || path.match(/\/diff-map\//))
+      return refuse('Studies need the solver. Download the tool to ask a question of your own network.')
     if (path.match(/\/sessions(\/|$)/))
       return refuse('Saving and opening sessions needs the server. Download the tool to keep your work.')
     // ---- everything that would change the model -----------------------------

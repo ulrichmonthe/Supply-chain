@@ -830,3 +830,15 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .session-diff { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft); font-size: var(--fs-small); }
 .session-diff ul { margin: 4px 0 0; padding-left: 18px; }
 .session-diff li { margin-bottom: 3px; }
+
+/* ---------- studies ---------- */
+
+.study-order { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.study-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; background: var(--panel-2); }
+.study-card.backed { border-color: #24513f; }
+.study-kpis { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-size: var(--fs-small); }
+.study-kpi b { font-variant-numeric: tabular-nums; }
+.study-diff { margin-bottom: 12px; font-size: var(--fs-small); }
+.study-levers { margin: 4px 0 4px; padding-left: 18px; color: var(--dim); }
+.study-facilities { margin: 4px 0 0; padding-left: 4px; list-style: none; }
+.study-facilities li { margin-bottom: 2px; }

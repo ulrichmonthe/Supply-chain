@@ -191,8 +191,10 @@ export function buildTour({ setTab, setColourBy }: TourActions): TourStep[] {
             Select a row and the sentence beneath the table spells it out.
           </p>
           <p>
-            The tabs below open the same result nine different ways. The guide visits four
-            of them next.
+            The tabs below open the same result ten different ways. <b>Studies</b> turns a
+            question — land, air or sea? — into an ordered set of scenarios with a verdict,
+            a lever diff and a map that draws two answers as one network. The guide visits
+            four of the tabs next.
           </p>
         </>
       ),
