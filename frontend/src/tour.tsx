@@ -164,6 +164,11 @@ export function buildTour({ setTab, setColourBy }: TourActions): TourStep[] {
             against the baseline.
           </p>
           <p>
+            The scorecard's last column says how much of each answer rests on estimated
+            demand, and whether it still holds with every estimate 30% lower or higher.
+            Select a row and the sentence beneath the table spells it out.
+          </p>
+          <p>
             The tabs below open the same result nine different ways. The guide visits four
             of them next.
           </p>

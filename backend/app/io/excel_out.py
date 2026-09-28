@@ -235,6 +235,37 @@ def export_results(country, scenario, result, roadmap: Optional[dict], compariso
         summary.cell(row=row, column=4, value=delta.get("delta"))
         summary.cell(row=row, column=5, value=delta.get("direction"))
         row += 1
+
+    # The confidence budget: how much of this rests on estimates, and the answer with
+    # every estimate a swing lower and higher. Absent when nothing was estimated.
+    confidence = result.confidence or {}
+    estimated = confidence.get("estimated") or {}
+    sensitivity = confidence.get("sensitivity") or {}
+    if estimated:
+        row += 1
+        summary.cell(row=row, column=1, value="Share of demand volume that is estimated")
+        summary.cell(row=row, column=2, value=estimated.get("demand_share_m3"))
+        summary.cell(row=row, column=3, value="percent")
+        row += 1
+        summary.cell(row=row, column=1, value="Facilities with estimated demand")
+        summary.cell(row=row, column=2, value=estimated.get("facilities_with_estimated_demand"))
+        summary.cell(row=row, column=3, value="count")
+        row += 1
+    if sensitivity:
+        swing = sensitivity.get("swing")
+        for end_key, word in (("low", "lower"), ("high", "higher")):
+            end = sensitivity.get(end_key) or {}
+            for key in ("total_cost", "fill_rate", "worst_stratum_fill_rate", "hubs_open"):
+                summary.cell(
+                    row=row, column=1, value=f"{KPI_META[key]['label']} with estimates {swing:.0%} {word}"
+                )
+                summary.cell(
+                    row=row,
+                    column=2,
+                    value=(end.get("kpi_set") or {}).get(key) if end.get("status") == "ok" else "not feasible",
+                )
+                summary.cell(row=row, column=3, value=KPI_META[key]["unit"])
+                row += 1
     _autosize(summary)
 
     detail = workbook.create_sheet("Facilities")

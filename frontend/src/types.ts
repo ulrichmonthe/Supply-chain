@@ -313,6 +313,25 @@ export type Result = {
 
 export type KpiMeta = Record<string, { label: string; unit: string; better: string }>
 
+/** What the estimates mean for a result: how much rests on them, and whether the
+ *  answer survives every estimated figure a swing lower and higher. */
+export type ConfidenceAssessment = {
+  share: number
+  share_rows: number
+  facilities_with_estimated_demand: number
+  facilities: number
+  facilities_with_estimated_storage: number
+  tested: boolean
+  swing: number | null
+  holds: boolean | null
+  changes: string[]
+  notes: string[]
+  /** [low, as modelled, high]; an end that could not be solved is null. */
+  range: Record<string, [number | null, number | null, number | null]>
+  baseline_tested: boolean | null
+  sentence: string
+}
+
 export type ScorecardRow = {
   scenario_id: number
   result_id?: number
@@ -326,6 +345,7 @@ export type ScorecardRow = {
   month_label?: string
   runtime_ms?: number
   comparison: Record<string, { baseline: number; value: number; delta: number; delta_pct: number | null; direction: string }>
+  confidence?: ConfidenceAssessment
 }
 
 export type Scorecard = {

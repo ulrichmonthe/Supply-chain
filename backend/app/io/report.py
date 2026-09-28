@@ -17,6 +17,8 @@ import html
 from datetime import datetime, timezone
 from typing import Optional
 
+from ..engine import confidence as confidence_mod
+
 
 def _e(value) -> str:
     return html.escape("" if value is None else str(value))
@@ -145,6 +147,55 @@ def render_report(
             </div>'''
         for label, value, delta, good in headline
     )
+
+    # --- how sure we are ------------------------------------------------------------
+    assessment = confidence_mod.assess(result, None if is_baseline else baseline_result)
+    swing = assessment.get("swing")
+    swing_word = _pct(swing, 0) if swing else "a third"
+    range_rows = ""
+    if assessment.get("tested") and assessment.get("range"):
+        labels = {
+            "total_cost": ("Total annual cost", lambda v: _money(v, currency)),
+            "fill_rate": ("Demand met, by volume", _pct),
+            "worst_stratum_fill_rate": ("Supply to the most vulnerable fifth", _pct),
+            "mean_stockout_risk": ("Mean stockout risk", _pct),
+            "hubs_open": ("Stores open", _exact),
+        }
+        for key, (label, fmt) in labels.items():
+            values = assessment["range"].get(key)
+            if not values:
+                continue
+            cells = "".join(
+                f'<td class="n">{_e(fmt(v)) if v is not None else "not feasible"}</td>' for v in values
+            )
+            range_rows += f"<tr><td>{_e(label)}</td>{cells}</tr>"
+    if assessment.get("share", 0) <= 0:
+        confidence_html = (
+            '<section><h2>How sure this is</h2>'
+            f'<p class="lede">{_e(assessment.get("sentence"))}</p></section>'
+        )
+    else:
+        tone = "good" if assessment.get("holds") else ("warn" if assessment.get("holds") is False else "neutral")
+        changes_html = "".join(f"<li>{_e(c)}</li>" for c in assessment.get("changes") or [])
+        table_html = (
+            '<div class="table-wrap"><table><thead><tr><th>Figure</th>'
+            f'<th class="n">Estimates {_e(swing_word)} lower</th><th class="n">As modelled</th>'
+            f'<th class="n">Estimates {_e(swing_word)} higher</th></tr></thead>'
+            f'<tbody>{range_rows}</tbody></table></div>'
+            if range_rows
+            else ""
+        )
+        confidence_html = (
+            '<section><h2>How sure this is</h2><p class="lede">'
+            f'{_e(_pct(assessment.get("share"), 0))} of the demand this plan was solved on is an estimate '
+            f'from a rule rather than a recorded figure, at '
+            f'{_exact(assessment.get("facilities_with_estimated_demand"))} of '
+            f'{_exact(assessment.get("facilities"))} facilities. So the plan was solved again with every '
+            f'estimated figure {_e(swing_word)} lower, and again with every one {_e(swing_word)} higher.'
+            f'</p><div class="verdict {tone}">{_e(assessment.get("sentence"))}</div>'
+            f'{("<ul class=" + chr(34) + "changes" + chr(34) + ">" + changes_html + "</ul>") if changes_html else ""}'
+            f'{table_html}</section>'
+        )
 
     # --- who carries it -------------------------------------------------------------
     strata_rows = "".join(
@@ -320,6 +371,9 @@ def render_report(
   .phase li {{ margin-bottom: 10px; }}
   .phase li .sub {{ display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }}
 
+  .changes {{ margin: 12px 0 14px; padding-left: 20px; color: var(--muted); }}
+  .changes li {{ margin-bottom: 6px; }}
+  section .verdict {{ font-size: 16px; margin-top: 6px; }}
   .caveats {{ background: #fafbfb; border: 1px solid var(--rule); border-radius: 6px; padding: 18px 24px; }}
   .caveats ul {{ margin: 0; padding-left: 18px; }}
   .caveats li {{ margin-bottom: 8px; color: var(--muted); }}
@@ -355,6 +409,8 @@ def render_report(
   <div class="verdict {verdict_tone}">{verdict}</div>
 
   <div class="figures">{headline_html}</div>
+
+  {confidence_html}
 
   <section>
     <h2>Who carries this plan</h2>

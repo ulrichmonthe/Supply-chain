@@ -306,6 +306,9 @@ class Result(Base):
     per_edge_flow: Mapped[list] = mapped_column(JSON, default=list)
     equity_detail: Mapped[dict] = mapped_column(JSON, default=dict)
     solver_log: Mapped[dict] = mapped_column(JSON, default=dict)
+    # The confidence budget: how much of the demand this was solved on is an estimate,
+    # and what the answer becomes with every estimated figure a swing lower and higher.
+    confidence: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     run_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     runtime_ms: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

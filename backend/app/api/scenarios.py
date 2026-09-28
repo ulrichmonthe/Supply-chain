@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import ledger
 from ..db import SessionLocal, get_session
 from .deps import author_claim, new_batch_id
-from ..engine import kpis as kpi_mod
+from ..engine import confidence as confidence_mod, kpis as kpi_mod
 from ..engine.roadmap import build_roadmap
 from ..engine.runner import run_scenario
 from ..models import Country, Node, Result, Scenario
@@ -282,6 +282,7 @@ def get_result(result_id: int, session: Session = Depends(get_session)):
         "scenario_name": result.scenario.name,
         "status": result.status,
         "kpi_set": result.kpi_set,
+        "confidence": result.confidence,
         "per_node_detail": result.per_node_detail,
         "per_edge_flow": result.per_edge_flow,
         "equity_detail": result.equity_detail,
@@ -358,6 +359,9 @@ def scorecard(country_id: int, session: Session = Depends(get_session)):
                     kpi_mod.compare(baseline_result.kpi_set, result.kpi_set)
                     if baseline_result and not scenario.is_baseline
                     else {}
+                ),
+                "confidence": confidence_mod.assess(
+                    result, baseline_result if baseline_result and not scenario.is_baseline else None
                 ),
             }
         )

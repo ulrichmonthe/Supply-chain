@@ -28,6 +28,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import Demand, Edge, Node, Product, Result, Scenario
+from . import confidence as confidence_mod
 from . import costing, equity as equity_mod, kpis as kpi_mod, seasonality, service
 from .allocation import FacilityIn, HubIn, LaneIn, SolveOptions, solve
 
@@ -74,6 +75,55 @@ def _frequency_for(edge: Edge, levers: dict) -> Optional[str]:
 
 
 def run_scenario(session: Session, scenario: Scenario) -> Result:
+    """Solve the scenario, test it against its own estimates, and persist the result.
+
+    The confidence budget rides on every run: if any of the demand the plan was solved
+    on is an estimate, the same scenario is solved again with every estimated figure a
+    swing lower and higher, and both ends are kept beside the answer. A solve takes
+    tens of milliseconds, so the test costs less than the page refresh that shows it,
+    and nobody has to remember to ask for it.
+    """
+    result = _solve(session, scenario)
+    result.confidence = {
+        **(result.confidence or {}),
+        "sensitivity": _sensitivity(session, scenario, result),
+    }
+    session.add(result)
+    session.commit()
+    # No refresh: sessions are configured expire_on_commit=False, so the instance is
+    # already fully populated. Refreshing would re-read the row, which under the
+    # parallel scenario-set run means a second connection racing the first one's
+    # write -- the source of an intermittent 500 on run-set.
+    return result
+
+
+def _sensitivity(session: Session, scenario: Scenario, base: Result) -> Optional[dict]:
+    """The answer with every estimated demand figure a swing lower, and a swing higher."""
+    estimated = (base.confidence or {}).get("estimated") or {}
+    if base.status != "ok" or not estimated.get("demand_share_m3"):
+        return None
+    swing = confidence_mod.swing_for(scenario.country)
+    started = time.perf_counter()
+    ends = {}
+    for key, factor in (("low", 1.0 - swing), ("high", 1.0 + swing)):
+        end = _solve(session, scenario, estimate_factor=factor)
+        ends[key] = {
+            "factor": round(factor, 4),
+            "status": end.status,
+            "kpi_set": end.kpi_set,
+            "hubs_open_codes": (end.solver_log or {}).get("hubs_open_codes", []),
+            "error": end.error,
+        }
+    return {"swing": swing, **ends, "runtime_ms": int((time.perf_counter() - started) * 1000)}
+
+
+def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0) -> Result:
+    """One solve, returned unsaved.
+
+    ``estimate_factor`` scales only the demand rows that are estimates. Recorded
+    figures and storage capacities stay where they are: a store sized from a guessed
+    demand is exactly as wrong as the guess, and that is the point of the test.
+    """
     started = time.perf_counter()
     levers = _resolve_levers(scenario)
     constraints = dict(scenario.constraints or {})
@@ -93,11 +143,22 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
     growth = costing.demand_scaling(levers)
     demand_m3: dict[int, float] = {}
     cold_m3: dict[int, float] = {}
+    rows_with_demand = 0
+    rows_estimated = 0
+    estimated_m3 = 0.0
+    nodes_with_estimates: set[int] = set()
     for row in demand_rows:
         product = products.get(row.product_id)
         if not product:
             continue
         volume = _volume_m3(row.quantity, product) * growth
+        if row.quantity > 0:
+            rows_with_demand += 1
+        if row.derivation:
+            volume *= estimate_factor
+            rows_estimated += 1
+            estimated_m3 += volume
+            nodes_with_estimates.add(row.node_id)
         demand_m3[row.node_id] = demand_m3.get(row.node_id, 0.0) + volume
         if product.temperature_band != "ambient":
             cold_m3[row.node_id] = cold_m3.get(row.node_id, 0.0) + volume
@@ -105,6 +166,31 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
     demand_nodes = [n for n in nodes if demand_m3.get(n.id, 0.0) > 0]
     total_demand = sum(demand_m3.values())
     total_cold = sum(cold_m3.values())
+
+    # --- the confidence budget: how much of this rests on estimates ------------------
+    population_all = sum(float(n.catchment_population or 0.0) for n in demand_nodes)
+    population_estimated = sum(
+        float(n.catchment_population or 0.0) for n in demand_nodes if n.id in nodes_with_estimates
+    )
+    confidence = {
+        "estimate_factor": estimate_factor,
+        "estimated": {
+            "demand_rows": rows_with_demand,
+            "demand_rows_estimated": rows_estimated,
+            "demand_share_rows": round(rows_estimated / rows_with_demand, 4) if rows_with_demand else 0.0,
+            "demand_m3": round(total_demand, 3),
+            "demand_m3_estimated": round(estimated_m3, 3),
+            "demand_share_m3": round(estimated_m3 / total_demand, 4) if total_demand else 0.0,
+            "facilities": len(demand_nodes),
+            "facilities_with_estimated_demand": sum(1 for n in demand_nodes if n.id in nodes_with_estimates),
+            "population_share_estimated": (
+                round(population_estimated / population_all, 4) if population_all else 0.0
+            ),
+            "facilities_with_estimated_storage": sum(
+                1 for n in demand_nodes if (n.derivations or {}).get("capacity")
+            ),
+        },
+    }
 
     # --- hubs ---------------------------------------------------------------------
     hub_nodes = [n for n in nodes if n.hub_capable]
@@ -275,17 +361,15 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
     solution = solve(facilities, hubs, lanes, options)
 
     if not solution.feasible:
-        result = Result(
+        return Result(
             scenario_id=scenario.id,
             status="infeasible",
             kpi_set={},
+            confidence=confidence,
             solver_log={**solution.log, "base_unmet_penalty_per_m3": round(base_penalty, 2), "month": month},
             error=solution.log.get("reason", "The model could not be solved."),
             runtime_ms=int((time.perf_counter() - started) * 1000),
         )
-        session.add(result)
-        session.commit()
-        return result
 
     # --- per-facility detail --------------------------------------------------------
     flows_by_facility: dict[int, list[dict]] = {}
@@ -427,10 +511,11 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
             }
         )
 
-    result = Result(
+    return Result(
         scenario_id=scenario.id,
         status="ok",
         kpi_set=kpi_set,
+        confidence=confidence,
         per_node_detail=node_detail,
         per_edge_flow=per_edge_flow,
         equity_detail={
@@ -457,10 +542,3 @@ def run_scenario(session: Session, scenario: Scenario) -> Result:
         },
         runtime_ms=int((time.perf_counter() - started) * 1000),
     )
-    session.add(result)
-    session.commit()
-    # No refresh: sessions are configured expire_on_commit=False, so the instance is
-    # already fully populated. Refreshing would re-read the row, which under the
-    # parallel scenario-set run means a second connection racing the first one's
-    # write -- the source of an intermittent 500 on run-set.
-    return result

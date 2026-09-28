@@ -252,6 +252,7 @@ class ResultSummary(BaseModel):
     scenario_id: int
     status: str
     kpi_set: dict
+    confidence: dict = {}
     runtime_ms: int
     run_timestamp: datetime
     error: Optional[str]

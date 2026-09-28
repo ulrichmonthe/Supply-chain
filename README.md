@@ -276,6 +276,27 @@ workspace's demand and storage are recorded as the estimates they always were, s
 overview says — truthfully — that 100% of its demand is a population proxy. That line
 is the first entry of the confidence budget.
 
+### The confidence budget
+
+Every result now says how much of the demand it was solved on is an estimate, and
+what happens to the answer if those estimates are wrong. When any demand is estimated,
+the run solves the same scenario twice more, with every estimated figure 30% lower and
+30% higher (a country can set its own swing in `config.estimators.swing`), and keeps
+both ends beside the answer. Recorded figures and storage capacities stay put: a store
+sized from a guessed demand is exactly as wrong as the guess, and that is the point of
+the test. A solve takes tens of milliseconds, so the check costs less than the page
+refresh that shows it and nobody has to remember to ask.
+
+`app/engine/confidence.py` turns the ends into a verdict. The answer *holds* when the
+same stores stay open at both ends, the plan is still feasible, and an option that was
+cheaper (or dearer) than today's network stays so with today's network pushed the same
+way, end against end rather than against the baseline as modelled. Anything else is
+named: "with estimated demand 30% higher, this option costs more than today's network,
+reversing the comparison"; "the plan would close LAE"; "the plan's constraints can no
+longer be met". The scorecard carries the share and holds/depends per scenario with the
+sentence and the range for the selected one; the report has a "How sure this is"
+section before the equity table; the spreadsheet's Scorecard sheet has the rows.
+
 ### An import is a diff, not a wipe
 
 A full refresh used to delete every facility, lane, product and demand row and reload

@@ -652,9 +652,20 @@
           "state": "done",
           "env": null,
           "note": "The overview and the Data tab say what share of demand rows is a rule's output. The seeded workspace says 100%, which is true."
+        },
+        {
+          "id": "f10s12",
+          "title": "Know how much of an answer rests on estimates, and whether it survives them",
+          "state": "done",
+          "env": null,
+          "note": "Every run re-solves with estimated demand 30% lower and higher. The scorecard says 'holds \u00b130%' or 'depends' per scenario; the report and spreadsheet carry the sentence and the range. A reversal is named, not averaged away."
         }
       ],
       "decisions": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "what": "The sensitivity runs inside every scenario run rather than on request. At ~50 ms a solve it is cheaper than a page load, and a check nobody has to ask for is the only one that is always there."
+        },
         {
           "at": "2026-09-28T00:00:00Z",
           "what": "An estimate's rate is fixed when it is made and shown; only the row's own inputs are live. Re-learning the rate on every change would move every row whenever one facility's real data shifted the median."
@@ -676,6 +687,11 @@
         "A claim is a name, not a login: anyone can type any name until accounts exist."
       ],
       "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Confidence budget: estimated share on every result, \u00b130% re-solves in the run, verdict in words on the scorecard, in the report and in the spreadsheet"
+        },
         {
           "at": "2026-09-28T00:00:00Z",
           "kind": "work",
