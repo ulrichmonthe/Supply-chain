@@ -297,6 +297,28 @@ longer be met". The scorecard carries the share and holds/depends per scenario w
 sentence and the range for the selected one; the report has a "How sure this is"
 section before the equity table; the spreadsheet's Scorecard sheet has the rows.
 
+### Sessions: a save file that cannot lie
+
+A session is the whole working state under a name: every facility, lane, product and
+demand row (retired ones too), the scenarios and their latest results, the country's
+settings, who saved it and where the ledger stood. The **Sessions** shelf at the top of
+the sidebar lists them; **Save…** names one; **Open** makes the working state exactly
+that, ids and all, so a saved result's per-facility detail still points at the facility
+it was solved for. The saved session is never modified again. Before an older session
+is opened, the work you are in is kept automatically as a *draft*, so looking at last
+month's save can never lose this morning's edits; naming a draft turns it into a save.
+
+The snapshot is every mapped column of every row, serialised generically and gzipped,
+content-addressed by hash so two saves of the same state share one row. This is
+deliberately not the import pipeline: an import is data entering the model from
+outside and must be validated and reconciled; a session is the model itself, and the
+only honest restore of a model is the model, column for column. **Compare** reads the
+difference between a session and the screen, or between two sessions, in sentences:
+"population changed at 3 facilities, demand estimated for 22, 1 facility retired,
+Kokopo run: month blank → 3, equity 0.5 → 0.9, annual cost 11.2M → 13.8M". The ledger
+records every save and open with the author's claim, and the shelf says how many
+changes have been made since the session you are working from.
+
 ### An import is a diff, not a wipe
 
 A full refresh used to delete every facility, lane, product and demand row and reload

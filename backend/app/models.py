@@ -24,6 +24,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    LargeBinary,
     Index,
     Integer,
     String,
@@ -61,6 +62,11 @@ class Country(Base):
     boundary: Mapped[dict] = mapped_column(JSON, default=dict)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    #: The session the working state was last saved as or opened from, and the ledger
+    #: position at that moment, so "3 changes since" is a count rather than a guess.
+    current_session_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    current_session_position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     nodes: Mapped[list["Node"]] = relationship(back_populates="country", cascade="all, delete-orphan")
     edges: Mapped[list["Edge"]] = relationship(back_populates="country", cascade="all, delete-orphan")
@@ -314,6 +320,52 @@ class Result(Base):
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     scenario: Mapped[Scenario] = relationship(back_populates="results")
+
+
+class DatasetSnapshot(Base):
+    """The whole working state of a country at one moment, gzipped and content-addressed.
+
+    Two sessions saved from the same state share one snapshot: the hash is the identity.
+    """
+
+    __tablename__ = "dataset_snapshot"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    payload: Mapped[bytes] = mapped_column(LargeBinary)
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class WorkSession(Base):
+    """A named, complete save: the dataset as it stood, the scenarios and their latest
+    results, who saved it and why. Open one and the working state becomes exactly that;
+    the saved session itself is never modified again.
+
+    A ``draft`` is the same thing without a name: made automatically before another
+    session is opened, so nothing typed since the last save can be lost.
+    """
+
+    __tablename__ = "work_session"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    note: Mapped[str] = mapped_column(Text, default="")
+    kind: Mapped[str] = mapped_column(String(12), default="saved")  # saved | draft
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("work_session.id", ondelete="SET NULL"), nullable=True
+    )
+    snapshot_id: Mapped[int] = mapped_column(ForeignKey("dataset_snapshot.id", ondelete="CASCADE"))
+    #: The last ledger entry id when this was saved; the diff between two sessions of
+    #: one lineage is the ledger between their positions.
+    ledger_position: Mapped[int] = mapped_column(Integer, default=0)
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    author_claim: Mapped[str] = mapped_column(String(96), default="anonymous")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    snapshot: Mapped[DatasetSnapshot] = relationship()
 
 
 class AuditEntry(Base):

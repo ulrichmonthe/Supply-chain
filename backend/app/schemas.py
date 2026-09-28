@@ -148,6 +148,16 @@ class DemandOut(BaseModel):
     derivation: Optional[dict] = None
 
 
+class SessionCreate(BaseModel):
+    name: str = Field(..., max_length=160)
+    note: str = Field("", max_length=4000)
+
+
+class SessionPatch(BaseModel):
+    name: Optional[str] = Field(None, max_length=160)
+    note: Optional[str] = Field(None, max_length=4000)
+
+
 class EstimateRequest(BaseModel):
     """One estimate: a rule, and what to apply it to.
 

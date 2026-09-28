@@ -21,6 +21,9 @@ import type {
   SyncPreview,
   ValidationIssue,
   ValidationReport,
+  SessionDiff,
+  SessionShelf,
+  WorkSession,
 } from './types'
 
 const BASE = '/api'
@@ -168,6 +171,19 @@ export const api = {
     request<{ applied: number; recomputed: number; skipped: string[]; skipped_count: number }>(`/countries/${countryId}/estimates/apply`, { method: 'POST', body: JSON.stringify(payload) }),
   recomputeEstimates: (countryId: number) =>
     request<{ recomputed: number }>(`/countries/${countryId}/estimates/recompute`, { method: 'POST' }),
+  sessions: (countryId: number) => request<SessionShelf>(`/countries/${countryId}/sessions`),
+  saveSession: (countryId: number, payload: { name: string; note?: string }) =>
+    request<WorkSession>(`/countries/${countryId}/sessions`, { method: 'POST', body: JSON.stringify(payload) }),
+  openSession: (sessionId: number) =>
+    request<{ restored: Record<string, number>; draft: WorkSession | null; current: SessionShelf['current'] }>(
+      `/sessions/${sessionId}/open`,
+      { method: 'POST' },
+    ),
+  renameSession: (sessionId: number, payload: { name?: string; note?: string }) =>
+    request<WorkSession>(`/sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteSession: (sessionId: number) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
+  sessionDiff: (sessionId: number, against: 'current' | number = 'current') =>
+    request<SessionDiff>(`/sessions/${sessionId}/diff?against=${against}`),
   revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
   createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
     request<{ id: number; code: string; name: string }>('/countries', {

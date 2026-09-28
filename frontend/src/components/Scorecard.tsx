@@ -48,7 +48,7 @@ export function Scorecard({
 
   return (
     <div>
-      <div className="scroll-x">
+      <div className="scroll-x" tabIndex={0} role="region" aria-label="Scenario scorecard">
         <table>
           <thead>
             <tr>

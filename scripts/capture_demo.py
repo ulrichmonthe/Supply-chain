@@ -64,6 +64,7 @@ for rel, path in [
     ("products.json", "/countries/1/products"),
     ("estimators.json", "/countries/1/estimators"),
     ("retired.json", "/countries/1/nodes/retired"),
+    ("sessions.json", "/countries/1/sessions"),
 ]:
     save(rel, call(path))
 # The facility editor reads each facility's demand rows, estimates and all.

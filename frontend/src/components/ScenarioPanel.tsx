@@ -4,6 +4,8 @@ import type { Scenario, ServiceSummary } from '../types'
 import { FREQUENCIES, frequencyLabel, money, pct } from '../format'
 
 type Props = {
+  /** The Sessions shelf, rendered above the scenarios. */
+  shelf?: React.ReactNode
   scenarios: Scenario[]
   selectedId: number | null
   compareIds: number[]
@@ -149,6 +151,7 @@ export function ScenarioPanel(props: Props) {
 
   return (
     <div className="sidebar">
+      {props.shelf}
       <div className="section" data-tour="scenarios">
         <h3>Scenarios</h3>
 

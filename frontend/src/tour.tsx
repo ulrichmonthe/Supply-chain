@@ -83,6 +83,28 @@ export function buildTour({ setTab, setColourBy }: TourActions): TourStep[] {
     },
 
     {
+      id: 'sessions',
+      target: '[data-tour="sessions"]',
+      placement: 'right',
+      title: 'Save the whole thing under a name',
+      body: (
+        <>
+          <p>
+            A session is a complete save: the map, every figure, the scenarios and their
+            results, exactly as they stand. <b>Save…</b> names one; <b>Open</b> brings it back
+            exactly, keeping whatever you were doing as a draft first, so nothing is lost by
+            looking at an older one.
+          </p>
+          <p>
+            <b>Compare</b> says what differs between a session and the screen in sentences —
+            “population changed at 3 facilities, demand estimated for 22, equity weight 0.5 →
+            0.9” — rather than in a spreadsheet.
+          </p>
+        </>
+      ),
+    },
+
+    {
       id: 'scenarios',
       target: '[data-tour="scenarios"]',
       placement: 'right',

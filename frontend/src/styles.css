@@ -809,3 +809,24 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .range-table th, .range-table td { padding: 3px 12px 3px 0; }
 .range-table td.n, .range-table th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .range-table td.modelled { color: var(--text); font-weight: 600; }
+
+/* ---------- sessions ---------- */
+
+.banner.notice { background: #10202f; border-color: var(--accent-dim); color: var(--text); }
+.banner.notice b { color: var(--accent); }
+.session-current { font-size: var(--fs-small); color: var(--dim); line-height: 1.45; margin-bottom: 8px; }
+.session-current b { color: var(--text); }
+.session-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.session-form { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.session-form label { display: block; }
+.session-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.session-row {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px;
+  background: var(--panel-2);
+}
+.session-row.current { border-color: var(--accent-dim); }
+.session-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 600; }
+.session-buttons { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.session-diff { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft); font-size: var(--fs-small); }
+.session-diff ul { margin: 4px 0 0; padding-left: 18px; }
+.session-diff li { margin-bottom: 3px; }

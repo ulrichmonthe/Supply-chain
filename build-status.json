@@ -708,6 +708,69 @@
           "what": "Alembic migrations with automatic adoption of pre-migration databases; the audit trail became a ledger with author claims and batch ids"
         }
       ]
+    },
+    {
+      "id": "f11",
+      "name": "Saving and reopening your work",
+      "oneLiner": "A session is the whole working state under a name: open it later and everything is exactly as saved, and the work it replaces is kept as a draft.",
+      "needsYou": null,
+      "stories": [
+        {
+          "id": "f11s1",
+          "title": "Save the whole working state under a name",
+          "state": "done",
+          "env": null,
+          "note": "Facilities, lanes, products, demand, scenarios, latest results and settings, with a note and the author's name. Two saves of the same state share one snapshot."
+        },
+        {
+          "id": "f11s2",
+          "title": "Open a session and get back exactly what was saved",
+          "state": "done",
+          "env": null,
+          "note": "Ids included, so saved results still point at their facilities. Whatever you were doing is kept as a draft first; naming a draft makes it a save."
+        },
+        {
+          "id": "f11s3",
+          "title": "Read what differs between two sessions in sentences",
+          "state": "done",
+          "env": null,
+          "note": "Compare a session with the screen or with another session: facilities moved, demand estimated, scenarios re-levered, costs changed."
+        },
+        {
+          "id": "f11s4",
+          "title": "See how much has changed since the session you are working from",
+          "state": "done",
+          "env": null,
+          "note": "Counted in sittings, not ledger rows, so one population edit that moved eight estimates reads as one change."
+        },
+        {
+          "id": "f11s5",
+          "title": "Studies: a question, its scenarios, its verdict, and the diff map",
+          "state": "planned",
+          "env": null,
+          "note": "Next. Comparison as a workflow rather than a tab, built on the scorecard and the sessions."
+        }
+      ],
+      "decisions": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "what": "A session snapshot is the model itself, every column of every row, not a file pushed back through the import pipeline. An import must be validated and reconciled; a restore must be exact, and serialising columns generically is what keeps the two from drifting."
+        },
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "what": "The saved session is immutable. Opening it copies it into the working state; the working state is drafted first so no edit can be lost by looking at an older save."
+        }
+      ],
+      "unsure": [
+        "Snapshots live in the database as gzipped blobs (about 100 KB each for PNG). Fine for hundreds; a country with ten thousand facilities and daily saves will want them on object storage."
+      ],
+      "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Sessions shelf: save, open with automatic draft, compare in words, rename and delete; migration 0006; the demo carries an empty shelf"
+        }
+      ]
     }
   ],
   "parkingLot": [

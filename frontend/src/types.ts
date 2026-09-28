@@ -529,3 +529,49 @@ export type SyncPreview = ValidationReport & {
   commit_mode: string
   commit_note: string
 }
+
+/** A named, complete save of the working state. */
+export type WorkSession = {
+  id: number
+  country_id: number
+  name: string
+  note: string
+  kind: 'saved' | 'draft'
+  parent_id: number | null
+  author_claim: string
+  created_at: string
+  ledger_position: number
+  summary: {
+    facilities?: number
+    stores?: number
+    lanes?: number
+    products?: number
+    demand_rows?: number
+    scenarios?: number
+    results?: number
+    scenario_kpis?: { name: string; is_baseline: boolean; status: string | null; kpi_set: Record<string, number> }[]
+  }
+  size_bytes: number
+  is_current: boolean
+  changes_since: number | null
+}
+
+export type SessionShelf = {
+  current: {
+    session_id: number
+    name: string
+    kind: 'saved' | 'draft'
+    author_claim: string
+    created_at: string
+    changes_since: number
+  } | null
+  sessions: WorkSession[]
+}
+
+export type SessionDiff = {
+  from: string
+  to: string
+  same: boolean
+  sentences: string[]
+  detail: Record<string, unknown>
+}
