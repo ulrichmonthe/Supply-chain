@@ -253,6 +253,29 @@ keeps its history, and the Data tab lists what is retired with a Restore button.
 hand-made change can be put back from the Provenance tab: undo is a row that reverses
 it, never a deletion.
 
+### Estimates that show their working
+
+The blank the solver reads as zero, and the typed guess that reads as a fact, are the
+two ways demand data goes wrong in a data-poor country. An estimate is the third way:
+a named rule, its arithmetic beside the number, and the number tied to its inputs so
+it moves when they do — until a person types over it, at which point it is theirs and
+the rule lets go. Three rules, deliberately few, in `app/estimators.py`:
+**from population** (catchment population × a per-1,000 annual rate, taken from the
+country's settings, else the median of facilities with measured demand, else the
+estimates already made); **like peers** (the median of facilities of the same type,
+then level); and **storage from cover days** (annual demand volume per temperature band
+× cover days ÷ 365). The Data tab fills every blank row for a product in one action
+after a preview; the facility editor estimates one row beside the blank. Every value
+written is a ledger row with provenance `derived` and the formula as its rationale.
+
+Live means live: editing a population, typing a demand figure or importing a file
+recomputes the estimates that read those inputs in the same request, demand first and
+then the storage sized from it, and writes a "Recomputed" row for each value that
+actually moved. A figure a person types, or a file supplies, pins the row. The seeded
+workspace's demand and storage are recorded as the estimates they always were, so the
+overview says — truthfully — that 100% of its demand is a population proxy. That line
+is the first entry of the confidence budget.
+
 ### An import is a diff, not a wipe
 
 A full refresh used to delete every facility, lane, product and demand row and reload

@@ -74,8 +74,10 @@
       var m
       if (path === '/countries') return file('countries.json')
       if (path === '/connectors') return file('connectors.json')
-      if ((m = path.match(/^\/countries\/\d+\/(overview|nodes|edges|audit|connections)$/)))
+      if ((m = path.match(/^\/countries\/\d+\/(overview|nodes|edges|audit|connections|products|estimators)$/)))
         return file(m[1] + '.json')
+      if (path.match(/^\/countries\/\d+\/nodes\/retired$/)) return file('retired.json')
+      if ((m = path.match(/^\/nodes\/(\d+)\/demand$/))) return file('demand/' + m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/basemap\.geojson$/)) return file('basemap.json')
       if ((m = path.match(/^\/countries\/\d+\/season\/(\d+)$/))) return file('season/' + m[1] + '.json')
       if ((m = path.match(/^\/results\/(\d+)$/))) return file('results/' + m[1] + '.json')
@@ -123,6 +125,8 @@
       return json({ ran: ids.length })
     }
 
+    if (path.match(/\/estimates\/(preview|apply|recompute)$/))
+      return refuse('Estimating needs the rules on the server. Download the tool to fill blank rows.')
     // ---- everything that would change the model -----------------------------
     if (path.match(/\/validate$/) || path.match(/^\/imports\//))
       return refuse('Uploading a workbook needs the validator, which runs on the server. Download the tool to try it.')

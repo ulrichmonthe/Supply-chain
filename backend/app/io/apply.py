@@ -30,7 +30,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from .. import ledger
+from .. import estimators, ledger
 from ..db import INCLUDE_RETIRED
 from ..engine.distance import resolve_distance
 from ..models import AuditEntry, Country, Demand, Edge, Node, Product
@@ -316,13 +316,23 @@ def apply_changes(
         if row.kind == "restore":
             demand.retired_at, demand.retired_reason = None, ""
         resolve("demand", row, demand, DEMAND_FIELDS)
+        if "quantity" in row.fields or ("quantity" in row.conflicts and demand.derivation and
+                                        ledger.render(demand.quantity) != ledger.render(row.conflicts["quantity"]["model"])):
+            estimators.pin_demand(demand)  # the file supplied a figure: it is data now, not an estimate
         demand_rows += 1
     for row in changes.demand.retires:
         demand = demand_by_id[row.existing_id]
         demand.retired_at, demand.retired_reason = now, reason
     session.flush()
 
+    # Whatever the file changed -- populations, demand, product volumes -- the estimates
+    # that read those inputs follow, under the import's own batch id.
+    recomputed = estimators.recompute(
+        session, country, reason=f"after {reference or source}", author_claim=author_claim, batch_id=batch_id, actor=actor
+    )
+
     counts = {
+        "recomputed": recomputed,
         "nodes_created": len(changes.nodes.adds),
         "nodes_updated": len(changes.nodes.updates) + len(changes.nodes.conflicts) + len(changes.nodes.restores),
         "nodes_retired": len(changes.nodes.retires),

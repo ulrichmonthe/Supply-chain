@@ -226,12 +226,25 @@ def seed_png(session: Session) -> Country:
             operating_status="operational",
             hub_capable=False,
             external_ids={"mfl_code": spec.code},
+            # The seeded storage is sized from seeded demand and an assumed cover, so it
+            # is recorded as the estimate it is -- and follows the demand when that moves.
+            derivations={
+                "capacity": {
+                    "rule": "capacity_cover",
+                    "params": {"cover_days": _storage_capacity(spec.type, spec.terrain, per_band)["cover_days_assumed"]},
+                    "inputs": {},
+                    "formula": "seeded: annual demand volume × cover days ÷ 365",
+                    "at": "seed",
+                }
+            },
         )
         session.add(node)
         nodes[spec.code] = node
     session.flush()
 
+    per_1000 = {sku: rate for sku, _, _, _, _, _, rate in png.PRODUCTS}
     for code, units in facility_units.items():
+        population = float(nodes[code].catchment_population or 0)
         for sku, quantity in units.items():
             session.add(
                 Demand(
@@ -242,6 +255,16 @@ def seed_png(session: Session) -> Country:
                     quantity=round(quantity, 2),
                     source="proxy",
                     confidence=0.4,
+                    # Seeded demand is population × a per-1,000 rate. Recording that as a
+                    # live derivation means changing a population moves the demand, and the
+                    # confidence budget can say, truthfully, that all of it is estimated.
+                    derivation={
+                        "rule": "population_rate",
+                        "params": {"per_1000": per_1000[sku], "basis": "rate from the country's settings"},
+                        "inputs": {"population": population},
+                        "formula": f"{population:,.0f} people × {per_1000[sku]:g} per 1,000 per year = {quantity:,.0f}",
+                        "at": "seed",
+                    },
                 )
             )
     session.flush()

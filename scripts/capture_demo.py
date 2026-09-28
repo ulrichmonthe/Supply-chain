@@ -61,8 +61,14 @@ for rel, path in [
     ("audit.json", "/countries/1/audit"),
     ("connectors.json", "/connectors"),
     ("connections.json", "/countries/1/connections"),
+    ("products.json", "/countries/1/products"),
+    ("estimators.json", "/countries/1/estimators"),
+    ("retired.json", "/countries/1/nodes/retired"),
 ]:
     save(rel, call(path))
+# The facility editor reads each facility's demand rows, estimates and all.
+for node in call("/countries/1/nodes"):
+    save(f"demand/{node['id']}.json", call(f"/nodes/{node['id']}/demand"))
 for m in range(1, 13):
     save(f"season/{m}.json", call(f"/countries/1/season/{m}"))
 print("static data captured")

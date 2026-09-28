@@ -712,6 +712,20 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .issue.reverted { opacity: 0.6; }
 .btn.revert { margin-left: 8px; min-height: 24px; padding: 1px 8px; }
 
+/* ---------- estimates that show their working ---------- */
+
+.estimate-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-micro); color: var(--warn); background: rgba(232, 178, 58, 0.12);
+  border: 1px dashed rgba(232, 178, 58, 0.5); border-radius: 10px; padding: 1px 7px;
+  white-space: nowrap; cursor: help;
+}
+.estimate-menu { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.estimate-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line-soft); font-size: var(--fs-small); }
+.estimate-row .row-note { font-size: var(--fs-micro); }
+.estimate-summary { font-size: var(--fs-small); color: var(--muted); margin-bottom: 6px; }
+.estimate-summary b { color: var(--warn); }
+
 /* ---------- guided tour ---------- */
 
 .tour { position: fixed; inset: 0; z-index: var(--z-tour); }

@@ -3,7 +3,7 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic \u2014 by road, boat and plane, month by month \u2014 and who gets left out when money is saved."
   },
-  "updated": "2026-09-24T00:00:00Z",
+  "updated": "2026-09-28T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -631,9 +631,34 @@
           "state": "done",
           "env": null,
           "note": "Revert from the Provenance tab. The original stays in the ledger marked reverted; the reversal names it."
+        },
+        {
+          "id": "f10s9",
+          "title": "Fill a blank demand figure with a rule that shows its working",
+          "state": "done",
+          "env": null,
+          "note": "From population, like peers, or storage from cover days. One row from the facility editor, or every blank row from the Data tab after a preview; each value is a ledger row with its arithmetic."
+        },
+        {
+          "id": "f10s10",
+          "title": "Estimates follow their inputs until somebody types over them",
+          "state": "done",
+          "env": null,
+          "note": "Change a population and the estimated demand moves, then the storage sized from it. Type a figure, or import one, and that row stops following."
+        },
+        {
+          "id": "f10s11",
+          "title": "See how much of the model is estimated rather than recorded",
+          "state": "done",
+          "env": null,
+          "note": "The overview and the Data tab say what share of demand rows is a rule's output. The seeded workspace says 100%, which is true."
         }
       ],
       "decisions": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "what": "An estimate's rate is fixed when it is made and shown; only the row's own inputs are live. Re-learning the rate on every change would move every row whenever one facility's real data shifted the median."
+        },
         {
           "at": "2026-09-24T00:00:00Z",
           "what": "Where a file disagrees with a correction made in the tool, the correction wins unless the person applying says otherwise, and the ledger records the choice either way."
@@ -651,6 +676,11 @@
         "A claim is a name, not a login: anyone can type any name until accounts exist."
       ],
       "activity": [
+        {
+          "at": "2026-09-28T00:00:00Z",
+          "kind": "work",
+          "what": "Estimators: population rate, peer median and cover-days storage, live until pinned, every value a ledger row with its formula; the estimated share on the overview"
+        },
         {
           "at": "2026-09-24T00:00:00Z",
           "kind": "work",

@@ -112,6 +112,9 @@ class Node(Base):
     #: {"dhis2_uid": ..., "msupply_id": ..., "openlmis_code": ..., "mfl_code": ...}
     external_ids: Mapped[dict] = mapped_column(JSON, default=dict)
     attributes: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Fields whose value is an estimate that stays live: {"capacity": {"rule": ..., "params": ...}}.
+    #: Typing over the field pins it -- the entry is removed and the value is a person's.
+    derivations: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
 
     # --- soft delete and the memory of the last import ---------------------------------
     #: Set instead of deleting. A retired row is invisible to every query unless it asks
@@ -241,6 +244,9 @@ class Demand(Base):
     #: actual | forecast | proxy -- proxy means derived from catchment population.
     source: Mapped[str] = mapped_column(String(16), default="proxy")
     confidence: Mapped[float] = mapped_column(Float, default=0.5)
+    #: When the quantity is an estimate: {"rule", "params", "inputs", "formula", "at"}.
+    #: Live -- recomputed when its inputs change -- until somebody types over it.
+    derivation: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # --- soft delete and the memory of the last import ---------------------------------
     #: Set instead of deleting. A retired row is invisible to every query unless it asks

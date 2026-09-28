@@ -13,6 +13,7 @@ import { Tour } from './components/Tour'
 import { TOUR_STORAGE_KEY, buildTour } from './tour'
 import type {
   AuditRow,
+  ProductRow,
   EdgeRow,
   NodeRow,
   Overview,
@@ -131,6 +132,7 @@ export default function App() {
   const [nodes, setNodes] = useState<NodeRow[]>([])
   const [edges, setEdges] = useState<EdgeRow[]>([])
   const [basemap, setBasemap] = useState<GeoJSON.FeatureCollection | null>(null)
+  const [products, setProducts] = useState<ProductRow[]>([])
   const [audit, setAudit] = useState<AuditRow[]>([])
 
   const [scenarios, setScenarios] = useState<Scenario[]>([])
@@ -181,18 +183,20 @@ export default function App() {
   }, [loadCountries])
 
   const loadNetwork = useCallback(async (id: number) => {
-    const [ov, ns, es, bm, au] = await Promise.all([
+    const [ov, ns, es, bm, au, ps] = await Promise.all([
       api.overview(id),
       api.nodes(id),
       api.edges(id),
       api.basemap(id),
       api.audit(id),
+      api.products(id),
     ])
     setOverview(ov)
     setNodes(ns)
     setEdges(es)
     setBasemap(bm)
     setAudit(au)
+    setProducts(ps)
   }, [])
 
   const loadScenarios = useCallback(async (id: number) => {
@@ -761,6 +765,8 @@ export default function App() {
                   <FacilityEditor
                     node={selectedNode}
                     edges={edges}
+                    products={products}
+                    countryId={countryId ?? 0}
                     currency={currency}
                     onChanged={reloadAfterEdit}
                     onRetired={() => {

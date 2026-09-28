@@ -13,7 +13,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { api } from '../api'
-import type { ConfidenceMarker, DemandRow, EdgeRow, NodeRow, ValidationIssue } from '../types'
+import type { ConfidenceMarker, DemandRow, EdgeRow, EstimateRule, NodeRow, ProductRow, ValidationIssue } from '../types'
 import { exact } from '../format'
 
 const STATUSES = ['operational', 'closed', 'proposed', 'seasonal'] as const
@@ -70,15 +70,29 @@ function Issues({ issues }: { issues: ValidationIssue[] }) {
   )
 }
 
+/** The rule behind an estimated value, as a chip whose tooltip is the arithmetic. */
+export function EstimateChip({ derivation }: { derivation: { rule: string; formula: string } }) {
+  const label = derivation.rule === 'population_rate' ? 'from population' : derivation.rule === 'peer_median' ? 'like peers' : 'from cover days'
+  return (
+    <span className="estimate-chip" title={`${derivation.formula}. Type a value to pin it.`}>
+      ≈ {label}
+    </span>
+  )
+}
+
 export function FacilityEditor({
   node,
   edges,
+  products,
+  countryId,
   currency,
   onChanged,
   onRetired,
 }: {
   node: NodeRow
   edges: EdgeRow[]
+  products: ProductRow[]
+  countryId: number
   currency: string
   onChanged: () => void
   onRetired: () => void
@@ -129,6 +143,38 @@ export function FacilityEditor({
     return text.trim() === '' || Number.isNaN(value) ? null : value
   }
 
+  const reloadDemand = () =>
+    api
+      .nodeDemand(node.id)
+      .then((rows) => {
+        setDemand(rows)
+        setDemandDraft(Object.fromEntries(rows.map((row) => [row.sku, String(row.quantity)])))
+      })
+      .catch(() => undefined)
+
+  async function estimate(rule: EstimateRule, sku?: string) {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const outcome = await api.applyEstimate(countryId, { rule, node_id: node.id, sku, reason })
+      if (!outcome.applied) {
+        setMessage(outcome.skipped[0] ?? 'Nothing to estimate from.')
+      } else {
+        setMessage(
+          sku
+            ? `Estimated ${sku}. It stays live — it follows the population until you type over it.`
+            : 'Estimated storage from demand and cover days. It follows the demand until you type over it.',
+        )
+      }
+      await reloadDemand()
+      onChanged()
+    } catch (error) {
+      setMessage(String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function save() {
     const patch: Record<string, unknown> = {}
     if (name.trim() !== node.name) patch.name = name.trim()
@@ -162,12 +208,17 @@ export function FacilityEditor({
     try {
       const outcome = await api.patchNode(node.id, { ...patch, confidence_marker: marker, reason })
       setIssues(outcome.issues)
+      const fields = Object.keys(patch).length
+      const followed = outcome.recomputed
+        ? ` ${outcome.recomputed} estimate${outcome.recomputed === 1 ? '' : 's'} followed the change.`
+        : ''
       setMessage(
         outcome.issues.some((issue) => issue.severity === 'error')
           ? 'Saved, but the checks below need attention.'
-          : `Saved ${Object.keys(patch).length} field${Object.keys(patch).length === 1 ? '' : 's'}. Re-run the scenario for the numbers to follow.`,
+          : `Saved ${fields} field${fields === 1 ? '' : 's'}.${followed} Re-run the scenario for the numbers to follow.`,
       )
       setReason('')
+      await reloadDemand()
       onChanged()
     } catch (error) {
       setMessage(String(error))
@@ -272,7 +323,10 @@ export function FacilityEditor({
           <input inputMode="numeric" value={population} onChange={(e) => setPopulation(e.target.value)} />
         </label>
         <label className="field">
-          <span>Dry storage (m³)</span>
+          <span>
+            Dry storage (m³){' '}
+            {node.derivations?.capacity && <EstimateChip derivation={node.derivations.capacity} />}
+          </span>
           <input inputMode="decimal" value={dry} onChange={(e) => setDry(e.target.value)} placeholder="unknown" />
         </label>
         <label className="field">
@@ -293,14 +347,28 @@ export function FacilityEditor({
         <button type="button" className="btn small primary" onClick={save} disabled={busy}>
           Save changes
         </button>
+        {!node.derivations?.capacity && (
+          <button
+            type="button"
+            className="btn small ghost"
+            onClick={() => void estimate('capacity_cover')}
+            disabled={busy}
+            title="Size dry and cold storage from this facility's annual demand and the country's cover days"
+          >
+            Estimate storage…
+          </button>
+        )}
       </div>
 
       {message && <div className="lever-note editor-message" role="status">{message}</div>}
       <Issues issues={issues} />
 
-      {demand.length > 0 && (
+      {(products.length > 0 || demand.length > 0) && node.level === 3 && (
         <div className="section" style={{ paddingLeft: 0, paddingRight: 0 }}>
           <h3>Demand</h3>
+          <div className="lever-note" style={{ marginBottom: 4 }}>
+            Per year. A blank row is not zero to the solver — it is nothing. Estimate it, or type what you know.
+          </div>
           <table className="editor-table">
             <thead>
               <tr>
@@ -310,31 +378,59 @@ export function FacilityEditor({
               </tr>
             </thead>
             <tbody>
-              {demand.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    {row.product_name}
-                    <div className="row-note">{row.sku}</div>
-                  </td>
-                  <td className="n">
-                    <input
-                      className="cell-input"
-                      inputMode="numeric"
-                      aria-label={`${row.product_name} demand per year`}
-                      value={demandDraft[row.sku] ?? ''}
-                      onChange={(e) => setDemandDraft({ ...demandDraft, [row.sku]: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <span className={`pill ${row.source === 'actual' ? 'good' : row.source === 'proxy' ? 'warn' : 'info'}`}>{row.source}</span>
-                  </td>
-                </tr>
-              ))}
+              {(products.length ? products : demand.map((d) => ({ sku: d.sku, name: d.product_name }))).map((product) => {
+                const row = demand.find((d) => d.sku === product.sku)
+                return (
+                  <tr key={product.sku}>
+                    <td>
+                      {product.name}
+                      <div className="row-note">
+                        {product.sku}
+                        {row?.derivation && (
+                          <>
+                            {' '}
+                            <EstimateChip derivation={row.derivation} />
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="n">
+                      {row ? (
+                        <input
+                          className="cell-input"
+                          inputMode="numeric"
+                          aria-label={`${product.name} demand per year`}
+                          value={demandDraft[row.sku] ?? ''}
+                          onChange={(e) => setDemandDraft({ ...demandDraft, [row.sku]: e.target.value })}
+                        />
+                      ) : (
+                        <span className="dim">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {row ? (
+                        <span className={`pill ${row.source === 'actual' ? 'good' : row.source === 'proxy' ? 'warn' : 'info'}`}>{row.source}</span>
+                      ) : (
+                        <span className="estimate-menu">
+                          <button type="button" className="btn small ghost" disabled={busy} onClick={() => void estimate('population_rate', product.sku)} title="Catchment population × the product's per-1,000 rate">
+                            Estimate from population
+                          </button>
+                          <button type="button" className="btn small ghost" disabled={busy} onClick={() => void estimate('peer_median', product.sku)} title="The median of facilities of the same type">
+                            like peers
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
-          <button type="button" className="btn small" onClick={saveDemand} disabled={busy} style={{ marginTop: 6 }}>
-            Save demand
-          </button>
+          {demand.length > 0 && (
+            <button type="button" className="btn small" onClick={saveDemand} disabled={busy} style={{ marginTop: 6 }}>
+              Save demand
+            </button>
+          )}
         </div>
       )}
 

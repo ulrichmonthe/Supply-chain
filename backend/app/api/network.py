@@ -252,6 +252,23 @@ def overview(country_id: int, session: Session = Depends(get_session)):
             "annual_demand_m3": round(sum(demand_m3.values()), 1),
             "provinces": sorted({n.admin1 for n in nodes if n.admin1}),
         },
+        # The confidence budget's first line: how much of the demand is a rule's output
+        # rather than a record. Truthfully 100% on the seeded workspace.
+        "estimated": {
+            "demand_rows": len(demand_rows),
+            "demand_rows_estimated": sum(1 for row in demand_rows if row.derivation),
+            "demand_share": round(sum(1 for row in demand_rows if row.derivation) / len(demand_rows), 3) if demand_rows else 0.0,
+            "demand_m3_estimated_share": (
+                round(
+                    sum(row.quantity * product_by_id[row.product_id].volume_per_unit_cm3 / 1e6 for row in demand_rows if row.derivation and row.product_id in product_by_id)
+                    / max(1e-9, sum(demand_m3.values())),
+                    3,
+                )
+                if demand_m3
+                else 0.0
+            ),
+            "facilities_with_estimated_storage": sum(1 for n in nodes if "capacity" in (n.derivations or {})),
+        },
         "distance_provenance": cascade_summary(edges),
         "services": sorted(services.values(), key=lambda s: -s["population"]),
         "vulnerability": {str(k): v.as_dict() for k, v in vulnerability.items()},

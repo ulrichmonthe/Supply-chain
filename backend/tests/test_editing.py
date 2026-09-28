@@ -42,8 +42,14 @@ def a_facility(client: TestClient) -> dict:
     raise AssertionError("no seeded facility with lanes and demand")
 
 
-def latest(client: TestClient, **params) -> dict:
-    return client.get("/api/countries/1/audit", params={"limit": 1, **params}).json()[0]
+def latest(client: TestClient, field: str = "", **params) -> dict:
+    """The newest ledger row, optionally for one field. Editing a population now also
+    writes the recomputed estimates that read it, so 'newest' alone is no longer the
+    row a test means."""
+    rows = client.get("/api/countries/1/audit", params={"limit": 20, **params}).json()
+    if field:
+        rows = [row for row in rows if row["field"] == field]
+    return rows[0]
 
 
 # --- editing a facility --------------------------------------------------------------
@@ -61,7 +67,7 @@ def test_a_field_can_be_changed_in_place_and_the_ledger_says_who(client: TestCli
     assert body["node"]["catchment_population"] == fac["catchment_population"] + 500
     assert body["issues"] == []
 
-    entry = latest(client, entity_ref=fac["code"])
+    entry = latest(client, field="catchment_population", entity_ref=fac["code"])
     assert (entry["field"], entry["author_claim"], entry["confidence_marker"]) == ("catchment_population", "Provincial officer", "S")
     assert entry["provenance"] == "manual_override"
     assert float(entry["old_value"]) == fac["catchment_population"]
@@ -193,17 +199,18 @@ def test_a_hand_made_change_can_be_reverted_by_a_row_not_a_deletion(client: Test
     fac = a_facility(client)
     original = fac["catchment_population"]
     client.patch(f"/api/nodes/{fac['id']}", json={"catchment_population": original + 1000}, headers={"X-Author": "Someone"})
-    entry = latest(client, entity_ref=fac["code"])
-    assert entry["field"] == "catchment_population"
+    entry = latest(client, field="catchment_population", entity_ref=fac["code"])
+    assert entry["provenance"] == "manual_override"
 
     response = client.post(f"/api/audit/{entry['id']}/revert", headers={"X-Author": "Reviewer"})
     assert response.status_code == 200, response.text
 
     assert next(n for n in nodes(client) if n["id"] == fac["id"])["catchment_population"] == original
-    reversal = latest(client, entity_ref=fac["code"])
+    reversal = latest(client, field="catchment_population", entity_ref=fac["code"])
     assert reversal["reverts_id"] == entry["id"]
     assert reversal["author_claim"] == "Reviewer"
-    assert client.get("/api/countries/1/audit", params={"entity_ref": fac["code"], "limit": 5}).json()[1]["status"] == "reverted"
+    assert client.get("/api/countries/1/audit", params={"entity_ref": fac["code"], "limit": 500}).json()
+    assert next(r for r in client.get("/api/countries/1/audit", params={"entity_ref": fac["code"], "limit": 500}).json() if r["id"] == entry["id"])["status"] == "reverted"
     assert client.post(f"/api/audit/{entry['id']}/revert").status_code == 409, "already reverted"
 
 

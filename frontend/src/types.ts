@@ -39,6 +39,50 @@ export type NodeRow = {
   geocode_source: string
   retired_at: string | null
   retired_reason: string
+  derivations: Record<string, Derivation>
+}
+
+/** The rule behind an estimated value, kept beside it so the number can show its working. */
+export type Derivation = {
+  rule: string
+  params: Record<string, unknown>
+  inputs: Record<string, unknown>
+  formula: string
+  at: string
+}
+
+export type ProductRow = {
+  id: number
+  sku: string
+  name: string
+  temperature_band: string
+  volume_per_unit_cm3: number
+  unit_cost: number
+  shelf_life_days: number
+}
+
+export type EstimatorInfo = {
+  rules: { key: string; target: string; label: string; detail: string; live: boolean }[]
+  products: {
+    sku: string
+    name: string
+    rows: number
+    estimated: number
+    blank: number
+    population_rate: { available: boolean; per_1000: number | null; basis: string }
+  }[]
+  capacity: { blank: number; estimated: number; cover_days: number }
+  demand: { rows: number; estimated: number; share: number }
+}
+
+export type EstimateRule = 'population_rate' | 'peer_median' | 'capacity_cover'
+
+export type EstimatePreview = {
+  rule: EstimateRule
+  count: number
+  proposals: { node_id: number; node_code: string; node_name: string; sku: string | null; field: string; current: unknown; proposed: unknown; formula: string; confidence: number }[]
+  skipped: string[]
+  skipped_count: number
 }
 
 export type DemandRow = {
@@ -52,6 +96,7 @@ export type DemandRow = {
   source: string
   confidence: number
   unit: string
+  derivation: Derivation | null
 }
 
 export type ConfidenceMarker = 'S' | 'I' | 'U'
@@ -128,6 +173,13 @@ export type Overview = {
   country: Country
   counts: Record<string, number>
   totals: { population: number; annual_demand_m3: number; provinces: string[] }
+  estimated?: {
+    demand_rows: number
+    demand_rows_estimated: number
+    demand_share: number
+    demand_m3_estimated_share: number
+    facilities_with_estimated_storage: number
+  }
   distance_provenance: {
     counts: Record<string, number>
     total_edges: number

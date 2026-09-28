@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
-from .api import connectors, editing, exports, ingest, network, scenarios
+from .api import connectors, editing, estimates, exports, ingest, network, scenarios
 from .config import settings
 from .db import SessionLocal
 from .migrate import prepare_database
@@ -81,6 +81,7 @@ app.add_middleware(
 
 app.include_router(network.router, prefix="/api")
 app.include_router(editing.router, prefix="/api")
+app.include_router(estimates.router, prefix="/api")
 app.include_router(scenarios.router, prefix="/api")
 app.include_router(ingest.router, prefix="/api")
 app.include_router(exports.router, prefix="/api")

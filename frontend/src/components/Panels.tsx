@@ -4,6 +4,8 @@ import type {
   ChangeRow,
   ConfidenceMarker,
   EdgeRow,
+  EstimateRule,
+  EstimatorInfo,
   ImportChanges,
   NodeRow,
   Overview,
@@ -830,6 +832,8 @@ export function DataPanel({
         />
       )}
 
+      {!report && <Estimates countryId={countryId} nodes={nodes} onChanged={onImported} />}
+
       {!report && retired.length > 0 && (
         <div className="section">
           <h3>Retired facilities ({retired.length})</h3>
@@ -861,6 +865,17 @@ export function DataPanel({
           {overview.counts.edges} lanes, {overview.counts.scheduled_services} timetabled services,{' '}
           {exact(overview.totals.population)} people in the modelled catchments and{' '}
           {exact(overview.totals.annual_demand_m3)} m³ of annual demand.
+          {overview.estimated && overview.estimated.demand_rows > 0 && (
+            <>
+              {' '}
+              <b>{Math.round(overview.estimated.demand_share * 100)}%</b> of the demand rows are estimates from a rule
+              rather than records
+              {overview.estimated.facilities_with_estimated_storage > 0 && (
+                <>, and {overview.estimated.facilities_with_estimated_storage} facilities have storage sized by a rule</>
+              )}
+              .
+            </>
+          )}
           {lowConfidence > 0 && (
             <>
               {' '}
@@ -1193,6 +1208,155 @@ function AddFacility({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ estimates */
+
+/**
+ * Filling what is missing with a rule that shows its working.
+ *
+ * Per product: how many facility rows are blank, and the rate the population rule
+ * would use and where that rate came from. Preview says what would be written; Apply
+ * writes it, each value a ledger row with its arithmetic, live until typed over.
+ */
+function Estimates({ countryId, nodes, onChanged }: { countryId: number; nodes: NodeRow[]; onChanged: () => void }) {
+  const [info, setInfo] = useState<EstimatorInfo | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [preview, setPreview] = useState<{ sku?: string; rule: EstimateRule; count: number; sample: string; skipped: number } | null>(null)
+
+  const load = useCallback(() => {
+    api.estimators(countryId).then(setInfo).catch(() => setInfo(null))
+  }, [countryId])
+  useEffect(() => {
+    load()
+  }, [load, nodes])
+
+  async function look(rule: EstimateRule, sku?: string) {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const out = await api.previewEstimate(countryId, { rule, sku })
+      setPreview({ sku, rule, count: out.count, sample: out.proposals[0]?.formula ?? '', skipped: out.skipped_count })
+    } catch (error) {
+      setMessage(String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function fill() {
+    if (!preview) return
+    setBusy(true)
+    try {
+      const out = await api.applyEstimate(countryId, { rule: preview.rule, sku: preview.sku, reason: 'Filled from the Data tab.' })
+      setMessage(
+        `Estimated ${out.applied} value${out.applied === 1 ? '' : 's'}` +
+          (out.recomputed ? ` and re-sized ${out.recomputed} that depend on them` : '') +
+          `. Each is in the ledger with its arithmetic, and stays live until somebody types over it.`,
+      )
+      setPreview(null)
+      load()
+      onChanged()
+    } catch (error) {
+      setMessage(String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function recompute() {
+    setBusy(true)
+    try {
+      const out = await api.recomputeEstimates(countryId)
+      setMessage(out.recomputed ? `Recomputed ${out.recomputed} estimates against current inputs.` : 'Every estimate was already current.')
+      load()
+      onChanged()
+    } catch (error) {
+      setMessage(String(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!info) return null
+  const blankProducts = info.products.filter((p) => p.blank > 0)
+
+  return (
+    <div className="section">
+      <h3>Estimates</h3>
+      <div className="estimate-summary">
+        <b>{Math.round(info.demand.share * 100)}%</b> of demand rows ({info.demand.estimated} of {info.demand.rows}) are estimates
+        from a rule. They follow their inputs — a population, a cover — until somebody types over them.
+      </div>
+
+      {blankProducts.length === 0 && info.capacity.blank === 0 ? (
+        <div className="lever-note">No blank demand or storage right now. Add a facility, and its rows appear here.</div>
+      ) : (
+        <>
+          {blankProducts.map((product) => (
+            <div className="estimate-row" key={product.sku}>
+              <div>
+                {product.name}
+                <div className="row-note">
+                  {product.blank} blank {product.blank === 1 ? 'facility' : 'facilities'} ·{' '}
+                  {product.population_rate.available
+                    ? `${product.population_rate.per_1000} per 1,000 people (${product.population_rate.basis})`
+                    : product.population_rate.basis}
+                </div>
+              </div>
+              <span className="estimate-menu">
+                <button type="button" className="btn small" disabled={busy || !product.population_rate.available} onClick={() => void look('population_rate', product.sku)}>
+                  From population
+                </button>
+                <button type="button" className="btn small ghost" disabled={busy} onClick={() => void look('peer_median', product.sku)}>
+                  Like peers
+                </button>
+              </span>
+            </div>
+          ))}
+          {info.capacity.blank > 0 && (
+            <div className="estimate-row">
+              <div>
+                Storage
+                <div className="row-note">
+                  {info.capacity.blank} {info.capacity.blank === 1 ? 'facility' : 'facilities'} without capacity · {info.capacity.cover_days} cover days
+                </div>
+              </div>
+              <button type="button" className="btn small" disabled={busy} onClick={() => void look('capacity_cover')}>
+                Size from demand
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {preview && (
+        <div className="callout" style={{ marginTop: 8 }}>
+          <h4>
+            Would fill {preview.count} {preview.count === 1 ? 'value' : 'values'}
+            {preview.skipped ? ` (${preview.skipped} skipped: nothing to work from)` : ''}
+          </h4>
+          {preview.sample && <div className="tiny" style={{ marginBottom: 6 }}>e.g. {preview.sample}</div>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="button" className="btn small primary" disabled={busy || preview.count === 0} onClick={() => void fill()}>
+              Apply
+            </button>
+            <button type="button" className="btn small ghost" onClick={() => setPreview(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 8 }}>
+        <button type="button" className="btn small ghost" disabled={busy} onClick={() => void recompute()} title="Edits and imports do this on their own; this is the honest answer to 'are these numbers current?'">
+          Recompute estimates
+        </button>
+      </div>
+      {message && <div className="lever-note" role="status" style={{ marginTop: 6 }}>{message}</div>}
     </div>
   )
 }

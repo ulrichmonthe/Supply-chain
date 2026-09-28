@@ -6,9 +6,13 @@ import type {
   ConnectorSpec,
   DemandRow,
   EdgeRow,
+  EstimatePreview,
+  EstimateRule,
+  EstimatorInfo,
   ImportChanges,
   NodeRow,
   Overview,
+  ProductRow,
   Result,
   Roadmap,
   Scenario,
@@ -119,7 +123,11 @@ export const api = {
   patchNode: (
     nodeId: number,
     patch: Partial<NodeRow> & { confidence_marker?: ConfidenceMarker; reason?: string },
-  ) => request<{ node: NodeRow; issues: ValidationIssue[] }>(`/nodes/${nodeId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  ) =>
+    request<{ node: NodeRow; issues: ValidationIssue[]; recomputed: number }>(`/nodes/${nodeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
   createNode: (
     countryId: number,
     payload: {
@@ -151,6 +159,15 @@ export const api = {
   ) => request<DemandRow[]>(`/nodes/${nodeId}/demand`, { method: 'PUT', body: JSON.stringify({ lines, confidence_marker, reason }) }),
   overrideEdge: (edgeId: number, patch: Partial<EdgeRow> & { rationale?: string }) =>
     request<EdgeRow>(`/edges/${edgeId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  products: (countryId: number) => request<ProductRow[]>(`/countries/${countryId}/products`),
+  /* --- estimates that show their working --- */
+  estimators: (countryId: number) => request<EstimatorInfo>(`/countries/${countryId}/estimators`),
+  previewEstimate: (countryId: number, payload: { rule: EstimateRule; node_id?: number; sku?: string }) =>
+    request<EstimatePreview>(`/countries/${countryId}/estimates/preview`, { method: 'POST', body: JSON.stringify(payload) }),
+  applyEstimate: (countryId: number, payload: { rule: EstimateRule; node_id?: number; sku?: string; reason?: string }) =>
+    request<{ applied: number; recomputed: number; skipped: string[]; skipped_count: number }>(`/countries/${countryId}/estimates/apply`, { method: 'POST', body: JSON.stringify(payload) }),
+  recomputeEstimates: (countryId: number) =>
+    request<{ recomputed: number }>(`/countries/${countryId}/estimates/recompute`, { method: 'POST' }),
   revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
   createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
     request<{ id: number; code: string; name: string }>('/countries', {

@@ -63,6 +63,7 @@ class NodeOut(BaseModel):
     hub_open_capex: float
     hub_throughput_m3: float
     external_ids: dict
+    derivations: dict = Field(default_factory=dict)
     retired_at: Optional[datetime] = None
     retired_reason: str = ""
 
@@ -144,6 +145,21 @@ class DemandOut(BaseModel):
     source: str
     confidence: float
     unit: str = "units"
+    derivation: Optional[dict] = None
+
+
+class EstimateRequest(BaseModel):
+    """One estimate: a rule, and what to apply it to.
+
+    With ``node_id`` and ``sku`` it is one row, applied whether blank or not -- the
+    person asked. Without them it is every blank row for the product (or every
+    product), and never a row somebody already filled.
+    """
+
+    rule: Literal["population_rate", "peer_median", "capacity_cover"]
+    node_id: Optional[int] = None
+    sku: Optional[str] = None
+    reason: str = ""
 
 
 class EdgeOut(BaseModel):

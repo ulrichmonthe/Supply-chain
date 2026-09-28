@@ -480,3 +480,11 @@ ISLAND_BUFFERS: list[tuple[float, float, float]] = [
 #: Everything the offshore check and the offline basemap need, in the shape the
 #: Country.boundary column stores.
 BOUNDARY = {"polygons": LAND_POLYGONS, "buffers": ISLAND_BUFFERS}
+
+#: The estimator rules read these. The per-1,000 rates are the same ones the seeded
+#: demand was built from, so an estimate for a new facility is consistent with the
+#: rest of the workspace -- and a consultant can change them without a release.
+COUNTRY["config"]["estimators"] = {
+    "per_1000": {sku: rate for sku, _, _, _, _, _, rate in PRODUCTS},
+    "cover_days": 30.0,
+}

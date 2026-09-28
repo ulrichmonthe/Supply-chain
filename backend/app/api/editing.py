@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import inspect as sa_inspect, select
 from sqlalchemy.orm import Session
 
-from .. import ledger
+from .. import estimators, ledger
 from ..db import INCLUDE_RETIRED, get_session
 from ..io.apply import restore_node, retire_node
 from ..io.validation import validate_dataset
@@ -170,11 +170,23 @@ def update_node(
         # A typed coordinate is a claim by a person, and the record should say so.
         node.geocode_source = "manual"
         node.geocode_confidence = {"S": 0.95, "I": 0.7, "U": 0.4}[payload.confidence_marker]
+    if "capacity" in changes and changes["capacity"] is not None:
+        estimators.pin_capacity(node)  # typed storage is a person's, not a rule's
+
+    # Estimates that read this facility -- demand from its population, storage from
+    # its demand -- follow the change, in the same request, under the same batch.
+    recomputed = 0
+    if any(field in changes for field in ("catchment_population", "type", "level", "capacity")):
+        session.flush()
+        recomputed = estimators.recompute(
+            session, country, node_ids=[node.id],
+            reason=f"{node.code} was edited", author_claim=author, batch_id=batch,
+        )
 
     issues = _check(session, country, node)
     session.commit()
     session.refresh(node)
-    return {"node": NodeOut.model_validate(node), "issues": issues}
+    return {"node": NodeOut.model_validate(node), "issues": issues, "recomputed": recomputed}
 
 
 @router.post("/nodes/{node_id}/retire")
@@ -237,6 +249,7 @@ def _demand_out(row: Demand, node: Node, product: Product) -> DemandOut:
         quantity=row.quantity,
         source=row.source,
         confidence=row.confidence,
+        derivation=row.derivation,
     )
 
 
@@ -296,12 +309,19 @@ def set_node_demand(
             if ledger.render(old) == ledger.render(new):
                 continue
             setattr(row, field, new)
+            if field == "quantity":
+                estimators.pin_demand(row)  # a person typed it: the rule lets go
             ledger.record(
                 session, country_id=node.country_id, entity_type="demand", entity_ref=ref, field=field,
                 old_value=old, new_value=new, provenance="manual_override",
                 confidence_marker=payload.confidence_marker, rationale=payload.reason,
                 author_claim=author, batch_id=batch,
             )
+    session.flush()
+    estimators.recompute(
+        session, session.get(Country, node.country_id), node_ids=[node.id],
+        reason=f"demand at {node.code} was typed", author_claim=author, batch_id=batch,
+    )
     session.commit()
     by_id = {p.id: p for p in products.values()}
     rows = session.scalars(select(Demand).where(Demand.node_id == node.id).order_by(Demand.product_id, Demand.period))
