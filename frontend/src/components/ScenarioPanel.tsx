@@ -509,6 +509,21 @@ function LeverEditor({
           </div>
         </div>
 
+        <label className="checkbox" style={{ margin: '6px 0 10px' }}>
+          <input
+            type="checkbox"
+            checked={Boolean(levers.multi_period)}
+            onChange={(e) => setLever({ multi_period: e.target.checked })}
+          />
+          Solve twelve months with stock carried between them
+        </label>
+        {levers.multi_period && (
+          <div className="lever-note" style={{ marginTop: -6, marginBottom: 10 }}>
+            Each month under its own conditions; a facility can be stocked up before its road closes, within
+            its storage. A pinned month is ignored: the year is the point. The Season tab shows the months.
+          </div>
+        )}
+
         <Slider
           label="Third-party transport"
           value={levers.third_party_share ?? 0}

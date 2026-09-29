@@ -45,6 +45,11 @@ KPI_META: dict[str, dict] = {
     "delivered_m3": {"label": "Delivered volume", "unit": "m3", "better": "higher"},
     "cold_share": {"label": "Cold chain share of volume", "unit": "percent", "better": "neutral"},
     "m3_km": {"label": "Freight task", "unit": "m3-km", "better": "lower"},
+    # Twelve-month runs only.
+    "worst_month_fill_rate": {"label": "Fill rate, worst month", "unit": "percent", "better": "higher"},
+    "months_with_shortfall": {"label": "Months with a shortfall", "unit": "count", "better": "lower"},
+    "peak_stock_m3": {"label": "Peak stock held", "unit": "m3", "better": "neutral"},
+    "holding_cost": {"label": "Cost of carrying stock", "unit": "currency", "better": "lower"},
 }
 
 

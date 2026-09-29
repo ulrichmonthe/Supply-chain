@@ -204,6 +204,20 @@ export type Levers = {
   fuel_index?: number
   demand_growth?: number
   safety_stock_days?: number
+  /** Twelve linked months with stock carried between them, instead of one set of conditions held all year. */
+  multi_period?: boolean
+}
+
+/** What a twelve-month run recorded for the network, month by month. */
+export type MonthlySummary = {
+  demand_m3: number[]
+  delivered_m3: number[]
+  unmet_m3: number[]
+  fill_rate: number[]
+  stock_m3: number[]
+  cost: number[]
+  facilities_short: number[]
+  holding_cost: number
 }
 
 export type Constraints = {

@@ -39,6 +39,10 @@ class FacilityIn:
     vulnerability: float = 0.0
     stratum: int = 0
     unmet_penalty: float = 0.0
+    #: Multi-period only: the most stock the facility can hold, and how its annual
+    #: demand falls across the twelve months (fractions summing to one; None = even).
+    storage_m3: float = 0.0
+    monthly_share: Optional[list] = None
 
 
 @dataclass
@@ -63,6 +67,10 @@ class LaneIn:
     unit_cost: float
     capacity_m3: float = 0.0  # 0 means unconstrained (on-demand road)
     mode: str = "road"
+    #: Multi-period only: the lane under each month's conditions. A capacity of 0 in a
+    #: month means closed; None means unconstrained.
+    monthly_unit_cost: Optional[list] = None
+    monthly_capacity: Optional[list] = None
 
 
 @dataclass
@@ -94,6 +102,8 @@ class AllocationSolution:
     hubs_open: list[int] = field(default_factory=list)
     runtime_ms: int = 0
     log: dict = field(default_factory=dict)
+    #: Multi-period only: what happened month by month, for the network and per facility.
+    monthly: dict = field(default_factory=dict)
 
 
 def _hub_annual_charge(hub: HubIn) -> float:
@@ -429,3 +439,239 @@ def _explain_infeasibility(options: SolveOptions, diagnosis: dict) -> str:
     if options.min_fill_rate:
         parts.append(f"The network-wide fill rate floor is {options.min_fill_rate:.0%}.")
     return " ".join(parts)
+
+
+# --- twelve linked months ---------------------------------------------------------------
+
+
+def solve_multi_period(
+    facilities: list[FacilityIn],
+    hubs: list[HubIn],
+    lanes: list[LaneIn],
+    options: SolveOptions,
+    *,
+    holding_cost_per_m3_month: float = 0.0,
+) -> AllocationSolution:
+    """Solve a year as twelve months with stock carried between them.
+
+    The annualised model answers "what would a year cost if these conditions held all
+    year". This one answers the question a wet season actually poses: can a facility
+    be stocked up before its road closes, how much shelf does that take, and what does
+    it cost to carry it. Flows are per lane per month under that month's access and
+    cost; each facility carries an end-of-month stock bounded by its storage; the year
+    is cyclic, so stock at the end of December is what January opens with and nothing
+    appears from nowhere. Stores open for the whole year or not at all.
+    """
+    started = time.perf_counter()
+    months = range(12)
+    facility_by_id = {f.id: f for f in facilities}
+    hub_by_id = {h.id: h for h in hubs}
+    lanes = [lane for lane in lanes if lane.facility_id in facility_by_id and lane.hub_id in hub_by_id]
+    total_demand = sum(f.demand_m3 for f in facilities)
+    if total_demand <= 0 or not lanes:
+        return AllocationSolution(
+            status="no_demand" if total_demand <= 0 else "no_lanes",
+            feasible=False,
+            runtime_ms=int((time.perf_counter() - started) * 1000),
+            log={"reason": "Model has no demand or no usable lanes after filtering."},
+        )
+
+    def share(f: FacilityIn) -> list[float]:
+        if f.monthly_share and len(f.monthly_share) == 12 and sum(f.monthly_share) > 0:
+            total = sum(f.monthly_share)
+            return [max(0.0, float(v)) / total for v in f.monthly_share]
+        return [1.0 / 12.0] * 12
+
+    demand_m = {f.id: [f.demand_m3 * s for s in share(f)] for f in facilities}
+
+    model = highspy.Highs()
+    model.setOptionValue("output_flag", False)
+    model.setOptionValue("mip_rel_gap", options.mip_rel_gap)
+    model.setOptionValue("time_limit", max(options.time_limit_s, 60.0))
+    w_cost = max(0.0, options.weight_cost)
+    w_service = max(0.0, options.weight_service)
+
+    def lane_cost(lane: LaneIn, m: int) -> float:
+        if lane.monthly_unit_cost and len(lane.monthly_unit_cost) == 12:
+            return float(lane.monthly_unit_cost[m])
+        return lane.unit_cost
+
+    def lane_cap(lane: LaneIn, m: int) -> Optional[float]:
+        """None = unconstrained; 0 = closed this month."""
+        if lane.monthly_capacity is not None and len(lane.monthly_capacity) == 12:
+            value = lane.monthly_capacity[m]
+            return None if value is None else float(value)
+        return None if lane.capacity_m3 <= 0 else lane.capacity_m3 / 12.0
+
+    # --- variables ---------------------------------------------------------------
+    x: dict[tuple[int, int], object] = {}
+    for i, lane in enumerate(lanes):
+        facility = facility_by_id[lane.facility_id]
+        for m in months:
+            cap = lane_cap(lane, m)
+            ub = facility.demand_m3  # a lane never usefully carries more than a year's demand
+            if options.respect_capacity and cap is not None:
+                ub = min(ub, cap)
+            if ub <= 0:
+                continue  # closed this month: no variable, no flow
+            x[(i, m)] = model.addVariable(lb=0.0, ub=ub, obj=w_cost * lane_cost(lane, m))
+    u = {(f.id, m): model.addVariable(lb=0.0, ub=demand_m[f.id][m], obj=w_service * f.unmet_penalty) for f in facilities for m in months}
+    s_var = {
+        (f.id, m): model.addVariable(lb=0.0, ub=max(0.0, f.storage_m3), obj=w_cost * holding_cost_per_m3_month)
+        for f in facilities
+        for m in months
+    }
+    hub_vars = {}
+    for hub in hubs:
+        if hub.forced_open is True:
+            hub_vars[hub.id] = model.addVariable(lb=1.0, ub=1.0, obj=w_cost * _hub_annual_charge(hub))
+        elif hub.forced_open is False:
+            hub_vars[hub.id] = model.addVariable(lb=0.0, ub=0.0, obj=0.0)
+        else:
+            hub_vars[hub.id] = model.addBinary(obj=w_cost * _hub_annual_charge(hub))
+
+    # --- constraints -------------------------------------------------------------
+    lanes_by_facility: dict[int, list[int]] = {}
+    lanes_by_hub: dict[int, list[int]] = {}
+    for i, lane in enumerate(lanes):
+        lanes_by_facility.setdefault(lane.facility_id, []).append(i)
+        lanes_by_hub.setdefault(lane.hub_id, []).append(i)
+
+    # Stock balance, cyclic over the year: opening stock + deliveries = demand met + closing stock.
+    for f in facilities:
+        for m in months:
+            prev = s_var[(f.id, (m - 1) % 12)]
+            inflow = sum(x[(i, m)] for i in lanes_by_facility.get(f.id, []) if (i, m) in x)
+            model.addConstr(prev + inflow + u[(f.id, m)] - s_var[(f.id, m)] == demand_m[f.id][m])
+
+    # A lane is used only if its store is open; the store's throughput is a monthly rate.
+    for (i, m), var in x.items():
+        hub = hub_by_id[lanes[i].hub_id]
+        if hub.forced_open is not True:
+            model.addConstr(var <= facility_by_id[lanes[i].facility_id].demand_m3 * hub_vars[hub.id])
+    if options.respect_capacity:
+        for hub in hubs:
+            if hub.throughput_m3 > 0:
+                for m in months:
+                    terms = [x[(i, m)] for i in lanes_by_hub.get(hub.id, []) if (i, m) in x]
+                    if terms:
+                        model.addConstr(sum(terms) <= (hub.throughput_m3 / 12.0) * hub_vars[hub.id])
+
+    if options.min_fill_rate is not None:
+        model.addConstr(sum(u.values()) <= (1.0 - options.min_fill_rate) * total_demand)
+    if options.equity_floor is not None and options.equity_floor > 0:
+        members: dict[int, list[FacilityIn]] = {}
+        for f in facilities:
+            members.setdefault(f.stratum, []).append(f)
+        for stratum, group in members.items():
+            demand = sum(f.demand_m3 for f in group)
+            if demand > 0:
+                model.addConstr(sum(u[(f.id, m)] for f in group for m in months) <= (1.0 - options.equity_floor) * demand)
+    if options.max_budget is not None and options.max_budget > 0:
+        cost_expr = sum(var * lane_cost(lanes[i], m) for (i, m), var in x.items())
+        cost_expr = cost_expr + sum(hub_vars[h.id] * _hub_annual_charge(h) for h in hubs)
+        model.addConstr(cost_expr <= options.max_budget)
+
+    model.setMinimize()
+    model.solve()
+    status = model.modelStatusToString(model.getModelStatus())
+    runtime_ms = int((time.perf_counter() - started) * 1000)
+    if status not in ("Optimal", "Feasible point found", "Time limit reached"):
+        return AllocationSolution(
+            status=status,
+            feasible=False,
+            runtime_ms=runtime_ms,
+            log={"reason": f"The twelve-month model could not be solved ({status}). Loosen the constraints or the storage limits.", "solver": "HiGHS"},
+        )
+
+    # --- extract -----------------------------------------------------------------
+    keys = list(x.keys())
+    values = model.vals([x[k] for k in keys]) if keys else []
+    flow_by_lane: dict[int, list[float]] = {i: [0.0] * 12 for i in range(len(lanes))}
+    for (i, m), value in zip(keys, values):
+        flow_by_lane[i][m] = max(0.0, float(value))
+    served = {f.id: 0.0 for f in facilities}
+    served_m = {f.id: [0.0] * 12 for f in facilities}
+    cost_by_facility = {f.id: 0.0 for f in facilities}
+    transport_cost = 0.0
+    flows: list[dict] = []
+    for i, lane in enumerate(lanes):
+        monthly = flow_by_lane[i]
+        volume = sum(monthly)
+        if volume <= 1e-6:
+            continue
+        cost = sum(monthly[m] * lane_cost(lane, m) for m in months)
+        transport_cost += cost
+        served[lane.facility_id] += volume
+        for m in months:
+            served_m[lane.facility_id][m] += monthly[m]
+        cost_by_facility[lane.facility_id] += cost
+        cap_year = sum(c for c in (lane_cap(lane, m) for m in months) if c is not None) if lane.capacity_m3 > 0 or lane.monthly_capacity else 0.0
+        flows.append(
+            {
+                "edge_id": lane.edge_id, "edge_code": lane.code, "hub_id": lane.hub_id, "facility_id": lane.facility_id, "mode": lane.mode,
+                "volume_m3": round(volume, 4), "unit_cost": round(cost / volume, 2), "cost": round(cost, 2),
+                "capacity_m3": round(cap_year, 2) if cap_year > 0 else None,
+                "capacity_utilisation": round(volume / cap_year, 4) if cap_year > 0 else None,
+                "monthly_m3": [round(v, 3) for v in monthly],
+            }
+        )
+    unmet_m = {f.id: [max(0.0, float(model.val(u[(f.id, m)]))) for m in months] for f in facilities}
+    stock_m = {f.id: [max(0.0, float(model.val(s_var[(f.id, m)]))) for m in months] for f in facilities}
+    unmet = {fid: sum(v) for fid, v in unmet_m.items()}
+    hubs_open = [h.id for h in hubs if float(model.val(hub_vars[h.id])) > 0.5]
+    hub_fixed = sum(_hub_annual_charge(hub_by_id[hid]) for hid in hubs_open)
+    holding = sum(sum(v) for v in stock_m.values()) * holding_cost_per_m3_month
+    total_served = sum(served.values())
+    if total_served > 0 and hub_fixed > 0:
+        for fid, volume in served.items():
+            cost_by_facility[fid] += hub_fixed * (volume / total_served)
+
+    network_demand = [sum(demand_m[f.id][m] for f in facilities) for m in months]
+    network_unmet = [sum(unmet_m[f.id][m] for f in facilities) for m in months]
+    network_stock = [sum(stock_m[f.id][m] for f in facilities) for m in months]
+    network_cost = [
+        sum(flow_by_lane[i][m] * lane_cost(lanes[i], m) for i in range(len(lanes))) + hub_fixed / 12.0 for m in months
+    ]
+    monthly = {
+        "demand_m3": [round(v, 2) for v in network_demand],
+        "delivered_m3": [round(sum(served_m[f.id][m] for f in facilities), 2) for m in months],
+        "unmet_m3": [round(v, 2) for v in network_unmet],
+        "fill_rate": [round(1.0 - network_unmet[m] / network_demand[m], 4) if network_demand[m] > 0 else 1.0 for m in months],
+        "stock_m3": [round(v, 2) for v in network_stock],
+        "cost": [round(v, 2) for v in network_cost],
+        "facilities_short": [sum(1 for f in facilities if unmet_m[f.id][m] > 0.01 * max(demand_m[f.id][m], 1e-9)) for m in months],
+        "facilities": {
+            f.id: {
+                "fill_rate": [round(1.0 - unmet_m[f.id][m] / demand_m[f.id][m], 4) if demand_m[f.id][m] > 0 else 1.0 for m in months],
+                "stock_m3": [round(v, 2) for v in stock_m[f.id]],
+                "delivered_m3": [round(v, 2) for v in served_m[f.id]],
+                "months_short": sum(1 for m in months if unmet_m[f.id][m] > 0.01 * max(demand_m[f.id][m], 1e-9)),
+                "peak_stock_m3": round(max(stock_m[f.id]), 2),
+                "storage_m3": round(f.storage_m3, 2),
+            }
+            for f in facilities
+        },
+        "holding_cost": round(holding, 2),
+    }
+    return AllocationSolution(
+        status="optimal" if status == "Optimal" else status.lower().replace(" ", "_"),
+        feasible=True,
+        objective=float(model.getObjectiveValue()),
+        transport_cost=round(transport_cost + holding, 2),
+        hub_fixed_cost=round(hub_fixed, 2),
+        total_cost=round(transport_cost + holding + hub_fixed, 2),
+        flows=flows,
+        unmet=unmet,
+        served=served,
+        cost_by_facility=cost_by_facility,
+        hubs_open=hubs_open,
+        runtime_ms=runtime_ms,
+        monthly=monthly,
+        log={
+            "solver": "HiGHS", "status": status, "lanes": len(lanes), "facilities": len(facilities), "hubs": len(hubs),
+            "binaries": sum(1 for h in hubs if h.forced_open is None), "mip_rel_gap_target": options.mip_rel_gap,
+            "objective_weights": {"cost": options.weight_cost, "service": options.weight_service, "equity": options.weight_equity},
+            "periods": 12, "flow_variables": len(x), "holding_cost_per_m3_month": holding_cost_per_m3_month,
+        },
+    )

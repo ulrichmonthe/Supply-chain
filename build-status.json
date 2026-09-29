@@ -348,6 +348,13 @@
           "title": "See who can only be reached by plane in the wet season",
           "state": "done",
           "env": null
+        },
+        {
+          "id": "f4s20",
+          "title": "Solve a year as twelve linked months with stock carried between them",
+          "state": "done",
+          "env": null,
+          "note": "Per-month flows under each month's access and cost, stock bounded by storage, a cyclic year. The Season tab shows the months and names the facilities that run short."
         }
       ],
       "decisions": [
@@ -360,6 +367,11 @@
         "The seasonal patterns come from typical weather, not from records of roads actually closing. Worth checking with provincial staff before publishing anything."
       ],
       "activity": [
+        {
+          "at": "2026-09-29T00:00:00Z",
+          "kind": "work",
+          "what": "Multi-period solver, runner lever, four new KPIs, month table"
+        },
         {
           "at": "2026-08-17T10:40:00Z",
           "kind": "back",

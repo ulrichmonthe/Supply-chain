@@ -31,7 +31,7 @@ from ..models import Demand, Edge, Node, Product, Result, Scenario
 from . import confidence as confidence_mod
 from . import overlay
 from . import costing, equity as equity_mod, kpis as kpi_mod, seasonality, service
-from .allocation import FacilityIn, HubIn, LaneIn, SolveOptions, solve
+from .allocation import FacilityIn, HubIn, LaneIn, SolveOptions, solve, solve_multi_period
 
 DEFAULT_WEIGHTS = {"cost": 1.0, "service": 1.0, "equity": 0.0}
 
@@ -57,6 +57,9 @@ def _resolve_levers(scenario: Scenario) -> dict:
     # delivery interval, which is how ministries actually write the standard -- and
     # which is why stretching an interval past a facility's shelf capacity bites.
     levers.setdefault("safety_stock_days", 14.0)
+    # Twelve linked months with stock carried between them, instead of one set of
+    # conditions held all year. Overrides a pinned month: the year is the point.
+    levers.setdefault("multi_period", False)
     return levers
 
 
@@ -129,8 +132,9 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
     levers = _resolve_levers(scenario)
     constraints = dict(scenario.constraints or {})
     weights = {**DEFAULT_WEIGHTS, **(scenario.objective_weights or {})}
+    multi_period = bool(levers.get("multi_period"))
     month = levers.get("month")
-    month = int(month) if month else None
+    month = int(month) if month and not multi_period else None
 
     country_id = scenario.country_id
     nodes = list(session.scalars(select(Node).where(Node.country_id == country_id)))
@@ -311,6 +315,26 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
         capacity = 0.0 if capacity == float("inf") else capacity
 
         unit_cost = cost.unit_cost_per_m3 + inbound_cost.get(edge.from_node_id, 0.0)
+        monthly_unit_cost = monthly_capacity = None
+        if multi_period:
+            # The lane under each month's conditions: its cost multiplier and, for a
+            # timetabled service, the hold it can carry; a closed month is a zero.
+            monthly_unit_cost, monthly_capacity = [], []
+            for m in range(1, 13):
+                month_access = seasonality.access(edge, m)
+                month_cost = costing.lane_cost(
+                    edge, month=m, fuel_index=float(levers.get("fuel_index", 1.0)),
+                    third_party_share=float(levers.get("third_party_share", 0.0)), cold_share=facility_cold_share,
+                ).unit_cost_per_m3 + inbound_cost.get(edge.from_node_id, 0.0)
+                month_prof = service.profile_for(edge, month=m, frequency_override=frequency)
+                month_cap = month_prof.annual_capacity_m3
+                monthly_unit_cost.append(month_cost)
+                if month_access <= 0.0:
+                    monthly_capacity.append(0.0)
+                elif month_cap == float("inf"):
+                    monthly_capacity.append(None)
+                else:
+                    monthly_capacity.append(month_cap / 12.0)
         lanes.append(
             LaneIn(
                 edge_id=edge.id,
@@ -320,6 +344,8 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
                 unit_cost=unit_cost,
                 capacity_m3=capacity,
                 mode=edge.mode,
+                monthly_unit_cost=monthly_unit_cost,
+                monthly_capacity=monthly_capacity,
             )
         )
         lane_meta[edge.id] = {
@@ -342,6 +368,10 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
     facilities: list[FacilityIn] = []
     for node in demand_nodes:
         vuln = vulnerability[node.id]
+        capacity_dict = node.capacity or {}
+        storage_m3 = float(capacity_dict.get("dry_m3") or 0.0) + sum(
+            float(v or 0.0) for v in (capacity_dict.get("cold_by_band") or {}).values()
+        )
         facilities.append(
             FacilityIn(
                 id=node.id,
@@ -352,6 +382,8 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
                 stratum=strata.get(node.id, 0),
                 unmet_penalty=base_penalty
                 * equity_mod.equity_penalty_weight(vuln.score, float(weights.get("equity", 0.0))),
+                storage_m3=storage_m3,
+                monthly_share=(scenario.country.config or {}).get("demand_profile"),
             )
         )
 
@@ -365,7 +397,13 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
         respect_capacity=bool(constraints.get("respect_capacity", True)),
     )
 
-    solution = solve(facilities, hubs, lanes, options)
+    if multi_period:
+        # Carrying stock is not free: a small charge per m³-month keeps the model from
+        # filling every shelf for no reason, without making a real buffer look expensive.
+        holding = float((scenario.country.config or {}).get("holding_cost_per_m3_month") or median(unit_costs) * 0.02)
+        solution = solve_multi_period(facilities, hubs, lanes, options, holding_cost_per_m3_month=holding)
+    else:
+        solution = solve(facilities, hubs, lanes, options)
 
     if not solution.feasible:
         return Result(
@@ -424,6 +462,7 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
 
         vuln = vulnerability[node.id]
         fill = min(1.0, served / demand) if demand else 1.0
+        month_detail = (solution.monthly.get("facilities") or {}).get(node.id) if multi_period else None
         # An unserved facility is at certain risk regardless of what its lane could do.
         stockout = 1.0 if not available else (risk_detail["stockout_risk"] if risk_detail else 1.0)
         stockout = max(stockout, 1.0 - fill)
@@ -470,6 +509,7 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
                 "storage_days": risk_detail["storage_days"] if risk_detail else 0.0,
                 "storage_binding": risk_detail["storage_binding"] if risk_detail else True,
                 "reachable": bool(available),
+                **({"monthly": month_detail} if month_detail else {}),
             }
         )
 
@@ -494,6 +534,12 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
         hubs_open=len(solution.hubs_open),
         unreachable=unreachable,
     )
+    if multi_period and solution.monthly:
+        fills = solution.monthly.get("fill_rate") or []
+        kpi_set["worst_month_fill_rate"] = round(min(fills), 4) if fills else kpi_set.get("fill_rate", 0.0)
+        kpi_set["months_with_shortfall"] = sum(1 for f in fills if f < 0.99)
+        kpi_set["peak_stock_m3"] = round(max(solution.monthly.get("stock_m3") or [0.0]), 2)
+        kpi_set["holding_cost"] = solution.monthly.get("holding_cost", 0.0)
 
     per_edge_flow = []
     for flow in solution.flows:
@@ -534,7 +580,11 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
         solver_log={
             **solution.log,
             "month": month,
-            "month_label": seasonality.MONTHS[month - 1] if month else "Annualised",
+            "month_label": (
+                "Twelve months, stock carried" if multi_period else (seasonality.MONTHS[month - 1] if month else "Annualised")
+            ),
+            "multi_period": multi_period,
+            **({"monthly": {k: v for k, v in solution.monthly.items() if k != "facilities"}} if multi_period else {}),
             "base_unmet_penalty_per_m3": round(base_penalty, 2),
             "hubs_open_codes": [node_by_id[h].code for h in solution.hubs_open],
             "lanes_dropped_by_season": sum(

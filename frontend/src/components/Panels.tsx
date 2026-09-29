@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type {
+  MonthlySummary,
+  NodeDetail,
   AuditRow,
   ChangeRow,
   ConfidenceMarker,
@@ -233,6 +235,11 @@ export function SeasonPanel({
   baselineCost: number | null
   currency: string
 }) {
+  const monthly = (result?.solver_log as { multi_period?: boolean; monthly?: MonthlySummary } | undefined)
+    ?.monthly
+  if (result?.status === 'ok' && (result.solver_log as { multi_period?: boolean }).multi_period && monthly) {
+    return <MonthTable monthly={monthly} result={result} currency={currency} />
+  }
   if (!month) {
     return (
       <div className="callout">
@@ -1739,6 +1746,109 @@ export function ProvenancePanel({
           </p>
         </div>
       ))}
+    </div>
+  )
+}
+
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** A twelve-month run, month by month: what was asked, delivered, carried and missed. */
+function MonthTable({
+  monthly,
+  result,
+  currency,
+}: {
+  monthly: MonthlySummary
+  result: Result
+  currency: string
+}) {
+  const short = (
+    result.per_node_detail as (NodeDetail & {
+      monthly?: { months_short: number; peak_stock_m3: number; storage_m3: number }
+    })[]
+  )
+    .filter((n) => n.monthly && n.monthly.months_short > 0)
+    .sort((a, b) => b.monthly!.months_short - a.monthly!.months_short || b.population - a.population)
+  const worst = Math.min(...monthly.fill_rate)
+  const worstIndex = monthly.fill_rate.indexOf(worst)
+  return (
+    <div>
+      <div className={`callout ${worst < 0.99 ? 'bad' : 'good'}`}>
+        <h4>Twelve months, stock carried between them</h4>
+        {worst < 0.99 ? (
+          <>
+            The worst month is <b>{MONTH_ABBR[worstIndex]}</b> at {pct(worst, 1)} of demand met, with{' '}
+            <b>{monthly.facilities_short[worstIndex]}</b> facilities short. Stock peaks at{' '}
+            <b>{exact(Math.max(...monthly.stock_m3))} m³</b> across the network; carrying it costs{' '}
+            {money(monthly.holding_cost, currency)} a year.
+          </>
+        ) : (
+          <>
+            Every month is met in full. Facilities are stocked ahead of their closures within their storage;
+            stock peaks at <b>{exact(Math.max(...monthly.stock_m3))} m³</b> across the network and carrying it
+            costs {money(monthly.holding_cost, currency)} a year.
+          </>
+        )}
+      </div>
+      <div className="scroll-x" tabIndex={0} role="region" aria-label="Month by month">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th className="n">Demand m³</th>
+              <th className="n">Delivered</th>
+              <th className="n">Met</th>
+              <th className="n">Stock held</th>
+              <th className="n">Short</th>
+              <th className="n">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MONTH_ABBR.map((label, i) => (
+              <tr key={label} className={monthly.fill_rate[i] < 0.99 ? 'shortfall' : ''}>
+                <td>{label}</td>
+                <td className="n">{exact(monthly.demand_m3[i])}</td>
+                <td className="n">{exact(monthly.delivered_m3[i])}</td>
+                <td className="n" style={{ color: fillColour(monthly.fill_rate[i]) }}>
+                  {pct(monthly.fill_rate[i], 1)}
+                </td>
+                <td className="n">{exact(monthly.stock_m3[i])}</td>
+                <td className="n">{monthly.facilities_short[i] || ''}</td>
+                <td className="n">{money(monthly.cost[i], currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {short.length > 0 && (
+        <>
+          <div className="section">
+            <h3>Facilities that run short ({short.length})</h3>
+            <p className="lever-note">
+              Ordered by how many months they go short. More storage, a buffer before the closure, or another
+              lane would change this.
+            </p>
+          </div>
+          <table>
+            <tbody>
+              {short.slice(0, 30).map((n) => (
+                <tr key={n.code}>
+                  <td>
+                    {n.name}
+                    <div className="row-note">
+                      {n.admin1} · {exact(n.population)} people · storage {exact(n.monthly!.storage_m3)} m³ ·
+                      peak stock {exact(n.monthly!.peak_stock_m3)} m³
+                    </div>
+                  </td>
+                  <td className="n">
+                    {n.monthly!.months_short} month{n.monthly!.months_short === 1 ? '' : 's'} short
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   )
 }

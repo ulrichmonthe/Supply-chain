@@ -354,6 +354,22 @@ beside them the three numbers, the equity line and the confidence line. Same dat
 one-tenth of the surface, and the front door a shared read-only session will open on
 later.
 
+### Twelve months, stock carried between them
+
+The annualised model answers "what would a year cost if these conditions held all
+year". The **Solve twelve months** lever answers the question a wet season actually
+poses: can a facility be stocked up before its road closes, how much shelf that takes,
+and what carrying it costs. `solve_multi_period` in `app/engine/allocation.py` gives
+every lane a flow per month under that month's access and cost multiplier (a closed
+month is a zero, a timetabled service's hold is its monthly share), every facility an
+end-of-month stock bounded by its storage, and makes the year cyclic so December's
+closing stock is what January opens with and nothing appears from nowhere. Stores open
+for the year or not at all; a small holding charge per m³-month keeps shelves from
+filling for no reason. The scorecard gains the worst month's fill rate, the months
+with a shortfall, the peak stock held and the cost of carrying it; the Season tab
+shows the twelve months and names the facilities that run short, with their storage
+and their peak stock beside them. The confidence budget rides on these runs too.
+
 ### Greenfield: where new stores would go
 
 The Studies tab's **Where would new stores go?** answers from the demand itself. A
