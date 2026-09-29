@@ -176,6 +176,19 @@ class StudyScenarioIn(BaseModel):
     scenario_id: int
 
 
+class GreenfieldRequest(BaseModel):
+    k: int = Field(2, ge=1, le=8)
+    keep_existing: bool = True
+    admin1: Optional[str] = None
+
+
+class GreenfieldAdopt(BaseModel):
+    proposals: List[dict]
+    keep_existing: bool = True
+    name: Optional[str] = None
+    study_id: Optional[int] = None
+
+
 class EstimateRequest(BaseModel):
     """One estimate: a rule, and what to apply it to.
 

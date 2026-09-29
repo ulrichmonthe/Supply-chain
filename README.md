@@ -354,6 +354,24 @@ beside them the three numbers, the equity line and the confidence line. Same dat
 one-tenth of the surface, and the front door a shared read-only session will open on
 later.
 
+### Greenfield: where new stores would go
+
+The Studies tab's **Where would new stores go?** answers from the demand itself. A
+demand-weighted centre-of-gravity method (weighted k-means on the sphere, seeded so the
+same question gets the same answer) places K new stores to minimise how far every cubic
+metre travels, with today's stores kept fixed or dropped, and optionally within one
+province. Each centre is snapped to the nearest real facility, because a store goes
+where there is a town, a road and staff, and the proposal reports what it would serve,
+the mean distance before and after, and the freight-task saving in m³·km. The sites are
+drawn on the map as marked pins.
+
+The proposal is not the decision. **Adopt** turns it into a scenario made of data
+items, a planned store with a lane to each facility it would serve and an upstream
+lane from the national store, with the solver free to open or leave each store closed,
+so the answer still has to earn its place on cost, service and equity against the
+other options in the study. Default running and opening costs come from the median of
+today's stores and are shown so they can be corrected.
+
 ### Sessions: a save file that cannot lie
 
 A session is the whole working state under a name: every facility, lane, product and

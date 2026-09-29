@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import { api } from '../api'
-import type { DiffMap, Scenario, Study, StudyCompare, StudyPreset } from '../types'
+import type { DiffMap, Greenfield, Scenario, Study, StudyCompare, StudyPreset } from '../types'
 import { exact, formatKpi, money, pct, signedPct } from '../format'
 
 /**
@@ -21,6 +21,7 @@ export function StudiesPanel({
   onScenariosChanged,
   onError,
   onSelectScenario,
+  onProposals,
 }: {
   countryId: number
   scenarios: Scenario[]
@@ -30,6 +31,7 @@ export function StudiesPanel({
   onScenariosChanged: () => Promise<void> | void
   onError: (message: string) => void
   onSelectScenario: (id: number) => void
+  onProposals: (proposals: Greenfield['proposals'] | null) => void
 }) {
   const [studies, setStudies] = useState<Study[]>([])
   const [presets, setPresets] = useState<StudyPreset[]>([])
@@ -284,6 +286,19 @@ export function StudiesPanel({
           </ul>
         )}
       </div>
+
+      <GreenfieldSection
+        countryId={countryId}
+        studyId={openId}
+        onProposals={onProposals}
+        onAdopted={async (message) => {
+          setMessage(message)
+          await onScenariosChanged()
+          await reload()
+          if (openId !== null) await loadCompare(openId)
+        }}
+        onError={onError}
+      />
 
       {open && (
         <StudyView
@@ -682,5 +697,153 @@ function shortLabel(key: string): string {
   return (
     { total_cost: 'Cost', fill_rate: 'Fill', worst_stratum_fill_rate: 'Q5 fill', hubs_open: 'Stores' }[key] ??
     key
+  )
+}
+
+/**
+ * Where would new stores go? Demand-weighted centre of gravity, snapped to real
+ * facilities, drawn on the map; adopt it and it becomes a scenario the solver still
+ * has to justify.
+ */
+function GreenfieldSection({
+  countryId,
+  studyId,
+  onProposals,
+  onAdopted,
+  onError,
+}: {
+  countryId: number
+  studyId: number | null
+  onProposals: (proposals: Greenfield['proposals'] | null) => void
+  onAdopted: (message: string) => Promise<void> | void
+  onError: (message: string) => void
+}) {
+  const [k, setK] = useState(2)
+  const [keep, setKeep] = useState(true)
+  const [admin1, setAdmin1] = useState('')
+  const [result, setResult] = useState<Greenfield | null>(null)
+  const [busy, setBusy] = useState(false)
+  const ids = useId()
+
+  async function run() {
+    setBusy(true)
+    try {
+      const next = await api.greenfield(countryId, { k, keep_existing: keep, admin1: admin1.trim() || null })
+      setResult(next)
+      onProposals(next.proposals)
+    } catch (e) {
+      onError(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function adopt() {
+    if (!result) return
+    setBusy(true)
+    try {
+      const outcome = await api.adoptGreenfield(countryId, {
+        proposals: result.proposals,
+        keep_existing: result.keep_existing,
+        study_id: studyId,
+      })
+      await onAdopted(
+        `“${outcome.scenario.name}” created with ${outcome.items} data changes` +
+          (studyId !== null ? ' and added to this study' : '') +
+          '. Run it: the solver decides which candidate stores earn their cost.',
+      )
+    } catch (e) {
+      onError(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="section" data-tour="greenfield">
+      <h3>Where would new stores go?</h3>
+      <p className="lever-note" style={{ marginBottom: 8 }}>
+        From the demand itself: the places that minimise how far every cubic metre travels, snapped to a real
+        facility. Adopt the proposal and it becomes a scenario of candidate stores the solver may open or
+        leave closed.
+      </p>
+      <div className="session-actions">
+        <label htmlFor={`${ids}-k`} className="tiny dim">
+          New stores
+        </label>
+        <select
+          id={`${ids}-k`}
+          className="tag-input"
+          style={{ maxWidth: 80 }}
+          value={k}
+          onChange={(e) => setK(Number(e.target.value))}
+        >
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <label className="checkbox tiny">
+          <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} /> keep today's
+          stores
+        </label>
+        <label htmlFor={`${ids}-p`} className="visually-hidden">
+          Only in province
+        </label>
+        <input
+          id={`${ids}-p`}
+          className="tag-input"
+          style={{ maxWidth: 160 }}
+          placeholder="Only in province…"
+          value={admin1}
+          onChange={(e) => setAdmin1(e.target.value)}
+        />
+        <button type="button" className="btn small primary" onClick={run} disabled={busy}>
+          Propose
+        </button>
+        {result && (
+          <button
+            type="button"
+            className="btn small ghost"
+            onClick={() => {
+              setResult(null)
+              onProposals(null)
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      {result && (
+        <>
+          <div className="callout" role="status" style={{ marginTop: 8 }}>
+            {result.sentence}
+          </div>
+          <ul className="study-facilities">
+            {result.proposals.map((p) => (
+              <li key={p.code}>
+                <b>{p.name}</b>
+                <span className="dim">
+                  {' '}
+                  · {p.admin1} · {p.facility_count} facilities · {p.demand_m3.toLocaleString()} m³ · mean{' '}
+                  {p.mean_km_before} → {p.mean_km_after} km
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="session-actions" style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              className="btn small primary"
+              onClick={adopt}
+              disabled={busy || !result.proposals.length}
+            >
+              Adopt as a scenario{studyId !== null ? ' in this study' : ''}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   )
 }

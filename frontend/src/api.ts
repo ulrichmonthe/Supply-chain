@@ -24,6 +24,8 @@ import type {
   CsvInspection,
   DiffMap,
   EdgeTableRow,
+  Greenfield,
+  GreenfieldProposal,
   ProductTableRow,
   TableName,
   SavedMapping,
@@ -253,6 +255,16 @@ export const api = {
     request<Study>(`/studies/${studyId}/scenarios/${scenarioId}`, { method: 'DELETE' }),
   runStudy: (studyId: number) => request<{ ran: number }>(`/studies/${studyId}/run`, { method: 'POST' }),
   compareStudy: (studyId: number) => request<StudyCompare>(`/studies/${studyId}/compare`),
+  greenfield: (countryId: number, payload: { k: number; keep_existing: boolean; admin1?: string | null }) =>
+    request<Greenfield>(`/countries/${countryId}/greenfield`, { method: 'POST', body: JSON.stringify(payload) }),
+  adoptGreenfield: (
+    countryId: number,
+    payload: { proposals: GreenfieldProposal[]; keep_existing: boolean; name?: string; study_id?: number | null },
+  ) =>
+    request<{ scenario: Scenario; items: number; store_codes: string[] }>(`/countries/${countryId}/greenfield/adopt`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   diffMap: (scenarioA: number, scenarioB: number) => request<DiffMap>(`/scenarios/${scenarioA}/diff-map/${scenarioB}`),
   revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
   createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>

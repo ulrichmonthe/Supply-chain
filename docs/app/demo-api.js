@@ -132,6 +132,8 @@
 
     if (path.match(/\/estimates\/(preview|apply|recompute)$/))
       return refuse('Estimating needs the rules on the server. Download the tool to fill blank rows.')
+    if (path.match(/\/greenfield/))
+      return refuse('Placing stores needs the server. Download the tool to ask where the next store should go.')
     if (path.match(/\/studies(\/|$)/) || path.match(/\/diff-map\//))
       return refuse('Studies need the solver. Download the tool to ask a question of your own network.')
     if (path.match(/\/sessions(\/|$)/))

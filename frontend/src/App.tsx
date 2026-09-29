@@ -33,6 +33,7 @@ import type {
   Scorecard as ScorecardData,
   SeasonView,
   DiffMap,
+  Greenfield,
 } from './types'
 import { exact, formatKpi, money, signedPct } from './format'
 
@@ -173,6 +174,7 @@ export default function App() {
   const [dataVersion, setDataVersion] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
   const [diff, setDiff] = useState<DiffMap | null>(null)
+  const [proposals, setProposals] = useState<Greenfield['proposals'] | null>(null)
   // Expert is today's screen; Decision hides the levers and tabs and keeps the map,
   // the options as cards, and the three numbers a decision-maker reads.
   const [view, setView] = useState<'expert' | 'decision'>(() => {
@@ -776,6 +778,7 @@ export default function App() {
             }}
             center={overview?.country.config.center}
             diff={diff}
+            proposals={proposals}
             pickMode={pickMode}
             onPick={(lat, lon) => {
               setPicked({ lat, lon })
@@ -930,6 +933,7 @@ export default function App() {
                   }}
                   onError={(message) => setError(message)}
                   onSelectScenario={setSelectedId}
+                  onProposals={setProposals}
                 />
               )}
               {tab === 'Equity' && (

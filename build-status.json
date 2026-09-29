@@ -227,6 +227,13 @@
           "state": "done",
           "env": null,
           "note": "Close a facility, scale demand, open a store, add or remove a lane. Applied in memory when it runs; listed in the lever diff; recorded in the ledger."
+        },
+        {
+          "id": "f2s24",
+          "title": "Propose where new stores would go, from the demand itself",
+          "state": "done",
+          "env": null,
+          "note": "Demand-weighted centre of gravity snapped to real facilities, with today's stores kept or dropped, drawn on the map; adopt it as a scenario of candidate stores the solver may open."
         }
       ],
       "decisions": [
@@ -243,6 +250,11 @@
         "The costs, demand and boat timetables in the demo are illustrative, not the ministry's real figures. The clinic locations and the shape of the network are real."
       ],
       "activity": [
+        {
+          "at": "2026-09-29T00:00:00Z",
+          "kind": "work",
+          "what": "Greenfield site selection with adopt-as-scenario"
+        },
         {
           "at": "2026-09-29T00:00:00Z",
           "kind": "work",

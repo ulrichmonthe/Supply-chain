@@ -744,3 +744,39 @@ export type DemandTableRow = DemandRow & { node_name: string; admin1: string | n
 
 export type EdgeTableRow = EdgeRow & { retired_at: string | null; retired_reason: string }
 export type ProductTableRow = ProductRow & { retired_at: string | null; retired_reason: string }
+
+export type GreenfieldProposal = {
+  code: string
+  name: string
+  host_code: string
+  host_name: string
+  admin1: string | null
+  lat: number
+  lon: number
+  centroid: { lat: number; lon: number }
+  facilities: string[]
+  facility_count: number
+  demand_m3: number
+  population: number
+  mean_km_before: number | null
+  mean_km_after: number | null
+  m3_km_before: number
+  m3_km_after: number
+  hub_fixed_cost: number
+  hub_open_capex: number
+  hub_throughput_m3: number
+}
+
+export type Greenfield = {
+  k: number
+  keep_existing: boolean
+  admin1: string | null
+  facilities_considered: number
+  facilities_kept_by_existing_stores: number
+  existing_stores: string[]
+  proposals: GreenfieldProposal[]
+  m3_km_before: number
+  m3_km_after: number
+  reduction: number | null
+  sentence: string
+}

@@ -25,6 +25,8 @@ type Props = {
   onPick?: (lat: number, lon: number) => void
   /** Two answers as one network: lanes only A uses, only B uses, or both; facilities whose supply changed. */
   diff?: DiffMap | null
+  /** Proposed store sites from the greenfield engine, drawn as marked pins with their names. */
+  proposals?: { code: string; name: string; lat: number; lon: number; facility_count: number }[] | null
 }
 
 type Hover = { x: number; y: number; html: ReactNode } | null
@@ -246,6 +248,31 @@ export function MapView(props: Props) {
         },
       })
 
+      instance.addSource('proposals', { type: 'geojson', data: EMPTY })
+      instance.addLayer({
+        id: 'proposal-rings',
+        type: 'circle',
+        source: 'proposals',
+        paint: {
+          'circle-radius': 13,
+          'circle-color': 'rgba(242,193,78,0.18)',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#f2c14e',
+        },
+      })
+      instance.addLayer({
+        id: 'proposal-labels',
+        type: 'symbol',
+        source: 'proposals',
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 11,
+          'text-offset': [0, 1.9],
+          'text-anchor': 'top',
+        },
+        paint: { 'text-color': '#f2c14e', 'text-halo-color': 'rgba(6,12,18,0.9)', 'text-halo-width': 1.4 },
+      })
+
       instance.addSource('nodes', { type: 'geojson', data: EMPTY })
       instance.addLayer({
         id: 'node-halo',
@@ -349,6 +376,19 @@ export function MapView(props: Props) {
     if (!ready || !map.current) return
     ;(map.current.getSource('nodes') as maplibregl.GeoJSONSource | undefined)?.setData(nodeData)
   }, [ready, nodeData])
+
+  useEffect(() => {
+    if (!ready || !map.current) return
+    const data: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: (props.proposals ?? []).map((p) => ({
+        type: 'Feature' as const,
+        properties: { code: p.code, label: `${p.name} · ${p.facility_count} facilities` },
+        geometry: { type: 'Point' as const, coordinates: [p.lon, p.lat] },
+      })),
+    }
+    ;(map.current.getSource('proposals') as maplibregl.GeoJSONSource | undefined)?.setData(data)
+  }, [ready, props.proposals])
 
   // Frame the country once, when the facilities first arrive. Doing it on every
   // update would fight the user every time they panned.

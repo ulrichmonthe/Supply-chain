@@ -15,7 +15,8 @@ from ..engine.roadmap import build_roadmap
 from ..io import decision as decision_mod
 from ..io import report as report_mod
 from ..models import AuditEntry, Country, Edge, Node, Scenario, Study
-from ..schemas import ResultSummary, StudyIn, StudyPatch, StudyScenarioIn
+from ..engine import greenfield, overlay
+from ..schemas import GreenfieldAdopt, GreenfieldRequest, ResultSummary, StudyIn, StudyPatch, StudyScenarioIn
 from .deps import author_claim, new_batch_id
 
 router = APIRouter(tags=["studies"])
@@ -241,3 +242,72 @@ def study_report(study_id: int, session: Session = Depends(get_session)):
         media_type="text/html; charset=utf-8",
         headers={"Content-Disposition": f'inline; filename="{country.code} - study - {safe_name}.html"'},
     )
+
+
+# --- greenfield ----------------------------------------------------------------------------
+
+
+@router.post("/countries/{country_id}/greenfield")
+def greenfield_proposals(country_id: int, payload: GreenfieldRequest, session: Session = Depends(get_session)):
+    """Where K new stores would go, from the demand itself. Reads only."""
+    country = _country_or_404(session, country_id)
+    try:
+        return greenfield.propose(session, country, k=payload.k, keep_existing=payload.keep_existing, admin1=payload.admin1)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+
+
+@router.post("/countries/{country_id}/greenfield/adopt", status_code=201)
+def greenfield_adopt(
+    country_id: int,
+    payload: GreenfieldAdopt,
+    session: Session = Depends(get_session),
+    author: str = Depends(author_claim),
+):
+    """Turn proposals into a scenario of data items: planned stores the solver may open,
+    with a lane to each facility they would serve. Optionally added to a study."""
+    country = _country_or_404(session, country_id)
+    baseline = studies_mod.baseline_for(session, country.id)
+    if baseline is None:
+        raise HTTPException(409, "This country has no baseline scenario.")
+    if not payload.proposals:
+        raise HTTPException(400, "Nothing to adopt.")
+    built = greenfield.adopt(session, country, payload.proposals, keep_existing=payload.keep_existing)
+    problems = overlay.validate(
+        built["items"],
+        {n.code for n in session.scalars(select(Node).where(Node.country_id == country.id))},
+        {e.code for e in session.scalars(select(Edge).where(Edge.country_id == country.id))},
+        set(),
+    )
+    if problems:
+        raise HTTPException(400, " ".join(problems))
+    hosts = ", ".join(str(p.get("host_name") or p.get("name") or p.get("code")) for p in payload.proposals)
+    plural = "s" if len(payload.proposals) > 1 else ""
+    name = payload.name or f"Greenfield: {len(payload.proposals)} new store{plural} near {hosts}"
+    kept = "with today's stores kept" if payload.keep_existing else "with today's area stores closed"
+    scenario = studies_mod._clone(
+        session,
+        baseline,
+        name=name[:128],
+        description=(
+            f"Candidate stores placed by demand-weighted centre of gravity and snapped to the nearest facility, {kept}. "
+            "Each has a lane to the facilities it would serve; the solver decides which earn their cost."
+        ),
+        levers={"optimize_hubs": True, "hub_nodes_open": [], "hub_nodes_closed": []},
+        tags=["study", "greenfield"],
+    )
+    scenario.data_items = built["items"]
+    batch = new_batch_id()
+    ledger.record(
+        session, country_id=country.id, entity_type="scenario", entity_ref=scenario.name, field="created",
+        new_value=f"Greenfield proposal adopted: {len(payload.proposals)} candidate stores, {len(built['items'])} data items.",
+        provenance="assumption", author_claim=author, batch_id=batch,
+    )
+    if payload.study_id:
+        study = session.get(Study, payload.study_id)
+        if study and study.country_id == country.id and scenario.id not in (study.scenario_ids or []):
+            study.scenario_ids = list(study.scenario_ids or []) + [scenario.id]
+    session.commit()
+    from .scenarios import _to_out
+
+    return {"scenario": _to_out(session, scenario).model_dump(), "items": len(built["items"]), "store_codes": built["store_codes"]}
