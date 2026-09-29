@@ -21,6 +21,7 @@ from . import ledger
 from .engine import confidence as confidence_mod
 from .engine import kpis as kpi_mod
 from .engine import seasonality
+from .engine import overlay
 from .engine.runner import run_scenario
 from .models import Country, Edge, Result, Scenario, Study
 from .tagging import normalise_tags
@@ -307,6 +308,9 @@ def lever_diff(baseline: Scenario, scenario: Scenario) -> dict:
                 if key == "month":
                     b, a = (b if before.get(key) else "annualised"), (a if after.get(key) else "annualised")
                 differences.append({"group": group, "key": key, "label": label, "baseline": before.get(key), "value": after.get(key), "text": f"{label}: {b} → {a}"})
+    for item in scenario.data_items or []:
+        text = overlay.describe(item)
+        differences.append({"group": "data_items", "key": item.get("kind"), "label": "data: " + text, "baseline": None, "value": item, "text": "data: " + text})
     if not differences:
         sentence = "Nothing differs from the baseline; only the data or the run conditions could."
     elif len(differences) == 1:

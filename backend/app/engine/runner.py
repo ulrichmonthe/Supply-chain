@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Demand, Edge, Node, Product, Result, Scenario
 from . import confidence as confidence_mod
+from . import overlay
 from . import costing, equity as equity_mod, kpis as kpi_mod, seasonality, service
 from .allocation import FacilityIn, HubIn, LaneIn, SolveOptions, solve
 
@@ -136,6 +137,12 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
     edges = list(session.scalars(select(Edge).where(Edge.country_id == country_id, Edge.active.is_(True))))
     products = {p.id: p for p in session.scalars(select(Product).where(Product.country_id == country_id))}
     demand_rows = list(session.scalars(select(Demand).where(Demand.country_id == country_id)))
+
+    # A scenario's data items are applied to copies, in memory, for this run only.
+    # The baseline data in the database is exactly as loaded, whatever the scenario says.
+    nodes, edges, demand_rows, _applied = overlay.apply(
+        list(scenario.data_items or []), nodes, edges, demand_rows, products, config=scenario.country.config
+    )
 
     node_by_id = {n.id: n for n in nodes}
 

@@ -220,6 +220,13 @@
           "state": "done",
           "env": null,
           "note": "Lanes only the first uses red, only the second green, both grey; facilities that change supplier amber. Built from the stored flows, no solver work."
+        },
+        {
+          "id": "f2s23",
+          "title": "A scenario can change the data, not only the levers, without touching the base",
+          "state": "done",
+          "env": null,
+          "note": "Close a facility, scale demand, open a store, add or remove a lane. Applied in memory when it runs; listed in the lever diff; recorded in the ledger."
         }
       ],
       "decisions": [
@@ -236,6 +243,11 @@
         "The costs, demand and boat timetables in the demo are illustrative, not the ministry's real figures. The clinic locations and the shape of the network are real."
       ],
       "activity": [
+        {
+          "at": "2026-09-29T00:00:00Z",
+          "kind": "work",
+          "what": "Scenario items applied as an in-memory overlay; migration 0008"
+        },
         {
           "at": "2026-09-28T00:00:00Z",
           "kind": "work",

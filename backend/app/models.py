@@ -290,6 +290,9 @@ class Scenario(Base):
     constraints: Mapped[dict] = mapped_column(JSON, default=dict)
     #: cost, service, equity
     objective_weights: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Data changes applied on top of the baseline data when this scenario runs, without
+    #: touching the base: close a facility, scale demand, add a store, add or remove a lane.
+    data_items: Mapped[list] = mapped_column(JSON, default=list, server_default="[]")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)

@@ -735,6 +735,8 @@ export default function App() {
                 />
               ) : null
             }
+            nodes={nodes}
+            edges={edges}
             scenarios={scenarios}
             selectedId={selectedId}
             compareIds={compareIds}

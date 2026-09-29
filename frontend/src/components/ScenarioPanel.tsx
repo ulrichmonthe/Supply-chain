@@ -1,11 +1,14 @@
 import { useId, useMemo, useState } from 'react'
 import type React from 'react'
-import type { Scenario, ServiceSummary } from '../types'
+import type { EdgeRow, NodeRow, Scenario, ServiceSummary } from '../types'
+import { ScenarioItems } from './ScenarioItems'
 import { FREQUENCIES, frequencyLabel, money, pct } from '../format'
 
 type Props = {
   /** The Sessions shelf, rendered above the scenarios. */
   shelf?: React.ReactNode
+  nodes: NodeRow[]
+  edges: EdgeRow[]
   scenarios: Scenario[]
   selectedId: number | null
   compareIds: number[]
@@ -200,16 +203,16 @@ export function ScenarioPanel(props: Props) {
         {filtering && visible.length === 0 && (
           <div className="callout">
             <h4>Nothing matches</h4>
-            No scenario here carries {activeTags.length ? 'all of those tags' : 'that text'}.
-            Clear the filter to see all {props.scenarios.length}.
+            No scenario here carries {activeTags.length ? 'all of those tags' : 'that text'}. Clear the filter
+            to see all {props.scenarios.length}.
           </div>
         )}
         {props.scenarios.length === 0 && (
           <div className="callout">
             <h4>Nothing loaded yet</h4>
-            This workspace is empty. Open the <b>Data</b> tab, download the blank template, and
-            upload a facility list — the tool checks it and tells you what is missing before
-            anything is saved. A baseline scenario appears once there is a network to run it on.
+            This workspace is empty. Open the <b>Data</b> tab, download the blank template, and upload a
+            facility list — the tool checks it and tells you what is missing before anything is saved. A
+            baseline scenario appears once there is a network to run it on.
           </div>
         )}
         {visible.map((scenario) => {
@@ -290,7 +293,11 @@ export function ScenarioPanel(props: Props) {
               )}
               {scenario.id === props.selectedId && (
                 <div className="scenario-actions" onClick={(event) => event.stopPropagation()}>
-                  <button className="btn small primary" disabled={props.running} onClick={() => props.onRun(scenario.id)}>
+                  <button
+                    className="btn small primary"
+                    disabled={props.running}
+                    onClick={() => props.onRun(scenario.id)}
+                  >
                     Run
                   </button>
                   <button className="btn small" onClick={() => props.onClone(scenario.id)}>
@@ -330,8 +337,8 @@ export function ScenarioPanel(props: Props) {
         </button>
         {hiddenTicked > 0 && (
           <div className="lever-note" style={{ marginTop: 5 }}>
-            {hiddenTicked === 1 ? 'One of those is' : `${hiddenTicked} of those are`} hidden by the
-            filter. Filtering changes what you can see, not what will run.
+            {hiddenTicked === 1 ? 'One of those is' : `${hiddenTicked} of those are`} hidden by the filter.
+            Filtering changes what you can see, not what will run.
           </div>
         )}
       </div>
@@ -343,8 +350,7 @@ export function ScenarioPanel(props: Props) {
         <div className="section">
           <div className="callout">
             <h4>Hidden by the filter</h4>
-            The levers below are still <b>{selected.name}</b>, which does not match what you
-            are filtering on.
+            The levers below are still <b>{selected.name}</b>, which does not match what you are filtering on.
             <div style={{ marginTop: 7 }}>
               <button type="button" className="btn small" onClick={clearFilter}>
                 Show it again
@@ -355,6 +361,9 @@ export function ScenarioPanel(props: Props) {
       )}
 
       {selected && <LeverEditor scenario={selected} services={props.services} onPatch={props.onPatch} />}
+      {selected && !selected.is_baseline && (
+        <ScenarioItems scenario={selected} nodes={props.nodes} edges={props.edges} onPatch={props.onPatch} />
+      )}
     </div>
   )
 }
@@ -542,15 +551,19 @@ function LeverEditor({
       <div className="section">
         <h3>
           Timetables{' '}
-          <button className="btn small ghost" style={{ float: 'right', marginTop: -3 }} onClick={() => setOpenServices(!openServices)}>
+          <button
+            className="btn small ghost"
+            style={{ float: 'right', marginTop: -3 }}
+            onClick={() => setOpenServices(!openServices)}
+          >
             {openServices ? 'hide' : `${scheduled.length} services`}
           </button>
         </h3>
         {openServices && (
           <>
             <div className="lever-note" style={{ marginBottom: 8 }}>
-              Change how often a service calls and watch stockout risk at the facilities on that run.
-              Nothing else in the network moves.
+              Change how often a service calls and watch stockout risk at the facilities on that run. Nothing
+              else in the network moves.
             </div>
             {scheduled.map((svc) => (
               <div className="lever" key={svc.name}>
@@ -618,7 +631,15 @@ function Slider({
         <label htmlFor={id}>{label}</label>
         {/* The number is typeable as well as slideable: "0.6" is a value somebody
             defends in a meeting, and dragging until it reads 0.6 is not how they type it. */}
-        <TypedValue value={value} min={min} max={max} step={step} format={format} onChange={onChange} label={label} />
+        <TypedValue
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          format={format}
+          onChange={onChange}
+          label={label}
+        />
       </div>
       <input
         id={id}

@@ -297,6 +297,20 @@ longer be met". The scorecard carries the share and holds/depends per scenario w
 sentence and the range for the selected one; the report has a "How sure this is"
 section before the equity table; the spreadsheet's Scorecard sheet has the rows.
 
+### Scenario items: data changes that belong to a scenario
+
+A what-if is not only a lever. "Close Wewak", "demand up a fifth in Morobe", "open a
+store at Kimbe with a road lane to each of these clinics" are changes to the data, and
+a scenario now carries them as **data items** in its own section of the sidebar: close a
+facility, change a facility field, scale demand (by province or product), open a new
+store, add or remove a lane, change a lane field. When the scenario runs, the items are
+applied to copies of the rows in memory (`app/engine/overlay.py`) and never written
+back, so the baseline data stays exactly as loaded and the ledger stays honest. Items
+are validated against the codes that exist, described in words, recorded in the ledger
+as one change to the scenario, and listed in the study's lever diff beside the levers.
+A new store opened this way is a candidate the solver can choose, which is what the
+greenfield engine builds on.
+
 ### Studies: comparison as the workflow
 
 A study is a question and the ordered scenarios that answer it, the baseline always

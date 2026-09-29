@@ -226,8 +226,36 @@ export type Scenario = {
   levers: Levers
   constraints: Constraints
   objective_weights: Weights
+  /** Data changes applied on top of the baseline when this scenario runs. */
+  data_items: DataItem[]
   latest_result_id: number | null
   latest_status: string | null
+}
+
+export type DataItem = {
+  kind: 'close_facility' | 'set_node_field' | 'scale_demand' | 'add_node' | 'add_lane' | 'remove_lane' | 'set_lane_field'
+  code?: string
+  field?: string
+  value?: unknown
+  factor?: number
+  admin1?: string
+  sku?: string
+  codes?: string[]
+  name?: string
+  lat?: number
+  lon?: number
+  level?: number
+  hub_capable?: boolean
+  operating_status?: string
+  hub_fixed_cost?: number
+  hub_open_capex?: number
+  hub_throughput_m3?: number
+  from_code?: string
+  to_code?: string
+  mode?: string
+  cost_per_m3?: number
+  capacity_per_trip_m3?: number
+  distance_km?: number
 }
 
 export type KpiSet = Record<string, number>

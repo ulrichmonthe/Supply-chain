@@ -899,3 +899,8 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .grid td.n .cell-button { text-align: right; }
 .grid .cell-input { width: 100%; min-width: 60px; }
 .bulk-bar { margin: 0 0 8px; }
+
+/* ---------- scenario items ---------- */
+
+.item-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-small); padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); }

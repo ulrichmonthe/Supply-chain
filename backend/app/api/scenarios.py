@@ -13,6 +13,7 @@ from .. import ledger
 from ..db import SessionLocal, get_session
 from .deps import author_claim, new_batch_id
 from ..engine import confidence as confidence_mod, kpis as kpi_mod
+from ..engine import overlay
 from ..engine.roadmap import build_roadmap
 from ..engine.runner import run_scenario
 from ..models import Country, Node, Result, Scenario
@@ -86,6 +87,8 @@ def create_scenario(
 
     fields = payload.model_dump()
     fields["tags"] = normalise_tags(fields.get("tags"))
+    if fields.get("data_items"):
+        _check_items(session, country_id, fields["data_items"])
     scenario = Scenario(country_id=country_id, **fields)
     session.add(scenario)
     session.flush()
@@ -119,6 +122,8 @@ def update_scenario(
 ):
     scenario = _scenario_or_404(session, scenario_id)
     batch = new_batch_id()
+    if payload.data_items is not None:
+        _check_items(session, scenario.country_id, payload.data_items)
     for field, value in payload.model_dump(exclude_unset=True).items():
         if value is None:
             continue
@@ -139,11 +144,28 @@ def update_scenario(
         )
         if isinstance(value, dict):
             ledger.record_dict_changes(session, before=before, after=value, field_prefix=field, **common)
+        elif field == "data_items":
+            was, now = [overlay.describe(i) for i in (before or [])], [overlay.describe(i) for i in value]
+            if was != now:
+                ledger.record(session, field="data_items", old_value="; ".join(was) or None, new_value="; ".join(now) or None, **common)
         elif before != value:
             ledger.record(session, field=field, old_value=before, new_value=value, **common)
     session.commit()
     session.refresh(scenario)
     return _to_out(session, scenario)
+
+
+def _check_items(session: Session, country_id: int, items: list) -> None:
+    from ..models import Edge, Node, Product
+
+    problems = overlay.validate(
+        items,
+        {n.code for n in session.scalars(select(Node).where(Node.country_id == country_id))},
+        {e.code for e in session.scalars(select(Edge).where(Edge.country_id == country_id))},
+        {p.sku for p in session.scalars(select(Product).where(Product.country_id == country_id))},
+    )
+    if problems:
+        raise HTTPException(400, " ".join(problems))
 
 
 @router.delete("/scenarios/{scenario_id}", status_code=204)

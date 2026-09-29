@@ -243,6 +243,7 @@ class ScenarioIn(BaseModel):
     levers: dict = Field(default_factory=dict)
     constraints: dict = Field(default_factory=dict)
     objective_weights: dict = Field(default_factory=dict)
+    data_items: List[dict] = Field(default_factory=list)
 
 
 class ScenarioPatch(BaseModel):
@@ -254,6 +255,7 @@ class ScenarioPatch(BaseModel):
     levers: Optional[dict] = None
     constraints: Optional[dict] = None
     objective_weights: Optional[dict] = None
+    data_items: Optional[List[dict]] = None
 
 
 class ScenarioOut(BaseModel):
@@ -267,6 +269,7 @@ class ScenarioOut(BaseModel):
     levers: dict
     constraints: dict
     objective_weights: dict
+    data_items: List[dict] = Field(default_factory=list)
     latest_result_id: Optional[int] = None
     latest_status: Optional[str] = None
     updated_at: datetime
