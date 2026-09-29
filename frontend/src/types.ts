@@ -708,3 +708,11 @@ export type DiffMap = {
     hubs_only_b: string[]
   }
 }
+
+export type TableName = 'nodes' | 'edges' | 'products' | 'demand'
+
+/** A demand row as the table editor lists it, with the facility's name beside the code. */
+export type DemandTableRow = DemandRow & { node_name: string; admin1: string | null }
+
+export type EdgeTableRow = EdgeRow & { retired_at: string | null; retired_reason: string }
+export type ProductTableRow = ProductRow & { retired_at: string | null; retired_reason: string }

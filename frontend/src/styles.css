@@ -881,3 +881,21 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 .mapping-table td label { font-weight: 600; }
 .mapping-table tr.missing td:first-child label { color: var(--warn); }
 .mapping-table select { max-width: 220px; }
+
+/* ---------- the table editor ---------- */
+
+.grid-wrap { max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.grid { font-size: var(--fs-small); min-width: 900px; }
+.grid th { position: sticky; top: 0; background: var(--panel); z-index: 1; white-space: nowrap; }
+.grid td, .grid th { padding: 3px 6px; }
+.grid tr.retired td { color: var(--dim); text-decoration: line-through; }
+.grid tr.retired td:last-child { text-decoration: none; }
+.th-sort { background: none; border: 0; color: inherit; font: inherit; font-weight: inherit; padding: 4px 0; cursor: pointer; min-height: var(--hit); }
+.cell-button {
+  background: none; border: 0; color: inherit; font: inherit; padding: 4px 2px; cursor: text; text-align: inherit;
+  width: 100%; min-height: var(--hit); border-radius: 3px;
+}
+.cell-button:hover { background: var(--panel-3); }
+.grid td.n .cell-button { text-align: right; }
+.grid .cell-input { width: 100%; min-width: 60px; }
+.bulk-bar { margin: 0 0 8px; }

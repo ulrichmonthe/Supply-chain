@@ -3,7 +3,7 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic \u2014 by road, boat and plane, month by month \u2014 and who gets left out when money is saved."
   },
-  "updated": "2026-09-28T00:00:00Z",
+  "updated": "2026-09-29T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -730,6 +730,13 @@
           "state": "done",
           "env": null,
           "note": "Every run re-solves with estimated demand 30% lower and higher. The scorecard says 'holds \u00b130%' or 'depends' per scenario; the report and spreadsheet carry the sentence and the range. A reversal is named, not averaged away."
+        },
+        {
+          "id": "f10s13",
+          "title": "Edit any table in a grid, and set one field on many rows at once",
+          "state": "done",
+          "env": null,
+          "note": "Facilities, lanes, products and demand. Lanes and products gained create, edit, retire and restore. A bulk edit is one ledger row per row in one batch."
         }
       ],
       "decisions": [
@@ -758,6 +765,11 @@
         "A claim is a name, not a login: anyone can type any name until accounts exist."
       ],
       "activity": [
+        {
+          "at": "2026-09-29T00:00:00Z",
+          "kind": "work",
+          "what": "Table editor over every model table with filter, sort, inline edit, add, retire/restore and bulk set"
+        },
         {
           "at": "2026-09-28T00:00:00Z",
           "kind": "work",

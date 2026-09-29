@@ -362,6 +362,18 @@ Kokopo run: month blank → 3, equity 0.5 → 0.9, annual cost 11.2M → 13.8M".
 records every save and open with the author's claim, and the shelf says how many
 changes have been made since the session you are working from.
 
+### Every table, as a grid
+
+The Data tab's **Edit the tables** shows facilities, lanes, products and demand as a
+grid: filter, sort, click a cell and type, add a lane or a product, retire and restore
+a row. Tick many rows and set one field on all of them: one ledger row per row, one
+batch for the sitting, so the whole edit can be reverted together from the Provenance
+tab or row by row. Every cell change goes through the same editing API as the facility
+editor, carrying the S/I/U marker and the reason typed above the grid; a population set
+in bulk moves the estimates that read it, and a quantity typed into a demand row pins
+the estimate it replaces. Lanes and products now have the same create, edit, retire
+and restore endpoints facilities had.
+
 ### The column mapper: any CSV, through the same hallway
 
 WMS and ERP data arrives as one-off CSV exports far more often than through a live

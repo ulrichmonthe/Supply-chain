@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -294,14 +294,69 @@ class EdgeOverride(BaseModel):
 
     distance_km: Optional[float] = None
     base_travel_time_hr: Optional[float] = None
+    mode: Optional[str] = None
+    service_name: Optional[str] = None
     service_frequency: Optional[str] = None
+    service_days: Optional[List[str]] = None
     capacity_per_trip_m3: Optional[float] = None
+    cold_capacity_per_trip_m3: Optional[float] = None
+    fixed_cost_per_trip: Optional[float] = None
+    variable_cost_per_km: Optional[float] = None
     monthly_access: Optional[list[float]] = None
     reliability: Optional[float] = None
+    lead_time_sd_days: Optional[float] = None
     cost_per_m3: Optional[float] = None
     active: Optional[bool] = None
     rationale: str = ""
     actor: str = "analyst"
+
+
+class EdgeCreate(BaseModel):
+    code: str
+    from_code: str
+    to_code: str
+    mode: str = "road"
+    distance_km: Optional[float] = None
+    base_travel_time_hr: Optional[float] = None
+    service_name: Optional[str] = None
+    service_frequency: Optional[str] = None
+    capacity_per_trip_m3: float = 0.0
+    cold_capacity_per_trip_m3: float = 0.0
+    fixed_cost_per_trip: float = 0.0
+    variable_cost_per_km: float = 0.0
+    cost_per_m3: float = 0.0
+    reliability: float = 0.9
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class ProductIn(BaseModel):
+    sku: str
+    name: str
+    temperature_band: str = "ambient"
+    volume_per_unit_cm3: float = 0.0
+    unit_cost: float = 0.0
+    shelf_life_days: int = 730
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class ProductPatch(BaseModel):
+    name: Optional[str] = None
+    temperature_band: Optional[str] = None
+    volume_per_unit_cm3: Optional[float] = None
+    unit_cost: Optional[float] = None
+    shelf_life_days: Optional[int] = None
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
+
+
+class BulkSet(BaseModel):
+    ids: List[int]
+    field: str
+    value: Any
+    confidence_marker: Literal["S", "I", "U"] = "I"
+    reason: str = ""
 
 
 class AuditOut(BaseModel):

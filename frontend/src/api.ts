@@ -23,6 +23,9 @@ import type {
   ValidationReport,
   CsvInspection,
   DiffMap,
+  EdgeTableRow,
+  ProductTableRow,
+  TableName,
   SavedMapping,
   SessionDiff,
   SessionShelf,
@@ -126,6 +129,33 @@ export const api = {
       { method: 'POST' },
     )
   },
+  /* --- the table editor --- */
+  table: <T = Record<string, unknown>>(countryId: number, table: TableName) => request<T[]>(`/countries/${countryId}/tables/${table}`),
+  bulkSet: (
+    countryId: number,
+    table: TableName,
+    payload: { ids: number[]; field: string; value: unknown; confidence_marker?: ConfidenceMarker; reason?: string },
+  ) =>
+    request<{ changed: number; of: number; recomputed: number; batch_id: string }>(`/countries/${countryId}/tables/${table}/bulk`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  createEdge: (countryId: number, payload: Record<string, unknown>) =>
+    request<EdgeTableRow>(`/countries/${countryId}/edges`, { method: 'POST', body: JSON.stringify(payload) }),
+  retireEdge: (edgeId: number, reason: string) =>
+    request<{ retired: string }>(`/edges/${edgeId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  restoreEdge: (edgeId: number, reason: string) =>
+    request<EdgeTableRow>(`/edges/${edgeId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  createProduct: (countryId: number, payload: Record<string, unknown>) =>
+    request<ProductTableRow>(`/countries/${countryId}/products`, { method: 'POST', body: JSON.stringify(payload) }),
+  patchProduct: (productId: number, payload: Record<string, unknown>) =>
+    request<ProductTableRow>(`/products/${productId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  retireProduct: (productId: number, reason: string) =>
+    request<{ retired: string; demand_rows: number }>(`/products/${productId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  restoreProduct: (productId: number, reason: string) =>
+    request<ProductTableRow>(`/products/${productId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  setDemandRow: (rowId: number, payload: { sku: string; quantity: number; source?: string; confidence?: number }) =>
+    request<DemandRow[]>(`/demand/${rowId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   /* --- the column mapper --- */
   inspectCsv: (countryId: number, file: File) => {
     const form = new FormData()

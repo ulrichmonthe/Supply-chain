@@ -18,6 +18,7 @@ import type {
 import { api } from '../api'
 import { MarkerPicker } from './FacilityEditor'
 import { CsvImport } from './CsvImport'
+import { TableEditor } from './TableEditor'
 import { exact, fillColour, frequencyLabel, money, pct, riskColour } from '../format'
 
 /* ------------------------------------------------------------------ facilities */
@@ -916,6 +917,7 @@ export function DataPanel({
       )}
 
       {!report && <Estimates countryId={countryId} nodes={nodes} onChanged={onImported} />}
+      {!report && <TableEditor countryId={countryId} onChanged={onImported} onMessage={setMessage} />}
 
       {!report && retired.length > 0 && (
         <div className="section">

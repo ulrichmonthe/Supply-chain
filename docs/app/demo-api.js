@@ -81,6 +81,7 @@
       if (path.match(/^\/countries\/\d+\/studies$/)) return file('studies.json')
       if (path === '/study-presets') return file('study-presets.json')
       if (path.match(/^\/countries\/\d+\/column-mappings$/)) return file('column-mappings.json')
+      if ((m = path.match(/^\/countries\/\d+\/tables\/(nodes|edges|products|demand)$/))) return file('tables-' + m[1] + '.json')
       if ((m = path.match(/^\/nodes\/(\d+)\/demand$/))) return file('demand/' + m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/basemap\.geojson$/)) return file('basemap.json')
       if ((m = path.match(/^\/countries\/\d+\/season\/(\d+)$/))) return file('season/' + m[1] + '.json')
