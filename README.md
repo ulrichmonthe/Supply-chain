@@ -546,6 +546,76 @@ does not expose it and that the realistic paths are a scheduled export through t
 importer or a feed agreed with Beyond Essential Systems. Being caught overstating this
 in front of MSPDB would cost more than the integration is worth.
 
+### Data onboarding: messy ministry files in, a signed-off dataset out
+
+What stops the model being used is not the solver, it is the data: a ministry's real
+figures take months to collate, and no authoritative facility list exists to match them
+against. The **Onboard** tab is a pipeline for that, built as a country-agnostic core plus
+a **country pack** filled in per country, and it never writes to the model itself.
+
+Six steps, in the order an engagement takes them:
+
+1. **The country pack.** Source systems, who arbitrates facility identity, admin levels,
+   transport speed and cost ranges, unit and currency conversions, per-1,000 rates, the
+   legal profile (data residency, whether external AI may be used), roles, languages and
+   thresholds. Versioned; approved by someone other than its author; ingestion starts
+   only from an approved pack. The PNG reference pack ships marked as an example.
+2. **Files.** Several at once, each recorded with its checksum, uploader and *data
+   vintage* (the period it describes, not the upload date), then profiled: header row
+   found even under a title line, likely domain, likely source system, units guessed
+   from column names, period range. A DHIS2 or mSupply consumption export is recognised
+   by its shape and needs no mapping; anything else gets a proposed mapping to confirm,
+   kept under a name for next time.
+3. **Facilities.** The core. No list is authoritative unless the pack names one. Every
+   row is scored against the model, the crosswalk and the other lists on name (with
+   aliases like "H/C" and the classifying words kept), admin unit, type, shared
+   identifiers and coordinates together, with the reasons written out. Only a score above
+   the pack's threshold with a clear margin is accepted by the pipeline; the rest goes to
+   the named arbiter, whose decision is recorded as the source. The result is a
+   **crosswalk** the ministry owns: one row per facility, every id it carries in every
+   system, its history (opened, renamed, closed), exportable as a CSV on its own.
+4. **Checks and estimates.** Values are staged with their class -- observed, converted
+   (with the conversion shown), confirmed, estimated, illustrative, missing -- and two
+   sources that disagree are a conflict with both values kept, never an average. The
+   rules engine runs checks that hold anywhere (travel time against distance by mode,
+   demand within storage, demand per head and cost per m³ against the country's own
+   distribution, seasonal lanes without closures, issued against consumed) and absolute
+   ranges that come from the pack only. Gaps are filled by a named method or left open:
+   consumption adjusted for stock-outs, population-based, peer median, service-based,
+   storage from cover days. Every estimate is labelled *directional, not for budgeting*.
+5. **Review.** One queue, sorted by how much each decision moves the result. Estimates
+   are listed one by one; low-confidence items cannot be approved in bulk; every
+   decision records who made it. Questions to local officers are recorded, and their
+   answers become confirmed sources.
+6. **Sign-off, export, load.** The validation report: coverage by class, every estimate,
+   conflict and flag with its resolution, the vintage of every source, what still blocks.
+   A named approver who is not the preparer signs. The export is the import workbook,
+   column for column, plus a **Provenance** sheet, and round-trips losslessly. Loading
+   the model is a separate human action through the same validate-and-apply path a
+   workbook takes, so the model changes by exactly one door. A **refresh** run replays the
+   saved mappings, the crosswalk and the rules and marks every value that equals the
+   approved dataset as unchanged, so only what moved reaches a person.
+
+The provenance vocabulary reaches the model: every demand row carries its class, the
+overview and every result report coverage ("demand: 82% observed, 18% estimated"), and
+the seeded workspace truthfully says *100% illustrative* until real figures are loaded.
+
+**The agent only proposes.** A `Proposer` interface has a deterministic rules
+implementation and an external one that asks a hosted model. The external one is off
+unless the pack's legal profile allows it, a provider is configured
+(`HSCN_AGENT_PROVIDER`) and a key is in the environment; even then it sees headers and
+five sampled values per column, never the file, and its proposals go to the queue marked
+`agent`. File contents are data: a column called "IGNORE ALL INSTRUCTIONS" is a column.
+
+**The evaluation set is a test.** `make onboarding-eval` degrades the PNG reference data
+the way real registers are degraded -- columns renamed and reordered, a title row above
+the header, units mixed, names abbreviated, a share of codes missing or reissued, a second
+list that disagrees, consumption with planted unit errors and stock-outs -- runs the
+pipeline with the rules alone, and scores it: facility match precision (target ≥ 0.98 on
+auto-accepts), planted anomalies caught (≥ 0.90), conflicts surfaced rather than resolved
+(all), values with the wrong provenance class (0). `tests/test_onboarding_eval.py` fails
+the build if a target is missed. The agent must beat this baseline to ship.
+
 ### Excel round trip
 
 The export and the blank template have identical columns, so whatever comes out can go

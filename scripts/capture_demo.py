@@ -68,6 +68,7 @@ for rel, path in [
     ("studies.json", "/countries/1/studies"),
     ("study-presets.json", "/study-presets"),
     ("column-mappings.json", "/countries/1/column-mappings"),
+    ("onboarding-pack.json", "/countries/1/onboarding/pack"),
     ("tables-nodes.json", "/countries/1/tables/nodes"),
     ("tables-edges.json", "/countries/1/tables/edges"),
     ("tables-products.json", "/countries/1/tables/products"),

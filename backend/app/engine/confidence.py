@@ -72,6 +72,7 @@ def assess(result, baseline_result=None) -> dict:
         "range": {},
         "baseline_tested": None,
         "sentence": "",
+        "provenance": conf.get("provenance") or {},
     }
 
     if share <= 0:

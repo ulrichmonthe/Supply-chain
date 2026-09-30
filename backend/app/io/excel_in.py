@@ -195,6 +195,7 @@ def assemble(nodes_raw: list, edges_raw: list, products_raw: list, demand_raw: l
                 "quantity": _to_float(record.get("quantity")),
                 "source": str(record.get("source") or "proxy").strip(),
                 "confidence": _to_float(record.get("confidence"), 0.5),
+                **({"provenance_class": str(record["provenance_class"]).strip()} if record.get("provenance_class") else {}),
             }
         )
 

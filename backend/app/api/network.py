@@ -270,11 +270,39 @@ def overview(country_id: int, session: Session = Depends(get_session)):
             "facilities_with_estimated_storage": sum(1 for n in nodes if "capacity" in (n.derivations or {})),
         },
         "distance_provenance": cascade_summary(edges),
+        # The onboarding vocabulary: how each demand row entered the model. Seeded demo
+        # figures are illustrative, and stay so until real ones are loaded.
+        "provenance": _provenance_coverage(demand_rows, product_by_id),
         "services": sorted(services.values(), key=lambda s: -s["population"]),
         "vulnerability": {str(k): v.as_dict() for k, v in vulnerability.items()},
         "seasonality_profiles": seasonality.PROFILES,
         "months": seasonality.MONTHS,
     }
+
+
+def _provenance_coverage(demand_rows, product_by_id) -> dict:
+    rows: dict[str, int] = {}
+    m3: dict[str, float] = {}
+    total = 0.0
+    for row in demand_rows:
+        cls = row.provenance_class or ("estimated" if row.derivation else "illustrative")
+        rows[cls] = rows.get(cls, 0) + 1
+        product = product_by_id.get(row.product_id)
+        volume = row.quantity * product.volume_per_unit_cm3 / 1e6 if product else 0.0
+        m3[cls] = m3.get(cls, 0.0) + volume
+        total += volume
+    return {
+        "rows": rows,
+        "m3_share": {cls: round(v / total, 4) if total else 0.0 for cls, v in m3.items()},
+        "illustrative_rows": rows.get("illustrative", 0),
+        "sentence": _provenance_sentence({cls: (v / total if total else 0.0) for cls, v in m3.items()}),
+    }
+
+
+def _provenance_sentence(shares: dict) -> str:
+    order = ("observed", "converted", "confirmed", "estimated", "illustrative", "missing")
+    parts = [f"{shares[c] * 100:.0f}% {c}" for c in order if shares.get(c)]
+    return "Demand: " + ", ".join(parts) + "." if parts else "No demand loaded."
 
 
 @router.get("/countries/{country_id}/basemap.geojson")

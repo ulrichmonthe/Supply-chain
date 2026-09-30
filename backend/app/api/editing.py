@@ -294,6 +294,7 @@ def set_node_demand(
                 quantity=line.quantity,
                 source=line.source,
                 confidence=line.confidence,
+                provenance_class="confirmed",
             )
             session.add(row)
             existing[(product.id, line.period)] = row
@@ -311,6 +312,7 @@ def set_node_demand(
             setattr(row, field, new)
             if field == "quantity":
                 estimators.pin_demand(row)  # a person typed it: the rule lets go
+                row.provenance_class = "confirmed"
             ledger.record(
                 session, country_id=node.country_id, entity_type="demand", entity_ref=ref, field=field,
                 old_value=old, new_value=new, provenance="manual_override",

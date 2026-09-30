@@ -78,6 +78,9 @@
         return file(m[1] + '.json')
       if (path.match(/^\/countries\/\d+\/nodes\/retired$/)) return file('retired.json')
       if (path.match(/^\/countries\/\d+\/sessions$/)) return file('sessions.json')
+      if (path.match(/^\/countries\/\d+\/onboarding\/pack$/)) return file('onboarding-pack.json')
+      if (path.match(/^\/countries\/\d+\/onboarding\/runs$/)) return json([])
+      if (path.match(/^\/countries\/\d+\/crosswalk/)) return json([])
       if (path.match(/^\/countries\/\d+\/studies$/)) return file('studies.json')
       if (path === '/study-presets') return file('study-presets.json')
       if (path.match(/^\/countries\/\d+\/column-mappings$/)) return file('column-mappings.json')
@@ -141,6 +144,8 @@
     // ---- everything that would change the model -----------------------------
     if (path.match(/\/imports\/csv/))
       return refuse('Mapping a CSV needs the validator, which runs on the server. Download the tool to try it.')
+    if (path.indexOf('/onboarding') !== -1)
+      return refuse('Onboarding a ministry\'s files needs the server: the pipeline, the reconciler and the sign-off all run there. Download the tool to try it.')
     if (path.match(/\/validate$/) || path.match(/^\/imports\//))
       return refuse('Uploading a workbook needs the validator, which runs on the server. Download the tool to try it.')
     if (path.match(/^\/connections/) || path.match(/\/connections$/))

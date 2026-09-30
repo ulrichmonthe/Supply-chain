@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const AXE = fs.readFileSync(path.join(HERE, '..', 'node_modules', 'axe-core', 'axe.min.js'), 'utf8')
 const URL = process.env.APP_URL ?? 'http://127.0.0.1:8000/'
-const TABS = ['Scorecard', 'Equity', 'Facilities', 'Services', 'Season', 'Data', 'Live', 'Provenance', 'Roadmap']
+const TABS = ['Scorecard', 'Equity', 'Facilities', 'Services', 'Season', 'Data', 'Onboard', 'Live', 'Provenance', 'Roadmap']
 
 // The container image ships one Chromium at a fixed path; fall back to whatever
 // Playwright resolves for itself elsewhere.

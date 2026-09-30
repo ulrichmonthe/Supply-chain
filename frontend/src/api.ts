@@ -1,4 +1,11 @@
 import type {
+  OnboardingFile,
+  OnboardingItem,
+  OnboardingMatch,
+  OnboardingPack,
+  OnboardingRecord,
+  OnboardingReport,
+  OnboardingRun,
   AuditRow,
   ConfidenceMarker,
   Connection,
@@ -71,7 +78,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!(init?.body instanceof FormData)) headers['Content-Type'] = 'application/json'
   const author = getAuthor()
   if (author) headers['X-Author'] = author
-  const response = await fetch(`${BASE}${path}`, { ...init, headers: { ...headers, ...(init?.headers as Record<string, string>) } })
+  const response = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: { ...headers, ...(init?.headers as Record<string, string>) },
+  })
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`
     try {
@@ -91,11 +101,17 @@ export const api = {
   overview: (countryId: number) => request<Overview>(`/countries/${countryId}/overview`),
   nodes: (countryId: number) => request<NodeRow[]>(`/countries/${countryId}/nodes`),
   edges: (countryId: number) => request<EdgeRow[]>(`/countries/${countryId}/edges`),
-  basemap: (countryId: number) => request<GeoJSON.FeatureCollection>(`/countries/${countryId}/basemap.geojson`),
-  season: (countryId: number, month: number) => request<SeasonView>(`/countries/${countryId}/season/${month}`),
-  audit: (countryId: number, params: { entity_type?: string; entity_ref?: string; author?: string; limit?: number } = {}) => {
+  basemap: (countryId: number) =>
+    request<GeoJSON.FeatureCollection>(`/countries/${countryId}/basemap.geojson`),
+  season: (countryId: number, month: number) =>
+    request<SeasonView>(`/countries/${countryId}/season/${month}`),
+  audit: (
+    countryId: number,
+    params: { entity_type?: string; entity_ref?: string; author?: string; limit?: number } = {},
+  ) => {
     const query = new URLSearchParams()
-    for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== '') query.set(key, String(value))
+    for (const [key, value] of Object.entries(params))
+      if (value !== undefined && value !== '') query.set(key, String(value))
     const suffix = query.toString()
     return request<AuditRow[]>(`/countries/${countryId}/audit${suffix ? `?${suffix}` : ''}`)
   },
@@ -123,48 +139,87 @@ export const api = {
     form.append('file', file)
     return request<ValidationReport>(`/countries/${countryId}/validate`, { method: 'POST', body: form })
   },
-  commitImport: (batchId: number, replace: boolean, conflicts: 'keep' | 'take_file' = 'keep', takeFile: string[] = []) => {
+  commitImport: (
+    batchId: number,
+    replace: boolean,
+    conflicts: 'keep' | 'take_file' = 'keep',
+    takeFile: string[] = [],
+  ) => {
     const query = new URLSearchParams({ replace: String(replace), conflicts })
     for (const key of takeFile) query.append('take_file', key)
-    return request<{ committed: boolean; mode: string; counts: Record<string, number | Record<string, number>> }>(
-      `/imports/${batchId}/commit?${query.toString()}`,
-      { method: 'POST' },
-    )
+    return request<{
+      committed: boolean
+      mode: string
+      counts: Record<string, number | Record<string, number>>
+    }>(`/imports/${batchId}/commit?${query.toString()}`, { method: 'POST' })
   },
   /* --- the table editor --- */
-  table: <T = Record<string, unknown>>(countryId: number, table: TableName) => request<T[]>(`/countries/${countryId}/tables/${table}`),
+  table: <T = Record<string, unknown>>(countryId: number, table: TableName) =>
+    request<T[]>(`/countries/${countryId}/tables/${table}`),
   bulkSet: (
     countryId: number,
     table: TableName,
-    payload: { ids: number[]; field: string; value: unknown; confidence_marker?: ConfidenceMarker; reason?: string },
+    payload: {
+      ids: number[]
+      field: string
+      value: unknown
+      confidence_marker?: ConfidenceMarker
+      reason?: string
+    },
   ) =>
-    request<{ changed: number; of: number; recomputed: number; batch_id: string }>(`/countries/${countryId}/tables/${table}/bulk`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    request<{ changed: number; of: number; recomputed: number; batch_id: string }>(
+      `/countries/${countryId}/tables/${table}/bulk`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
   createEdge: (countryId: number, payload: Record<string, unknown>) =>
     request<EdgeTableRow>(`/countries/${countryId}/edges`, { method: 'POST', body: JSON.stringify(payload) }),
   retireEdge: (edgeId: number, reason: string) =>
-    request<{ retired: string }>(`/edges/${edgeId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    request<{ retired: string }>(`/edges/${edgeId}/retire`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   restoreEdge: (edgeId: number, reason: string) =>
     request<EdgeTableRow>(`/edges/${edgeId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
   createProduct: (countryId: number, payload: Record<string, unknown>) =>
-    request<ProductTableRow>(`/countries/${countryId}/products`, { method: 'POST', body: JSON.stringify(payload) }),
+    request<ProductTableRow>(`/countries/${countryId}/products`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   patchProduct: (productId: number, payload: Record<string, unknown>) =>
     request<ProductTableRow>(`/products/${productId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   retireProduct: (productId: number, reason: string) =>
-    request<{ retired: string; demand_rows: number }>(`/products/${productId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    request<{ retired: string; demand_rows: number }>(`/products/${productId}/retire`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   restoreProduct: (productId: number, reason: string) =>
-    request<ProductTableRow>(`/products/${productId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
-  setDemandRow: (rowId: number, payload: { sku: string; quantity: number; source?: string; confidence?: number }) =>
-    request<DemandRow[]>(`/demand/${rowId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+    request<ProductTableRow>(`/products/${productId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  setDemandRow: (
+    rowId: number,
+    payload: { sku: string; quantity: number; source?: string; confidence?: number },
+  ) => request<DemandRow[]>(`/demand/${rowId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   /* --- the column mapper --- */
   inspectCsv: (countryId: number, file: File) => {
     const form = new FormData()
     form.append('file', file)
-    return request<CsvInspection>(`/countries/${countryId}/imports/csv/inspect`, { method: 'POST', body: form })
+    return request<CsvInspection>(`/countries/${countryId}/imports/csv/inspect`, {
+      method: 'POST',
+      body: form,
+    })
   },
-  importCsv: (countryId: number, file: File, sheet: string, mapping: Record<string, string | null>, saveAs = '') => {
+  importCsv: (
+    countryId: number,
+    file: File,
+    sheet: string,
+    mapping: Record<string, string | null>,
+    saveAs = '',
+  ) => {
     const form = new FormData()
     form.append('file', file)
     form.append('sheet', sheet)
@@ -174,8 +229,11 @@ export const api = {
   },
   columnMappings: (countryId: number) => request<SavedMapping[]>(`/countries/${countryId}/column-mappings`),
   deleteColumnMapping: (countryId: number, name: string) =>
-    request<void>(`/countries/${countryId}/column-mappings/${encodeURIComponent(name)}`, { method: 'DELETE' }),
-  importChanges: (batchId: number, replace: boolean) => request<ImportChanges>(`/imports/${batchId}/changes?replace=${replace}`),
+    request<void>(`/countries/${countryId}/column-mappings/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    }),
+  importChanges: (batchId: number, replace: boolean) =>
+    request<ImportChanges>(`/imports/${batchId}/changes?replace=${replace}`),
   /* --- editing in the tool --- */
   retiredNodes: (countryId: number) => request<NodeRow[]>(`/countries/${countryId}/nodes/retired`),
   patchNode: (
@@ -203,37 +261,64 @@ export const api = {
       confidence_marker?: ConfidenceMarker
       reason?: string
     },
-  ) => request<{ node: NodeRow; issues: ValidationIssue[] }>(`/countries/${countryId}/nodes`, { method: 'POST', body: JSON.stringify(payload) }),
+  ) =>
+    request<{ node: NodeRow; issues: ValidationIssue[] }>(`/countries/${countryId}/nodes`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   retireNode: (nodeId: number, reason: string) =>
-    request<{ retired: string; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/retire`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    request<{ retired: string; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/retire`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   restoreNode: (nodeId: number, reason: string) =>
-    request<{ node: NodeRow; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/restore`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    request<{ node: NodeRow; lanes: number; demand_rows: number }>(`/nodes/${nodeId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   nodeDemand: (nodeId: number) => request<DemandRow[]>(`/nodes/${nodeId}/demand`),
   setNodeDemand: (
     nodeId: number,
     lines: { sku: string; quantity: number; period?: number; source?: string; confidence?: number }[],
     confidence_marker: ConfidenceMarker,
     reason: string,
-  ) => request<DemandRow[]>(`/nodes/${nodeId}/demand`, { method: 'PUT', body: JSON.stringify({ lines, confidence_marker, reason }) }),
+  ) =>
+    request<DemandRow[]>(`/nodes/${nodeId}/demand`, {
+      method: 'PUT',
+      body: JSON.stringify({ lines, confidence_marker, reason }),
+    }),
   overrideEdge: (edgeId: number, patch: Partial<EdgeRow> & { rationale?: string }) =>
     request<EdgeRow>(`/edges/${edgeId}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   products: (countryId: number) => request<ProductRow[]>(`/countries/${countryId}/products`),
   /* --- estimates that show their working --- */
   estimators: (countryId: number) => request<EstimatorInfo>(`/countries/${countryId}/estimators`),
   previewEstimate: (countryId: number, payload: { rule: EstimateRule; node_id?: number; sku?: string }) =>
-    request<EstimatePreview>(`/countries/${countryId}/estimates/preview`, { method: 'POST', body: JSON.stringify(payload) }),
-  applyEstimate: (countryId: number, payload: { rule: EstimateRule; node_id?: number; sku?: string; reason?: string }) =>
-    request<{ applied: number; recomputed: number; skipped: string[]; skipped_count: number }>(`/countries/${countryId}/estimates/apply`, { method: 'POST', body: JSON.stringify(payload) }),
+    request<EstimatePreview>(`/countries/${countryId}/estimates/preview`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  applyEstimate: (
+    countryId: number,
+    payload: { rule: EstimateRule; node_id?: number; sku?: string; reason?: string },
+  ) =>
+    request<{ applied: number; recomputed: number; skipped: string[]; skipped_count: number }>(
+      `/countries/${countryId}/estimates/apply`,
+      { method: 'POST', body: JSON.stringify(payload) },
+    ),
   recomputeEstimates: (countryId: number) =>
     request<{ recomputed: number }>(`/countries/${countryId}/estimates/recompute`, { method: 'POST' }),
   sessions: (countryId: number) => request<SessionShelf>(`/countries/${countryId}/sessions`),
   saveSession: (countryId: number, payload: { name: string; note?: string }) =>
-    request<WorkSession>(`/countries/${countryId}/sessions`, { method: 'POST', body: JSON.stringify(payload) }),
+    request<WorkSession>(`/countries/${countryId}/sessions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   openSession: (sessionId: number) =>
-    request<{ restored: Record<string, number>; draft: WorkSession | null; current: SessionShelf['current'] }>(
-      `/sessions/${sessionId}/open`,
-      { method: 'POST' },
-    ),
+    request<{
+      restored: Record<string, number>
+      draft: WorkSession | null
+      current: SessionShelf['current']
+    }>(`/sessions/${sessionId}/open`, { method: 'POST' }),
   renameSession: (sessionId: number, payload: { name?: string; note?: string }) =>
     request<WorkSession>(`/sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteSession: (sessionId: number) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
@@ -242,50 +327,238 @@ export const api = {
   /* --- studies --- */
   studyPresets: () => request<StudyPreset[]>('/study-presets'),
   studies: (countryId: number) => request<Study[]>(`/countries/${countryId}/studies`),
-  createStudy: (countryId: number, payload: { question: string; note?: string; preset?: string | null; scenario_ids?: number[] }) =>
-    request<Study>(`/countries/${countryId}/studies`, { method: 'POST', body: JSON.stringify(payload) }),
+  createStudy: (
+    countryId: number,
+    payload: { question: string; note?: string; preset?: string | null; scenario_ids?: number[] },
+  ) => request<Study>(`/countries/${countryId}/studies`, { method: 'POST', body: JSON.stringify(payload) }),
   patchStudy: (
     studyId: number,
-    payload: { question?: string; note?: string; scenario_ids?: number[]; recommended_scenario_id?: number | null },
+    payload: {
+      question?: string
+      note?: string
+      scenario_ids?: number[]
+      recommended_scenario_id?: number | null
+    },
   ) => request<Study>(`/studies/${studyId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteStudy: (studyId: number) => request<void>(`/studies/${studyId}`, { method: 'DELETE' }),
   addStudyScenario: (studyId: number, scenarioId: number) =>
-    request<Study>(`/studies/${studyId}/scenarios`, { method: 'POST', body: JSON.stringify({ scenario_id: scenarioId }) }),
+    request<Study>(`/studies/${studyId}/scenarios`, {
+      method: 'POST',
+      body: JSON.stringify({ scenario_id: scenarioId }),
+    }),
   removeStudyScenario: (studyId: number, scenarioId: number) =>
     request<Study>(`/studies/${studyId}/scenarios/${scenarioId}`, { method: 'DELETE' }),
   runStudy: (studyId: number) => request<{ ran: number }>(`/studies/${studyId}/run`, { method: 'POST' }),
   compareStudy: (studyId: number) => request<StudyCompare>(`/studies/${studyId}/compare`),
   greenfield: (countryId: number, payload: { k: number; keep_existing: boolean; admin1?: string | null }) =>
-    request<Greenfield>(`/countries/${countryId}/greenfield`, { method: 'POST', body: JSON.stringify(payload) }),
-  adoptGreenfield: (
-    countryId: number,
-    payload: { proposals: GreenfieldProposal[]; keep_existing: boolean; name?: string; study_id?: number | null },
-  ) =>
-    request<{ scenario: Scenario; items: number; store_codes: string[] }>(`/countries/${countryId}/greenfield/adopt`, {
+    request<Greenfield>(`/countries/${countryId}/greenfield`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  diffMap: (scenarioA: number, scenarioB: number) => request<DiffMap>(`/scenarios/${scenarioA}/diff-map/${scenarioB}`),
-  revertAudit: (entryId: number) => request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
-  createCountry: (body: { code: string; name: string; currency?: string; config?: Record<string, unknown> }) =>
+  adoptGreenfield: (
+    countryId: number,
+    payload: {
+      proposals: GreenfieldProposal[]
+      keep_existing: boolean
+      name?: string
+      study_id?: number | null
+    },
+  ) =>
+    request<{ scenario: Scenario; items: number; store_codes: string[] }>(
+      `/countries/${countryId}/greenfield/adopt`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  diffMap: (scenarioA: number, scenarioB: number) =>
+    request<DiffMap>(`/scenarios/${scenarioA}/diff-map/${scenarioB}`),
+  revertAudit: (entryId: number) =>
+    request<{ reverted: number; by: number }>(`/audit/${entryId}/revert`, { method: 'POST' }),
+  createCountry: (body: {
+    code: string
+    name: string
+    currency?: string
+    config?: Record<string, unknown>
+  }) =>
     request<{ id: number; code: string; name: string }>('/countries', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
-  correctImportRow: (batchId: number, body: { sheet: string; key: string; values: Record<string, unknown>; reason?: string }) =>
-    request<ValidationReport>(`/imports/${batchId}/rows`, { method: 'PATCH', body: JSON.stringify(body) }),
+  correctImportRow: (
+    batchId: number,
+    body: { sheet: string; key: string; values: Record<string, unknown>; reason?: string },
+  ) => request<ValidationReport>(`/imports/${batchId}/rows`, { method: 'PATCH', body: JSON.stringify(body) }),
 
   templateUrl: () => `${BASE}/template.xlsx`,
   reportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/report.html`,
+  // Onboarding, under plain names the panel reads well with.
+  onboardingPack: (countryId: number) => onboardingApi.pack(countryId),
+  createOnboardingPack: (countryId: number, payload: { pack: Record<string, unknown>; note: string }) =>
+    onboardingApi.createPack(countryId, payload),
+  approveOnboardingPack: (packId: number, comment: string) => onboardingApi.approvePack(packId, comment),
+  onboardingRuns: (countryId: number) => onboardingApi.runs(countryId),
+  createOnboardingRun: (countryId: number, payload: { name: string; kind: 'initial' | 'refresh' }) =>
+    onboardingApi.createRun(countryId, payload),
+  onboardingRun: (runId: number) => onboardingApi.run(runId),
+  addOnboardingFiles: (
+    runId: number,
+    files: File[],
+    meta: { source_system?: string; domain?: string; vintage_from?: string; vintage_to?: string },
+  ) => onboardingApi.addFiles(runId, files, meta),
+  setOnboardingMapping: (
+    fileId: number,
+    payload: {
+      mapping: Record<string, string | null>
+      sheet?: string
+      domain?: string
+      aux_columns: string[]
+      units: Record<string, string>
+      save_as: string
+    },
+  ) => onboardingApi.setMapping(fileId, payload),
+  stageOnboardingFile: (fileId: number) => onboardingApi.stage(fileId),
+  onboardingRecords: (
+    runId: number,
+    params: { domain?: string; status?: string; q?: string; limit?: number } = {},
+  ) => onboardingApi.records(runId, params),
+  onboardingMatches: (runId: number, decision?: string) => onboardingApi.matches(runId, decision),
+  decideOnboardingMatch: (matchId: number, payload: { choice: string; comment?: string }) =>
+    onboardingApi.decideMatch(matchId, payload),
+  crosswalkCsvUrl: (countryId: number) => onboardingApi.crosswalkCsvUrl(countryId),
+  runOnboardingChecks: (runId: number) => onboardingApi.checks(runId),
+  runOnboardingEstimates: (runId: number) => onboardingApi.estimates(runId),
+  onboardingQueue: (runId: number, params: { kind?: string; limit?: number } = {}) =>
+    onboardingApi.queue(runId, params),
+  decideOnboardingItem: (
+    itemId: number,
+    payload: { decision: string; choice?: string; value?: unknown; comment?: string },
+  ) => onboardingApi.decideItem(itemId, payload),
+  bulkOnboardingDecide: (
+    runId: number,
+    payload: { item_ids: number[]; decision: string; comment?: string },
+  ) => onboardingApi.bulk(runId, payload),
+  onboardingReport: (runId: number) => onboardingApi.report(runId),
+  signOffOnboarding: (runId: number, payload: { decision: 'approved' | 'rejected'; comment: string }) =>
+    onboardingApi.signOff(runId, payload),
+  onboardingExportUrl: (runId: number) => onboardingApi.exportUrl(runId),
+  loadOnboarding: (runId: number) => onboardingApi.load(runId),
   studyReportUrl: (studyId: number) => `${BASE}/studies/${studyId}/report.html`,
   networkExportUrl: (countryId: number) => `${BASE}/countries/${countryId}/export/network.xlsx`,
   resultsExportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/export/results.xlsx`,
 }
 
+export const onboardingApi = {
+  pack: (countryId: number) => request<OnboardingPack>(`/countries/${countryId}/onboarding/pack`),
+  createPack: (countryId: number, payload: { pack: Record<string, unknown>; note: string }) =>
+    request<OnboardingPack>(`/countries/${countryId}/onboarding/packs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  approvePack: (packId: number, comment: string) =>
+    request<OnboardingPack>(`/onboarding/packs/${packId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ comment }),
+    }),
+  runs: (countryId: number) => request<OnboardingRun[]>(`/countries/${countryId}/onboarding/runs`),
+  createRun: (countryId: number, payload: { name: string; kind: 'initial' | 'refresh' }) =>
+    request<OnboardingRun>(`/countries/${countryId}/onboarding/runs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  run: (runId: number) => request<OnboardingRun>(`/onboarding/runs/${runId}`),
+  addFiles: (
+    runId: number,
+    files: File[],
+    meta: { source_system?: string; domain?: string; vintage_from?: string; vintage_to?: string },
+  ) => {
+    const form = new FormData()
+    for (const file of files) form.append('files', file)
+    for (const [key, value] of Object.entries(meta)) if (value) form.append(key, value)
+    return request<OnboardingFile[]>(`/onboarding/runs/${runId}/files`, { method: 'POST', body: form })
+  },
+  setMapping: (
+    fileId: number,
+    payload: {
+      mapping: Record<string, string | null>
+      sheet?: string
+      domain?: string
+      aux_columns: string[]
+      units: Record<string, string>
+      save_as: string
+    },
+  ) =>
+    request<OnboardingFile>(`/onboarding/files/${fileId}/mapping`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  stage: (fileId: number) =>
+    request<{ file: OnboardingFile; counts: Record<string, number> }>(`/onboarding/files/${fileId}/stage`, {
+      method: 'POST',
+    }),
+  records: (runId: number, params: { domain?: string; status?: string; q?: string; limit?: number } = {}) => {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params))
+      if (value !== undefined && value !== '') query.set(key, String(value))
+    const suffix = query.toString()
+    return request<{ items: OnboardingRecord[] }>(
+      `/onboarding/runs/${runId}/records${suffix ? `?${suffix}` : ''}`,
+    )
+  },
+  matches: (runId: number, decision?: string) =>
+    request<OnboardingMatch[]>(`/onboarding/runs/${runId}/matches${decision ? `?decision=${decision}` : ''}`),
+  decideMatch: (matchId: number, payload: { choice: string; comment?: string }) =>
+    request<OnboardingMatch>(`/onboarding/matches/${matchId}/decide`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  crosswalkCsvUrl: (countryId: number) => `${BASE}/countries/${countryId}/crosswalk.csv`,
+  checks: (runId: number) =>
+    request<Record<string, unknown>>(`/onboarding/runs/${runId}/checks`, { method: 'POST' }),
+  estimates: (runId: number) =>
+    request<Record<string, unknown>>(`/onboarding/runs/${runId}/estimates`, { method: 'POST' }),
+  queue: (runId: number, params: { kind?: string; limit?: number } = {}) => {
+    const query = new URLSearchParams()
+    if (params.kind) query.set('kind', params.kind)
+    if (params.limit) query.set('limit', String(params.limit))
+    const suffix = query.toString()
+    return request<{
+      total: number
+      by_kind: Record<string, number>
+      by_confidence: Record<string, number>
+      items: OnboardingItem[]
+    }>(`/onboarding/runs/${runId}/queue${suffix ? `?${suffix}` : ''}`)
+  },
+  decideItem: (
+    itemId: number,
+    payload: { decision: string; choice?: string; value?: unknown; comment?: string },
+  ) =>
+    request<OnboardingItem>(`/onboarding/items/${itemId}/decide`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  bulk: (runId: number, payload: { item_ids: number[]; decision: string; comment?: string }) =>
+    request<{ decided: number[]; skipped: { id: number; title: string; why: string }[] }>(
+      `/onboarding/runs/${runId}/items/bulk`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  report: (runId: number) => request<OnboardingReport>(`/onboarding/runs/${runId}/report`),
+  signOff: (runId: number, payload: { decision: 'approved' | 'rejected'; comment: string }) =>
+    request<{ run: OnboardingRun }>(`/onboarding/runs/${runId}/sign-off`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  exportUrl: (runId: number) => `${BASE}/onboarding/runs/${runId}/export.xlsx`,
+  load: (runId: number) =>
+    request<{ run: OnboardingRun }>(`/onboarding/runs/${runId}/load`, { method: 'POST' }),
+}
+
 export const connectorApi = {
-  systems: () =>
-    request<{ systems: ConnectorSpec[]; note: string }>('/connectors'),
+  systems: () => request<{ systems: ConnectorSpec[]; note: string }>('/connectors'),
   list: (countryId: number) => request<Connection[]>(`/countries/${countryId}/connections`),
   create: (countryId: number, body: Record<string, unknown>) =>
     request<Connection>(`/countries/${countryId}/connections`, {

@@ -947,6 +947,112 @@
           "note": "Needs a small hosted function with an API key. Described on the site as coming, not faked."
         }
       ]
+    },
+    {
+      "id": "f13",
+      "name": "Data onboarding",
+      "oneLiner": "Messy ministry files in, a validated, provenance-tagged dataset out: a country pack, a facility crosswalk the ministry owns, rules and named estimates, a triaged review queue, and a named approver before anything reaches the model.",
+      "needsYou": "To decide before a pilot: who in PNG is the facility arbiter and the approver, which sources exist per domain, and what PNG allows for external AI processing of government health data.",
+      "stories": [
+        {
+          "id": "f13s1",
+          "title": "Fill in a country pack before any data is ingested",
+          "state": "done",
+          "env": null,
+          "note": "Source systems, facility authority, admin levels, transport ranges, units, currency, legal profile, roles, languages, thresholds. Versioned, approved by a second person; the PNG example ships marked as such."
+        },
+        {
+          "id": "f13s2",
+          "title": "Take several files with their checksum, uploader and vintage",
+          "state": "done",
+          "env": null,
+          "note": "Profiled: header found under a title line, domain and system guessed, units and periods read. DHIS2 and mSupply exports need no mapping."
+        },
+        {
+          "id": "f13s3",
+          "title": "Reconcile facilities into a crosswalk the ministry owns",
+          "state": "done",
+          "env": null,
+          "note": "Name with aliases, admin unit, type, identifiers and coordinates scored together with reasons. Auto-accept only above the pack's threshold; the arbiter decides the rest. Exported as CSV with history."
+        },
+        {
+          "id": "f13s4",
+          "title": "Stage every value with its class, keep both sides of a conflict",
+          "state": "done",
+          "env": null,
+          "note": "Observed, converted (conversion shown), confirmed, estimated, illustrative, missing. Two sources that disagree are a decision, never an average."
+        },
+        {
+          "id": "f13s5",
+          "title": "Run checks that hold anywhere and ranges from the pack only",
+          "state": "done",
+          "env": null,
+          "note": "Travel time vs distance, demand within storage, per-head and per-m³ outliers against the country's own figures, seasonal lanes, issued vs consumed, changes against the approved dataset."
+        },
+        {
+          "id": "f13s6",
+          "title": "Fill gaps only by a named method, labelled directional",
+          "state": "done",
+          "env": null,
+          "note": "Stock-out adjusted consumption, population, peer median, consultations, cover days. Each estimate is its own review item; a gap no method fits blocks sign-off."
+        },
+        {
+          "id": "f13s7",
+          "title": "Review in a queue sorted by impact, no bulk approval of low confidence",
+          "state": "done",
+          "env": null,
+          "note": "Every decision records who made it. Questions to local officers become confirmed sources."
+        },
+        {
+          "id": "f13s8",
+          "title": "Sign off by a named approver who is not the preparer, then load separately",
+          "state": "done",
+          "env": null,
+          "note": "The report: coverage, estimates, conflicts, flags, vintages, blockers. The workbook exports with a Provenance sheet and round-trips. Loading goes through the same import path as a workbook."
+        },
+        {
+          "id": "f13s9",
+          "title": "Refresh: replay mappings, crosswalk and rules; review only what changed",
+          "state": "done",
+          "env": null,
+          "note": "Values equal to the approved dataset are marked unchanged; large changes are flagged at the pack's sensitivity."
+        },
+        {
+          "id": "f13s10",
+          "title": "Show provenance coverage beside every result",
+          "state": "done",
+          "env": null,
+          "note": "Every demand row carries its class; the overview and each result say what share is observed, estimated or illustrative."
+        },
+        {
+          "id": "f13s11",
+          "title": "Score the pipeline on a degraded PNG set",
+          "state": "done",
+          "env": null,
+          "note": "Match precision 1.0, all planted conflicts surfaced, 12 of 12 planted anomalies caught, 0 values with the wrong class, on three seeds. Runs as a test."
+        },
+        {
+          "id": "f13s12",
+          "title": "An agent that proposes, off unless the pack allows it",
+          "state": "done",
+          "env": null,
+          "note": "Rules-only baseline plus a gated external proposer that sees headers and sampled values only. Must beat the baseline on the evaluation set to ship; without a key it is not used."
+        },
+        {
+          "id": "f13s13",
+          "title": "Extract timetables from PDFs",
+          "state": "idea",
+          "env": null,
+          "note": "Deferred to phase 4 in the PRD: the least reliable step."
+        },
+        {
+          "id": "f13s14",
+          "title": "Scheduled refresh from DHIS2 or mSupply",
+          "state": "idea",
+          "env": null,
+          "note": "Where the country pack allows it. The connectors exist; the schedule does not."
+        }
+      ]
     }
   ],
   "parkingLot": [

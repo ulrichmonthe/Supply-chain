@@ -158,6 +158,7 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
     rows_estimated = 0
     estimated_m3 = 0.0
     nodes_with_estimates: set[int] = set()
+    provenance_m3: dict[str, float] = {}
     for row in demand_rows:
         product = products.get(row.product_id)
         if not product:
@@ -165,6 +166,10 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
         volume = _volume_m3(row.quantity, product) * growth
         if row.quantity > 0:
             rows_with_demand += 1
+            # The class the row carries wins: a seeded figure derived from an illustrative
+            # rate is illustrative, an estimator's figure is estimated, a loaded one observed.
+            cls = row.provenance_class or ("estimated" if row.derivation else "illustrative")
+            provenance_m3[cls] = provenance_m3.get(cls, 0.0) + volume
         if row.derivation:
             volume *= estimate_factor
             rows_estimated += 1
@@ -185,6 +190,10 @@ def _solve(session: Session, scenario: Scenario, *, estimate_factor: float = 1.0
     )
     confidence = {
         "estimate_factor": estimate_factor,
+        # FR31: how the demand this rests on entered the model, by class, as shares of m3.
+        "provenance": {
+            cls: round(m3 / total_demand, 4) if total_demand else 0.0 for cls, m3 in sorted(provenance_m3.items())
+        },
         "estimated": {
             "demand_rows": rows_with_demand,
             "demand_rows_estimated": rows_estimated,

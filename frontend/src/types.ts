@@ -80,7 +80,17 @@ export type EstimateRule = 'population_rate' | 'peer_median' | 'capacity_cover'
 export type EstimatePreview = {
   rule: EstimateRule
   count: number
-  proposals: { node_id: number; node_code: string; node_name: string; sku: string | null; field: string; current: unknown; proposed: unknown; formula: string; confidence: number }[]
+  proposals: {
+    node_id: number
+    node_code: string
+    node_name: string
+    sku: string | null
+    field: string
+    current: unknown
+    proposed: unknown
+    formula: string
+    confidence: number
+  }[]
   skipped: string[]
   skipped_count: number
 }
@@ -111,7 +121,14 @@ export type ChangeRow = {
 }
 
 export type SheetChanges = {
-  counts: { add: number; update: number; retire: number; restore: number; conflict: number; unchanged: number }
+  counts: {
+    add: number
+    update: number
+    retire: number
+    restore: number
+    conflict: number
+    unchanged: number
+  }
   adds: ChangeRow[]
   updates: ChangeRow[]
   retires: ChangeRow[]
@@ -247,7 +264,14 @@ export type Scenario = {
 }
 
 export type DataItem = {
-  kind: 'close_facility' | 'set_node_field' | 'scale_demand' | 'add_node' | 'add_lane' | 'remove_lane' | 'set_lane_field'
+  kind:
+    | 'close_facility'
+    | 'set_node_field'
+    | 'scale_demand'
+    | 'add_node'
+    | 'add_lane'
+    | 'remove_lane'
+    | 'set_lane_field'
   code?: string
   field?: string
   value?: unknown
@@ -306,7 +330,14 @@ export type NodeDetail = {
   vulnerability: number
   stratum: number
   restricted_months: number
-  served_by: { hub_code: string; hub_name: string; edge_code: string; mode: string; volume_m3: number; share: number }[]
+  served_by: {
+    hub_code: string
+    hub_name: string
+    edge_code: string
+    mode: string
+    volume_m3: number
+    share: number
+  }[]
   primary_mode: string | null
   service_name: string | null
   service_frequency: string | null
@@ -386,7 +417,10 @@ export type ScorecardRow = {
   equity?: Stratum[]
   month_label?: string
   runtime_ms?: number
-  comparison: Record<string, { baseline: number; value: number; delta: number; delta_pct: number | null; direction: string }>
+  comparison: Record<
+    string,
+    { baseline: number; value: number; delta: number; delta_pct: number | null; direction: string }
+  >
   confidence?: ConfidenceAssessment
 }
 
@@ -401,9 +435,21 @@ export type Scorecard = {
 export type SeasonView = {
   month: number
   month_name: string
-  closed_lanes: { edge_code: string; to_name: string; mode: string; service_name: string | null; access: number }[]
+  closed_lanes: {
+    edge_code: string
+    to_name: string
+    mode: string
+    service_name: string | null
+    access: number
+  }[]
   degraded_lanes: { edge_code: string; to_name: string; mode: string; access: number }[]
-  facilities_cut_off: { node_id: number; code: string; name: string; admin1: string | null; population: number }[]
+  facilities_cut_off: {
+    node_id: number
+    code: string
+    name: string
+    admin1: string | null
+    population: number
+  }[]
   facilities_losing_surface_access: {
     node_id: number
     code: string
@@ -618,7 +664,12 @@ export type WorkSession = {
     demand_rows?: number
     scenarios?: number
     results?: number
-    scenario_kpis?: { name: string; is_baseline: boolean; status: string | null; kpi_set: Record<string, number> }[]
+    scenario_kpis?: {
+      name: string
+      is_baseline: boolean
+      status: string | null
+      kpi_set: Record<string, number>
+    }[]
   }
   size_bytes: number
   is_current: boolean
@@ -793,4 +844,260 @@ export type Greenfield = {
   m3_km_after: number
   reduction: number | null
   sentence: string
+}
+
+// --- data onboarding ------------------------------------------------------------------------
+
+export type ProvenanceClass =
+  | 'observed'
+  | 'converted'
+  | 'confirmed'
+  | 'estimated'
+  | 'illustrative'
+  | 'missing'
+
+export type OnboardingPack = {
+  id: number
+  country_id: number
+  version: number
+  status: 'draft' | 'approved' | 'superseded'
+  pack: {
+    source_systems: {
+      name: string
+      system: string
+      level: string
+      version: string
+      cadence: string
+      export_format: string
+      owner: string
+      domains: string[]
+    }[]
+    facility_authority: {
+      authoritative_list: string
+      arbiter: string
+      id_schemes: string[]
+      geolocation_allowed: boolean
+    }
+    admin_structure: { levels: string[] }
+    network_structure: { tiers: string[]; hubs: string[]; direct_delivery_rules: string }
+    transport: {
+      modes: Record<string, { speed_kmh: number[]; cost_per_m3: number[]; seasonal: boolean }>
+      seasonal_pattern: string
+      hidden_costs: string[]
+    }
+    products_units: {
+      product_aliases: Record<string, string>
+      conversions: { from_unit: string; to_unit: string; factor: number; note: string }[]
+      per_1000_rates: Record<string, number>
+      per_consultation: Record<string, number>
+    }
+    currency: { code: string; base_year: number; fx_source: string; fx_to_model: Record<string, number> }
+    legal_profile: {
+      data_residency: string
+      external_ai_allowed: boolean
+      data_sharing_agreement: string
+      signatory: string
+    }
+    roles: { data_officers: string[]; approvers: string[]; local_contacts: Record<string, string> }
+    languages: string[]
+    thresholds: {
+      auto_accept_match: number
+      review_match_floor: number
+      change_sensitivity: number
+      ranges: Record<string, number[]>
+      known_aggregates: Record<string, number>
+    }
+    reference_example: boolean
+  }
+  note: string
+  author_claim: string
+  approved_by: string
+  approved_at: string | null
+  created_at: string | null
+  completeness: { complete: boolean; missing: { path: string; needs: string }[]; checked: number }
+  reference_example: boolean
+  agent: { allowed: boolean; provider: string | null; reasons: string[] }
+  methods: Record<string, { label: string; detail: string; needs: string }>
+}
+
+export type OnboardingSheet = {
+  name: string
+  columns: string[]
+  row_count: number
+  sample: Record<string, unknown>[]
+  domain: string
+  system: string
+  system_confidence: number
+  units: Record<string, string | null>
+  vintage_from: string
+  vintage_to: string
+  period_column: string | null
+  guesses: Record<string, Record<string, string | null>>
+  missing_required: Record<string, string[]>
+  matched_saved: string | null
+}
+
+export type OnboardingFile = {
+  id: number
+  filename: string
+  sha256: string
+  size_bytes: number
+  uploader: string
+  uploaded_at: string | null
+  source_system: string
+  domain: string
+  vintage_from: string
+  vintage_to: string
+  status: 'uploaded' | 'profiled' | 'mapped' | 'staged'
+  mapping: {
+    sheet?: string
+    mapping?: Record<string, string>
+    aux_columns?: string[]
+    units?: Record<string, string>
+    confirmed_by?: string
+  }
+  profile: {
+    filename: string
+    kind: string
+    sheets: OnboardingSheet[]
+    domain: string
+    system: string
+    primary_sheet: string | null
+  }
+}
+
+export type OnboardingRun = {
+  id: number
+  country_id: number
+  pack_id: number | null
+  name: string
+  kind: 'initial' | 'refresh'
+  status: 'open' | 'in_review' | 'signed_off' | 'loaded' | 'rejected'
+  preparer: string
+  summary: Record<string, unknown>
+  created_at: string | null
+  updated_at: string | null
+  files: OnboardingFile[]
+  staged: Record<string, { records: number; conflicts: number; blocked: number }>
+  has_pending: boolean
+  matches: { auto_accepted: number; accepted: number; new: number; pending: number; rejected: number }
+}
+
+export type FieldEntry = {
+  value: unknown
+  unit: string
+  class: ProvenanceClass
+  source_file_id: number | null
+  location: string
+  system: string
+  vintage: string
+  transformation: string
+  confidence: 'high' | 'medium' | 'low'
+  reason: string
+  method: string
+  inputs: Record<string, unknown>
+  by: string
+  label?: string
+  alternatives?: FieldEntry[]
+  unchanged?: boolean
+}
+
+export type OnboardingRecord = {
+  id: number
+  domain: string
+  key: string
+  label: string
+  fields: Record<string, FieldEntry>
+  aux: Record<string, unknown>
+  issues: { code: string; severity: string; message: string; suggestion?: string; field?: string }[]
+  status: 'staged' | 'conflict' | 'blocked'
+}
+
+export type OnboardingMatch = {
+  id: number
+  source_file_id: number | null
+  source_key: string
+  source_name: string
+  record: Record<string, unknown>
+  candidates: {
+    code: string
+    name: string
+    source: string
+    score: number
+    reasons: string[]
+    admin1?: string | null
+  }[]
+  canonical_code: string
+  confidence: number
+  reason: string
+  decision: 'auto_accepted' | 'accepted' | 'rejected' | 'new' | 'pending'
+  decided_by: string
+  decided_at: string | null
+}
+
+export type OnboardingItem = {
+  id: number
+  kind: 'mapping' | 'match' | 'conflict' | 'anomaly' | 'estimate' | 'missing' | 'unit' | 'question'
+  subject: string
+  title: string
+  detail: string
+  confidence: 'high' | 'medium' | 'low'
+  impact: number
+  proposed_by: string
+  payload: Record<string, unknown>
+  options: { code?: string; index?: number; label: string }[]
+  decision: string
+  choice: string
+  comment: string
+  decided_by: string
+  decided_at: string | null
+}
+
+export type OnboardingReport = {
+  run: { id: number; name: string; kind: string; status: string; preparer: string }
+  coverage: {
+    by_domain: Record<string, Record<string, number>>
+    totals: Record<string, number>
+    shares: Record<string, number>
+    approvable: number
+    blocking: number
+  }
+  records: { total: number; by_domain: Record<string, number>; unresolved_references: number }
+  sources: {
+    id: number
+    filename: string
+    system: string
+    domain: string
+    vintage_from: string
+    vintage_to: string
+    uploader: string
+    sha256: string
+    status: string
+  }[]
+  estimates: {
+    domain: string
+    key: string
+    label: string
+    field: string
+    value: unknown
+    method: string
+    formula: string
+    by: string
+  }[]
+  conflicts: {
+    domain: string
+    key: string
+    field: string
+    open: boolean
+    chosen: unknown
+    chosen_by?: string
+    options: unknown[]
+  }[]
+  anomalies: (OnboardingItem & { resolution: string })[]
+  missing: { domain: string; key: string; label: string; field: string; reason: string }[]
+  pending: OnboardingItem[]
+  reviewers: { decisions: number; reviewers: string[]; first: string | null; last: string | null }
+  blockers: string[]
+  can_sign_off: boolean
+  approval?: { approver: string; decision: string; comment: string; at: string | null }
 }

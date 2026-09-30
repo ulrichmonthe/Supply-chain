@@ -1,4 +1,4 @@
-.PHONY: help install run dev backend frontend build test a11y board panel demo site site-check clean check-python
+.PHONY: help install run dev backend frontend build test a11y board panel demo site site-check onboarding-eval clean check-python
 
 VENV := .venv
 PY   := $(VENV)/bin/python
@@ -29,6 +29,7 @@ help:
 	@echo "make demo      rebuild the static demo published at docs/app  (needs Node)"
 	@echo "make site      regenerate the marketing site pages in docs/ from the demo captures"
 	@echo "make site-check   audit the site: axe on every page, the in-browser solver, the mapper  (needs Node)"
+	@echo "make onboarding-eval   score the data onboarding pipeline on the degraded PNG set"
 	@echo "make board     open the plain-language build board"
 	@echo "               override the port with:  make board BOARD_PORT=4322"
 
@@ -102,6 +103,11 @@ demo:
 	@curl -sf -o /dev/null http://127.0.0.1:$(PORT)/api/countries || { \
 	  echo "No API on :$(PORT). Start 'make run' in another terminal first."; exit 1; }
 	bash scripts/build-demo.sh
+
+## The onboarding evaluation: the PNG data degraded on purpose, run through the pipeline
+## with the rules alone, scored against the PRD's targets. Exits non-zero on a miss.
+onboarding-eval:
+	$(PY) scripts/onboarding_eval.py --seeds 7 11 3
 
 ## The marketing site: docs/*.html generated from the captured demo, so every figure on it is
 ## solver output that the demo can reproduce. Stdlib only; no Node needed to build it.

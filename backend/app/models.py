@@ -253,6 +253,11 @@ class Demand(Base):
     #: When the quantity is an estimate: {"rule", "params", "inputs", "formula", "at"}.
     #: Live -- recomputed when its inputs change -- until somebody types over it.
     derivation: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    #: How this figure entered the model, in the onboarding vocabulary:
+    #: observed | converted | confirmed | estimated | illustrative | missing.
+    #: Seeded demo figures are illustrative; the coverage printed beside every result
+    #: is the count of demand by this column, so "0 illustrative" is a measurable claim.
+    provenance_class: Mapped[str] = mapped_column(String(16), default="illustrative", server_default="illustrative")
 
     # --- soft delete and the memory of the last import ---------------------------------
     #: Set instead of deleting. A retired row is invisible to every query unless it asks
@@ -521,3 +526,200 @@ class Connection(Base):
 
     def has_secret(self) -> bool:
         return bool(self.resolved_secret())
+
+
+# --- data onboarding ---------------------------------------------------------------------
+# The pipeline that turns a ministry's files into a signed-off, provenance-tagged dataset.
+# Nothing here writes to the model tables above: loading is a separate human action after
+# sign-off, through the same import pipeline as a workbook.
+
+
+class CountryPack(Base):
+    """Configuration completed before any data is ingested: source systems, who arbitrates
+    facility identity, admin levels, transport ranges, units, currency, legal limits on
+    data movement, roles, languages and thresholds. Versioned; changed only with approval.
+    """
+
+    __tablename__ = "country_pack"
+    __table_args__ = (UniqueConstraint("country_id", "version", name="uq_country_pack_version"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    #: draft | approved | superseded
+    status: Mapped[str] = mapped_column(String(12), default="draft")
+    pack: Mapped[dict] = mapped_column(JSON, default=dict)
+    note: Mapped[str] = mapped_column(Text, default="")
+    author_claim: Mapped[str] = mapped_column(String(96), default="anonymous")
+    approved_by: Mapped[str] = mapped_column(String(96), default="")
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class OnboardingRun(Base):
+    """One pass from files to a signed-off dataset. ``refresh`` runs replay the saved
+    mappings, the crosswalk and the rules, and send only what changed to review."""
+
+    __tablename__ = "onboarding_run"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    pack_id: Mapped[Optional[int]] = mapped_column(ForeignKey("country_pack.id", ondelete="SET NULL"), nullable=True)
+    name: Mapped[str] = mapped_column(String(160))
+    #: initial | refresh
+    kind: Mapped[str] = mapped_column(String(12), default="initial")
+    #: open | in_review | signed_off | loaded | rejected
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    preparer: Mapped[str] = mapped_column(String(96), default="anonymous")
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class SourceFile(Base):
+    """A file somebody handed over, with its checksum, who uploaded it, when, which system
+    it came from, and the period it describes -- which is not the upload date."""
+
+    __tablename__ = "source_file"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("onboarding_run.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    uploader: Mapped[str] = mapped_column(String(96), default="anonymous")
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    #: dhis2 | msupply | openlmis | excel | csv | unknown -- guessed by the profiler, then confirmed.
+    source_system: Mapped[str] = mapped_column(String(32), default="unknown")
+    #: Nodes | Edges | Products | Demand -- the canonical domain the file feeds.
+    domain: Mapped[str] = mapped_column(String(16), default="")
+    #: The period the data describes, e.g. "2025-01" to "2025-12".
+    vintage_from: Mapped[str] = mapped_column(String(16), default="")
+    vintage_to: Mapped[str] = mapped_column(String(16), default="")
+    profile: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Our field -> their column, once confirmed. Also carries aux columns kept beside the record.
+    mapping: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: uploaded | profiled | mapped | staged
+    status: Mapped[str] = mapped_column(String(16), default="uploaded")
+    payload: Mapped[bytes] = mapped_column(LargeBinary, default=b"")
+
+
+class StagedRecord(Base):
+    """One entity in the canonical staging model, every field carrying its provenance.
+
+    ``fields`` is ``{name: {"value", "unit", "class", "source_file_id", "location",
+    "system", "vintage", "transformation", "confidence", "reason", "method", "inputs",
+    "alternatives"}}``. A field with alternatives from two sources is a conflict until a
+    person chooses; nothing is averaged and nothing is silently picked.
+    """
+
+    __tablename__ = "staged_record"
+    __table_args__ = (UniqueConstraint("run_id", "domain", "key", name="uq_staged_run_domain_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("onboarding_run.id", ondelete="CASCADE"), index=True)
+    domain: Mapped[str] = mapped_column(String(16))
+    key: Mapped[str] = mapped_column(String(160))
+    label: Mapped[str] = mapped_column(String(255), default="")
+    fields: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Columns the source carried that the model has no field for; kept for triangulation.
+    aux: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Flags raised by the rules, each with a code, severity, message and resolution.
+    issues: Mapped[list] = mapped_column(JSON, default=list)
+    #: staged | conflict | blocked
+    status: Mapped[str] = mapped_column(String(16), default="staged")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class FacilityMatch(Base):
+    """A source facility against the candidates it might be, with a confidence and the
+    reasons. Auto-accepted only above the pack's threshold; everything else is a person's."""
+
+    __tablename__ = "facility_match"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("onboarding_run.id", ondelete="CASCADE"), index=True)
+    source_file_id: Mapped[Optional[int]] = mapped_column(ForeignKey("source_file.id", ondelete="SET NULL"), nullable=True)
+    source_key: Mapped[str] = mapped_column(String(160))
+    source_name: Mapped[str] = mapped_column(String(255), default="")
+    source_record: Mapped[dict] = mapped_column(JSON, default=dict)
+    candidates: Mapped[list] = mapped_column(JSON, default=list)
+    #: The chosen canonical code, once decided.
+    canonical_code: Mapped[str] = mapped_column(String(64), default="")
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    #: auto_accepted | accepted | rejected | new | pending
+    decision: Mapped[str] = mapped_column(String(16), default="pending")
+    decided_by: Mapped[str] = mapped_column(String(96), default="")
+    decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Crosswalk(Base):
+    """The reconciled facility register the ministry owns: one row per facility, every
+    identifier it carries in every system, and how it changed over time."""
+
+    __tablename__ = "crosswalk"
+    __table_args__ = (UniqueConstraint("country_id", "canonical_code", name="uq_crosswalk_country_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    country_id: Mapped[int] = mapped_column(ForeignKey("country.id", ondelete="CASCADE"), index=True)
+    canonical_code: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str] = mapped_column(String(255), default="")
+    type: Mapped[str] = mapped_column(String(64), default="")
+    admin1: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    admin2: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    lon: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    #: {"model": "PNG-NCD-001", "dhis2": "abc123", "hmis_2024.csv": "0412", ...}
+    ids: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: open | closed | merged | unknown
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    #: [{"at", "change", "detail", "by"}] -- opened, closed, renamed, merged, recategorised.
+    history: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class ReviewItem(Base):
+    """One decision for a person, triaged by how much it moves the result."""
+
+    __tablename__ = "review_item"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("onboarding_run.id", ondelete="CASCADE"), index=True)
+    #: mapping | match | conflict | anomaly | estimate | missing | unit | question
+    kind: Mapped[str] = mapped_column(String(16))
+    #: What the item is about: "Nodes:PNG-NCD-001", "file:3", "Demand:PNG-X|KIT|0/quantity"
+    subject: Mapped[str] = mapped_column(String(200), default="")
+    title: Mapped[str] = mapped_column(String(255))
+    detail: Mapped[str] = mapped_column(Text, default="")
+    #: high | medium | low
+    confidence: Mapped[str] = mapped_column(String(8), default="medium")
+    #: Larger moves the result more; the queue is sorted by it.
+    impact: Mapped[float] = mapped_column(Float, default=0.0)
+    #: rules | agent
+    proposed_by: Mapped[str] = mapped_column(String(16), default="rules")
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    options: Mapped[list] = mapped_column(JSON, default=list)
+    #: pending | accepted | rejected | chosen | answered
+    decision: Mapped[str] = mapped_column(String(16), default="pending")
+    choice: Mapped[str] = mapped_column(String(200), default="")
+    comment: Mapped[str] = mapped_column(Text, default="")
+    decided_by: Mapped[str] = mapped_column(String(96), default="")
+    decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class Approval(Base):
+    """A named approver's decision on a run, with the report they saw."""
+
+    __tablename__ = "approval"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("onboarding_run.id", ondelete="CASCADE"), index=True)
+    approver: Mapped[str] = mapped_column(String(96))
+    #: approved | rejected
+    decision: Mapped[str] = mapped_column(String(12))
+    comment: Mapped[str] = mapped_column(Text, default="")
+    report: Mapped[dict] = mapped_column(JSON, default=dict)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

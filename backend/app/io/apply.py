@@ -308,6 +308,7 @@ def apply_changes(
             source=row.record.get("source", "proxy"),
             confidence=row.record.get("confidence", 0.5),
             last_import=_remember(row.record, DEMAND_FIELDS),
+            provenance_class=row.record.get("provenance_class") or "observed",
         )
         session.add(demand)
         demand_rows += 1
@@ -319,6 +320,9 @@ def apply_changes(
         if "quantity" in row.fields or ("quantity" in row.conflicts and demand.derivation and
                                         ledger.render(demand.quantity) != ledger.render(row.conflicts["quantity"]["model"])):
             estimators.pin_demand(demand)  # the file supplied a figure: it is data now, not an estimate
+            demand.provenance_class = row.record.get("provenance_class") or "observed"
+        elif row.record.get("provenance_class"):
+            demand.provenance_class = row.record["provenance_class"]
         demand_rows += 1
     for row in changes.demand.retires:
         demand = demand_by_id[row.existing_id]

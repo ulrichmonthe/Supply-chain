@@ -15,6 +15,7 @@ import {
   ServicesPanel,
 } from './components/Panels'
 import { ConnectionsPanel } from './components/ConnectionsPanel'
+import { OnboardingPanel } from './components/OnboardingPanel'
 import { FacilityEditor } from './components/FacilityEditor'
 import { SessionsShelf } from './components/SessionsShelf'
 import { StudiesPanel } from './components/StudiesPanel'
@@ -45,6 +46,7 @@ const TABS = [
   'Services',
   'Season',
   'Data',
+  'Onboard',
   'Live',
   'Provenance',
   'Roadmap',
@@ -994,6 +996,9 @@ export default function App() {
                   picked={picked}
                   onPickedUsed={() => setPicked(null)}
                 />
+              )}
+              {tab === 'Onboard' && countryId !== null && (
+                <OnboardingPanel countryId={countryId} onLoaded={reloadAfterEdit} />
               )}
               {tab === 'Live' && countryId !== null && (
                 <ConnectionsPanel

@@ -908,3 +908,25 @@ details.list ul { margin: 4px 0 0; padding-left: 18px; }
 /* ---------- twelve months ---------- */
 
 tr.shortfall td { background: rgba(239, 107, 107, 0.06); }
+
+
+/* --- onboarding --------------------------------------------------------------------------- */
+.onboarding-steps .tab .step-n { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--panel-3); font: 600 10px var(--mono); margin-right: 4px; }
+.onboarding-steps .tab.on .step-n { background: var(--accent); color: #04121f; }
+.onboarding-steps .tab:disabled { opacity: 0.45; cursor: not-allowed; }
+.pack-summary { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: var(--fs-small); margin: 6px 0; }
+.pack-summary dt { color: var(--dim); }
+.pack-summary dd { margin: 0; color: var(--muted); }
+.pack-editor { width: 100%; font-family: var(--mono); font-size: 11.5px; min-height: 240px; }
+.file-list, .match-list, .queue { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.file-card, .match-card, .queue-item { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; background: var(--panel-2); }
+.file-head, .queue-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.file-mapper { margin-top: 8px; border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.mapper-grid { min-width: 560px; }
+.mapper-grid th[scope='row'] { text-align: left; font-weight: 500; white-space: nowrap; }
+.queue-item.low { border-left: 3px solid var(--bad); }
+.queue-item.medium { border-left: 3px solid var(--warn); }
+.queue-item.high { border-left: 3px solid var(--good); }
+.warn-text { color: var(--warn); }
+.grid tr.blocking th, .grid tr.blocking td { color: var(--bad); }
+.callout.good { border-color: #24513f; }

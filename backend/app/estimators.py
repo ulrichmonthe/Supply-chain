@@ -384,6 +384,7 @@ def apply(session: Session, country: Country, proposals: Iterable[Proposal], *, 
             row.source = "proxy"
             row.confidence = proposal.confidence
             row.derivation = proposal.derivation
+            row.provenance_class = "estimated"
             ref, entity, field_name = f"{node.code}/{product.sku}/0", "demand", "quantity"
         ledger.record(
             session,
