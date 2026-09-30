@@ -1,9 +1,9 @@
 {
   "project": {
     "name": "Health Supply Chain Network Design",
-    "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic \u2014 by road, boat and plane, month by month \u2014 and who gets left out when money is saved."
+    "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic — by road, boat and plane, month by month — and who gets left out when money is saved."
   },
-  "updated": "2026-09-29T00:00:00Z",
+  "updated": "2026-09-30T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -73,7 +73,7 @@
         }
       ],
       "unsure": [
-        "There is no light-colour version of the screen \u2014 it is dark only."
+        "There is no light-colour version of the screen — it is dark only."
       ],
       "activity": [
         {
@@ -110,7 +110,7 @@
           "title": "Read the map with no internet connection at all",
           "state": "done",
           "env": null,
-          "unsure": "The coastline we draw is rough \u2014 good to about 4km. Fine for showing where things are, not for measuring."
+          "unsure": "The coastline we draw is rough — good to about 4km. Fine for showing where things are, not for measuring."
         },
         {
           "id": "f1s3",
@@ -145,7 +145,7 @@
         {
           "at": "2026-08-17T12:00:00Z",
           "kind": "ok",
-          "what": "Ten real towns were being marked as out at sea \u2014 the coastline was wrong and is now fixed"
+          "what": "Ten real towns were being marked as out at sea — the coastline was wrong and is now fixed"
         }
       ]
     },
@@ -273,19 +273,19 @@
         {
           "at": "2026-08-17T10:54:20Z",
           "kind": "ok",
-          "what": "Running seven plans at once was occasionally failing \u2014 found the cause and fixed it"
+          "what": "Running seven plans at once was occasionally failing — found the cause and fixed it"
         },
         {
           "at": "2026-08-17T10:30:00Z",
           "kind": "work",
-          "what": "Opening three new stores looked like it cost 4.5M a year more than it does \u2014 a one-off building cost was being counted as a yearly bill"
+          "what": "Opening three new stores looked like it cost 4.5M a year more than it does — a one-off building cost was being counted as a yearly bill"
         }
       ]
     },
     {
       "id": "f3",
       "name": "Who pays for a saving",
-      "oneLiner": "Shows which communities lose their supply when a plan saves money \u2014 before anyone decides.",
+      "oneLiner": "Shows which communities lose their supply when a plan saves money — before anyone decides.",
       "stories": [
         {
           "id": "f3s1",
@@ -321,14 +321,14 @@
         {
           "at": "2026-08-17T11:00:00Z",
           "kind": "ok",
-          "what": "Checked the numbers hold up both ways round \u2014 the saving and the abandonment are the same figure seen from two sides"
+          "what": "Checked the numbers hold up both ways round — the saving and the abandonment are the same figure seen from two sides"
         }
       ]
     },
     {
       "id": "f4",
       "name": "Month by month conditions",
-      "oneLiner": "See what the wet season does \u2014 which roads close, and who can only be reached by plane.",
+      "oneLiner": "See what the wet season does — which roads close, and who can only be reached by plane.",
       "stories": [
         {
           "id": "f4s1",
@@ -375,7 +375,7 @@
         {
           "at": "2026-08-17T10:40:00Z",
           "kind": "back",
-          "what": "February and July had no workable answer at all \u2014 changed the approach so every month gives a readable result naming who is affected"
+          "what": "February and July had no workable answer at all — changed the approach so every month gives a readable result naming who is affected"
         }
       ]
     },
@@ -486,7 +486,7 @@
           "title": "Pull from OpenLMIS",
           "state": "testing",
           "env": null,
-          "unsure": "Same \u2014 built and working, never tried against a real deployment."
+          "unsure": "Same — built and working, never tried against a real deployment."
         },
         {
           "id": "f6s3",
@@ -540,7 +540,7 @@
         {
           "at": "2026-08-17T22:00:00Z",
           "kind": "work",
-          "what": "Two different clinics in the same town were being treated as one place because their names were trimmed too aggressively \u2014 fixed"
+          "what": "Two different clinics in the same town were being treated as one place because their names were trimmed too aggressively — fixed"
         }
       ]
     },
@@ -765,7 +765,7 @@
           "title": "Know how much of an answer rests on estimates, and whether it survives them",
           "state": "done",
           "env": null,
-          "note": "Every run re-solves with estimated demand 30% lower and higher. The scorecard says 'holds \u00b130%' or 'depends' per scenario; the report and spreadsheet carry the sentence and the range. A reversal is named, not averaged away."
+          "note": "Every run re-solves with estimated demand 30% lower and higher. The scorecard says 'holds ±30%' or 'depends' per scenario; the report and spreadsheet carry the sentence and the range. A reversal is named, not averaged away."
         },
         {
           "id": "f10s13",
@@ -809,7 +809,7 @@
         {
           "at": "2026-09-28T00:00:00Z",
           "kind": "work",
-          "what": "Confidence budget: estimated share on every result, \u00b130% re-solves in the run, verdict in words on the scorecard, in the report and in the spreadsheet"
+          "what": "Confidence budget: estimated share on every result, ±30% re-solves in the run, verdict in words on the scorecard, in the report and in the spreadsheet"
         },
         {
           "at": "2026-09-28T00:00:00Z",
@@ -890,13 +890,70 @@
           "what": "Sessions shelf: save, open with automatic draft, compare in words, rename and delete; migration 0006; the demo carries an empty shelf"
         }
       ]
+    },
+    {
+      "id": "f12",
+      "name": "The public site",
+      "oneLiner": "A marketing site generated from the same repository, whose home page re-solves the demo network in the visitor's browser and whose every figure is solver output the demo can reproduce.",
+      "needsYou": "Still to decide: the licence and pricing position, a contact route, the organisation the site speaks as, any real engagement to name, a domain, and whether a small hosted function can carry the question box.",
+      "stories": [
+        {
+          "id": "f12s1",
+          "title": "Export the allocation model as data",
+          "state": "done",
+          "env": null,
+          "note": "One call returns exactly what the solver is handed. A test proves solving the export reproduces the tool's own answer within 0.1%."
+        },
+        {
+          "id": "f12s2",
+          "title": "Solve the network in the browser",
+          "state": "done",
+          "env": null,
+          "note": "HiGHS compiled to WebAssembly, loaded from the site itself. Every lever on the home page re-optimises 134 facilities over 180 lanes in about fifty milliseconds; nothing is pre-solved."
+        },
+        {
+          "id": "f12s3",
+          "title": "Generate the pages from the demo captures",
+          "state": "done",
+          "env": null,
+          "note": "Seven pages following the arc of an engagement: home, bring your data, ask a question, trust the answer, decide, keep it, compare. Every number computed from the captured results."
+        },
+        {
+          "id": "f12s4",
+          "title": "Map a visitor's own facility CSV without uploading it",
+          "state": "done",
+          "env": null,
+          "note": "The mapper's synonym table in the browser: headers read, columns matched, facilities plotted. The file never leaves the page."
+        },
+        {
+          "id": "f12s5",
+          "title": "Render a decision page live from stored results",
+          "state": "done",
+          "env": null,
+          "note": "Pick a scenario and page one appears: the sentence, the stores, three figures against today, who carries it, whether it holds."
+        },
+        {
+          "id": "f12s6",
+          "title": "Audit the site like the app",
+          "state": "done",
+          "env": null,
+          "note": "axe on every page at desktop and phone width in both colour schemes, plus checks that the solver, the mapper and the decision page really work."
+        },
+        {
+          "id": "f12s7",
+          "title": "Ask the network: a question box over the results",
+          "state": "idea",
+          "env": null,
+          "note": "Needs a small hosted function with an API key. Described on the site as coming, not faked."
+        }
+      ]
     }
   ],
   "parkingLot": [
     {
       "name": "Mapbox as the map",
       "tag": "Proposed, not built",
-      "note": "Looked at properly and set aside. It needs an internet connection and a paid key, and roads carry only 11.5% of the cost in this model \u2014 so it would not change any answer. The reasoning is written down."
+      "note": "Looked at properly and set aside. It needs an internet connection and a paid key, and roads carry only 11.5% of the cost in this model — so it would not change any answer. The reasoning is written down."
     },
     {
       "name": "Better-looking offline map",
@@ -916,7 +973,7 @@
     {
       "name": "Accounts, logins and payment",
       "tag": "Proposed, not built",
-      "note": "Needed before anyone could pay for access. Planned out in detail, not begun \u2014 it is the first thing to build if the answer is yes."
+      "note": "Needed before anyone could pay for access. Planned out in detail, not begun — it is the first thing to build if the answer is yes."
     }
   ]
 }

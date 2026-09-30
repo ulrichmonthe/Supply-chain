@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decide</title>
+<meta name="description" content="Pick a scenario and its decision page renders live: the recommendation, the stores, three numbers against today, and whether the answer holds.">
+<meta property="og:title" content="Decide">
+<meta property="og:description" content="Pick a scenario and its decision page renders live: the recommendation, the stores, three numbers against today, and whether the answer holds.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="site/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1119'/%3E%3Ccircle cx='10' cy='21' r='4' fill='%233fb984'/%3E%3Ccircle cx='22' cy='10' r='4' fill='%234da3ff'/%3E%3Cpath d='M13 19 L19 12' stroke='%23e28b4a' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site/site.css">
+
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="brand" href="index.html"><b>Health Supply Chain Network Design</b><span>A design engine that shows its working</span></a>
+    <div class="nav-links"><a href="index.html">Home</a><a href="data.html">Bring your data</a><a href="ask.html">Ask a question</a><a href="trust.html">Trust the answer</a><a href="decide.html" aria-current="page">Decide</a><a href="keep.html">Keep it</a><a href="compare.html">Compare</a></div>
+    <div class="nav-right">
+      <a class="btn ghost" href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+      <a class="btn primary" href="app/">Open the tool <span aria-hidden="true">→</span></a>
+    </div>
+  </nav>
+  <main id="main">
+
+    <section class="hero flush">
+      <p class="eyebrow">04 · Decide</p>
+      <h1>Page one, generated in front of you</h1>
+      <p class="lede">Pick one of the demo's scenarios and its decision page renders here from the stored result: the recommendation in a sentence, the stores on a map, three numbers against today, who carries it, and how sure the answer is. This is the page a director reads; everything else in the report is the evidence for it.</p>
+    </section>
+    <section class="flush">
+      <div class="decision-pick">
+        <label for="decide-pick"><b>Scenario</b></label>
+        <select id="decide-pick" aria-label="Scenario to render"></select>
+        <span class="small-note" id="decide-status" role="status" aria-live="polite"></span>
+      </div>
+      <div class="sheet" id="decision-sheet" aria-live="polite">Loading the demo results…</div>
+      <p class="small-note">Generated from <code>app/api</code>, the same pre-solved results the demo serves. In the tool the report is one self-contained HTML file per scenario and per study, printable to PDF from any browser, with the assumptions annex at the end.</p>
+    </section>
+    <section>
+      <h2>In the tool</h2>
+      <div class="pair">
+        <figure class=""><img src="site/shots/27-decision-view.png" alt="The Decision view: the map, the question, option cards and three number tiles" loading="lazy"><figcaption><b>Decision view.</b> Levers and tabs hidden; the options as cards, the three numbers, the equity line and the confidence line. Same data, one-tenth of the surface.</figcaption></figure>
+        <figure class=""><img src="site/shots/28-report-page-one.png" alt="Page one of a study report" loading="lazy"><figcaption><b>The report.</b> Page one over the backed option; then the options considered, the figures, who carries it, the facilities not fully supplied, the roadmap, and the annex.</figcaption></figure>
+      </div>
+      <figure class="narrow"><img src="site/shots/22-roadmap.png" alt="The Roadmap tab with phases and one-off costs" loading="lazy"><figcaption><b>The roadmap.</b> What to build first and what it costs one-off, phased against how the network runs today. Capital appears here at full value and in the annual comparison as an amortised charge.</figcaption></figure>
+    </section>
+
+  </main>
+  <footer>
+    <span>Health Supply Chain Network Design Tool</span>
+    <a href="app/">Live demo</a>
+    <a href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+    <a href="board/">Build board</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain">Source and docs</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain#readme">README</a>
+    <span>Figures are model output on an illustrative Papua New Guinea workspace, not measurements.</span>
+    <span>Built with Claude Code.</span>
+  </footer>
+</div>
+
+<script src="site/decision.js"></script>
+
+</body>
+</html>

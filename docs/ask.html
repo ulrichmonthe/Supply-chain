@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask a question</title>
+<meta name="description" content="Studies with presets, data changes inside a scenario, a diff map, greenfield sites and twelve-month runs.">
+<meta property="og:title" content="Ask a question">
+<meta property="og:description" content="Studies with presets, data changes inside a scenario, a diff map, greenfield sites and twelve-month runs.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="site/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1119'/%3E%3Ccircle cx='10' cy='21' r='4' fill='%233fb984'/%3E%3Ccircle cx='22' cy='10' r='4' fill='%234da3ff'/%3E%3Cpath d='M13 19 L19 12' stroke='%23e28b4a' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site/site.css">
+
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+  <nav class="nav" aria-label="Site">
+    <a class="brand" href="index.html"><b>Health Supply Chain Network Design</b><span>A design engine that shows its working</span></a>
+    <div class="nav-links"><a href="index.html">Home</a><a href="data.html">Bring your data</a><a href="ask.html" aria-current="page">Ask a question</a><a href="trust.html">Trust the answer</a><a href="decide.html">Decide</a><a href="keep.html">Keep it</a><a href="compare.html">Compare</a></div>
+    <div class="nav-right">
+      <a class="btn ghost" href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+      <a class="btn primary" href="app/">Open the tool <span aria-hidden="true">→</span></a>
+    </div>
+  </nav>
+  <main id="main">
+
+    <section class="hero flush">
+      <p class="eyebrow">02 · Ask a question</p>
+      <h1>Comparison as the workflow, not a tab</h1>
+      <p class="lede">A study is a question and the ordered scenarios that answer it, the baseline always first. Presets make the classic studies in one click; the verdict, the lever diff and the diff map say what differs and what it did.</p>
+    </section>
+    <section class="flush">
+      <figure class="narrow"><img src="site/shots/24-study.png" alt="The Studies tab with a study open" loading="lazy"><figcaption><b>A study.</b> Run it and read the verdict: which option is cheapest, which keeps the bottom band best supplied, and which the analyst backs.</figcaption></figure>
+      <div class="pair">
+        <figure class=""><img src="site/shots/05-scenario-card.png" alt="A scenario card with tags, figures and Run and Duplicate buttons" loading="lazy"><figcaption><b>Scenarios are questions.</b> Levers, constraints and objective weights belong to the scenario; the data belongs to the country.</figcaption></figure>
+        <figure class=""><img src="site/shots/07-scenario-items.png" alt="The Data changes in this scenario section" loading="lazy"><figcaption><b>Data changes inside a scenario.</b> Close a facility, scale demand in a province, open a store, add a lane. Applied in memory when it runs; the baseline is never touched.</figcaption></figure>
+      </div>
+    </section>
+    <section>
+      <h2>Two answers as one network</h2>
+      <figure class=""><img src="site/shots/25-diff-map.png" alt="The diff map with lanes only the baseline uses drawn red" loading="lazy"><figcaption><b>The diff map.</b> Lanes only the first option uses are red, only the second green, both grey; facilities that change supplier are amber. Built from the stored flows, no solver work.</figcaption></figure>
+    </section>
+    <section>
+      <h2>Where would new stores go?</h2>
+      <figure class=""><img src="site/shots/26-greenfield.png" alt="The greenfield proposal with two pins on the map" loading="lazy"><figcaption><b>Greenfield.</b> Demand-weighted centre of gravity, snapped to real facilities. Adopt it and it becomes a scenario of candidate stores the solver may open or leave closed; on the illustrative data it leaves them closed, and says so.</figcaption></figure>
+    </section>
+    <section>
+      <h2>The wet season as it is lived</h2>
+      <div class="pair">
+        <figure class=""><img src="site/shots/13-season-february.png" alt="The map in February with closed lanes dashed red" loading="lazy"><figcaption><b>A month held all year.</b> Click a month and the network re-solves at its conditions; the Season tab names what closed and who is cut off.</figcaption></figure>
+        <figure class="narrow"><img src="site/shots/14-twelve-months.png" alt="The Season tab for a twelve-month run with a month table" loading="lazy"><figcaption><b>Twelve linked months.</b> Stock carried between them within each facility's storage, a cyclic year, and the facilities that run short named with their peak stock.</figcaption></figure>
+      </div>
+    </section>
+    <section>
+      <div class="feature soon" style="max-width:70ch"><span class="tag">Needs hosting</span><h3>Ask the network <span class="soon-pill">coming</span></h3><p>The question box: type "which facilities lose supply if the Alotau sailing goes monthly?" and get an answer drawn from the demo's results and the confidence budget, with the query shown. It needs a small server with an API key, so it ships once the site has one. Every question typed will also be read as a signal for what to build next.</p></div>
+    </section>
+
+  </main>
+  <footer>
+    <span>Health Supply Chain Network Design Tool</span>
+    <a href="app/">Live demo</a>
+    <a href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+    <a href="board/">Build board</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain">Source and docs</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain#readme">README</a>
+    <span>Figures are model output on an illustrative Papua New Guinea workspace, not measurements.</span>
+    <span>Built with Claude Code.</span>
+  </footer>
+</div>
+
+</body>
+</html>

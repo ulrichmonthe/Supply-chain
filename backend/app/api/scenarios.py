@@ -16,6 +16,7 @@ from ..engine import confidence as confidence_mod, kpis as kpi_mod
 from ..engine import overlay
 from ..engine.roadmap import build_roadmap
 from ..engine.runner import run_scenario
+from ..engine import export_model
 from ..models import Country, Node, Result, Scenario
 from ..tagging import normalise_tags
 from ..schemas import ResultSummary, ScenarioIn, ScenarioOut, ScenarioPatch
@@ -428,3 +429,11 @@ def roadmap(scenario_id: int, session: Session = Depends(get_session)):
         nodes_by_code=nodes_by_code,
         currency=country.currency,
     )
+
+
+@router.get("/scenarios/{scenario_id}/model")
+def scenario_model(scenario_id: int, session: Session = Depends(get_session)):
+    """The allocation model as data: what the solver is handed for this scenario, so a
+    solver that is not this one -- the site's in-browser HiGHS -- can reproduce it."""
+    scenario = _scenario_or_404(session, scenario_id)
+    return export_model.assemble(session, scenario)

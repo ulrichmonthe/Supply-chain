@@ -693,6 +693,40 @@ mouse, that focus draws a visible ring, that no viewport from 1440px down to 768
 produces horizontal page scroll, and that every target is thumb-sized under a coarse
 pointer. Twenty-three checks; it exits non-zero on any failure.
 
+### The marketing site
+
+`docs/index.html` and the six pages beside it are the public face of the project, served
+by GitHub Pages from the same branch as the demo. They are generated, not written:
+`make site` runs `scripts/build_site.py`, which reads the captured demo API under
+`docs/app/api` and the exported model under `docs/site/model`, computes every figure on
+the site from them, and writes the pages. Rebuild the demo and the site's numbers follow;
+the site cannot quote a saving the tool would not reproduce.
+
+The home page solves. `GET /scenarios/{id}/model` exports the allocation model exactly as
+the runner hands it to the solver — facilities with demand, band and penalty; stores with
+their annual charge and throughput; lanes with unit cost and capacity — and
+`docs/site/solver.js` rebuilds it as LP text for HiGHS compiled to WebAssembly
+(`docs/site/vendor`, MIT). Every lever on the page re-optimises the network in the
+visitor's browser in about fifty milliseconds; nothing is pre-solved.
+`tests/test_export_model.py` proves that solving the export reproduces the runner's own
+total cost within 0.1%, and `scripts/check_site_solver.mjs` proves the browser solver
+gives the same baseline, cost-optimised and equity-floor answers as the server did.
+
+Two more demonstrations run without a server: the **Bring your data** page maps and plots
+a visitor's own facility CSV in the browser (`docs/site/mapper.js`, a port of the mapper's
+synonym table; the file never leaves the page), and the **Decide** page renders a decision
+page live from the stored demo results (`docs/site/decision.js`). The question box, "Ask
+the network", is described but not wired: it needs a small hosted function with an API key.
+
+`make site-check` audits the site the way `make a11y` audits the app: axe-core over every
+page at desktop and phone width in both colour schemes, and then whether the solver really
+re-solves when a preset is chosen, whether the mapper matches the sample's foreign headers,
+and whether the decision page renders and switches scenario.
+
+Deliberately left for later, and left honest on the pages rather than invented: the
+licence and pricing position, a contact route, the organisation the site speaks as, named
+engagements, and a domain.
+
 ### Configuration
 
 | Variable | Default | Purpose |

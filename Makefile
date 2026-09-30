@@ -1,4 +1,4 @@
-.PHONY: help install run dev backend frontend build test a11y board panel demo clean check-python
+.PHONY: help install run dev backend frontend build test a11y board panel demo site site-check clean check-python
 
 VENV := .venv
 PY   := $(VENV)/bin/python
@@ -27,6 +27,8 @@ help:
 	@echo "make a11y      audit the running app for accessibility  (needs Node)"
 	@echo "               start 'make run' in another terminal first"
 	@echo "make demo      rebuild the static demo published at docs/app  (needs Node)"
+	@echo "make site      regenerate the marketing site pages in docs/ from the demo captures"
+	@echo "make site-check   audit the site: axe on every page, the in-browser solver, the mapper  (needs Node)"
 	@echo "make board     open the plain-language build board"
 	@echo "               override the port with:  make board BOARD_PORT=4322"
 
@@ -100,6 +102,18 @@ demo:
 	@curl -sf -o /dev/null http://127.0.0.1:$(PORT)/api/countries || { \
 	  echo "No API on :$(PORT). Start 'make run' in another terminal first."; exit 1; }
 	bash scripts/build-demo.sh
+
+## The marketing site: docs/*.html generated from the captured demo, so every figure on it is
+## solver output that the demo can reproduce. Stdlib only; no Node needed to build it.
+site:
+	python3 scripts/build_site.py
+
+## Audit the site in Chromium: axe on every page, the in-browser solver re-solves when a
+## lever moves, the CSV mapper plots the sample, the decision page renders, no horizontal scroll.
+site-check:
+	@(cd docs && python3 -m http.server 8090 >/dev/null 2>&1 & echo $$! > /tmp/hscn-site.pid); sleep 1; \
+	  (cd frontend && SITE_URL=http://127.0.0.1:8090/ npm run --silent site-check); status=$$?; \
+	  kill $$(cat /tmp/hscn-site.pid) 2>/dev/null; rm -f /tmp/hscn-site.pid; exit $$status
 
 ## The Build Companion board: what has been built, what is in flight, what is finished
 ## but not deployed, and what was discussed and dropped. Reads build-status.json, which

@@ -1,292 +1,170 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="color-scheme" content="dark" />
-<meta name="theme-color" content="#0d1219" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Health Supply Chain Network Design</title>
-<meta name="description" content="A digital twin of a national health supply chain that models sea, air and seasonal road access, and scores every scenario on cost and equity." />
-<style>
-  :root {
-    --bg: #0d1219;
-    --panel: #141c26;
-    --panel-2: #1a2431;
-    --line: #2a3849;
-    --text: #e6edf5;
-    --muted: #8fa3b8;
-    --dim: #8697aa;
-    --accent: #4da3ff;
-    --accent-dim: #16324f;
-    --good: #3fb984;
-    --warn: #e8b23a;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: var(--sans); font-size: 16px; line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: var(--accent); text-underline-offset: 2px; }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+<meta name="description" content="A national health supply chain design engine that runs on a laptop, solves in your browser, scores cost beside equity, and shows its working.">
+<meta property="og:title" content="Health Supply Chain Network Design">
+<meta property="og:description" content="A national health supply chain design engine that runs on a laptop, solves in your browser, scores cost beside equity, and shows its working.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="site/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1119'/%3E%3Ccircle cx='10' cy='21' r='4' fill='%233fb984'/%3E%3Ccircle cx='22' cy='10' r='4' fill='%234da3ff'/%3E%3Cpath d='M13 19 L19 12' stroke='%23e28b4a' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site/site.css">
 
-  /* ---------- nav ---------- */
-  nav {
-    position: sticky; top: 0; z-index: 20;
-    background: rgba(13, 18, 25, 0.92); backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--line);
-  }
-  .nav-inner {
-    max-width: 1180px; margin: 0 auto; padding: 11px 24px;
-    display: flex; align-items: center; gap: 18px;
-  }
-  .brand { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
-  .brand b { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
-  .brand span { font-size: 11px; color: var(--dim); }
-  .nav-links { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-  .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 9px 16px; min-height: 40px;
-    border-radius: 7px; border: 1px solid var(--line);
-    background: var(--panel-2); color: var(--text);
-    font-family: inherit; font-size: 14px; font-weight: 600;
-    text-decoration: none; cursor: pointer;
-    touch-action: manipulation;
-    transition: background 140ms cubic-bezier(0.2, 0, 0, 1), border-color 140ms cubic-bezier(0.2, 0, 0, 1);
-  }
-  .btn:hover { background: #22303f; border-color: #3a4c61; }
-  .btn.primary {
-    background: var(--accent); border-color: var(--accent); color: #04121f;
-  }
-  .btn.primary:hover { background: #6cb4ff; border-color: #6cb4ff; }
-  .btn.big { padding: 14px 26px; min-height: 52px; font-size: 16px; border-radius: 9px; }
-  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-  .btn .arrow { font-size: 1.1em; line-height: 1; }
-
-  /* ---------- hero ---------- */
-  header.hero { padding: 68px 0 0; }
-  h1 {
-    font-size: clamp(30px, 4.6vw, 48px); line-height: 1.08;
-    letter-spacing: -0.02em; margin: 0 0 18px; max-width: 17ch; text-wrap: balance;
-  }
-  .standfirst {
-    font-size: clamp(17px, 2vw, 20px); color: var(--muted);
-    max-width: 62ch; margin: 0 0 26px; line-height: 1.5;
-  }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .hero-note { font-size: 13.5px; color: var(--dim); margin: 14px 0 0; }
-
-  .shot {
-    margin: 38px 0 0; border: 1px solid var(--line); border-radius: 12px;
-    overflow: hidden; background: var(--panel);
-    box-shadow: 0 24px 70px -30px rgba(0, 0, 0, 0.9);
-  }
-  .shot img { display: block; width: 100%; height: auto; }
-  .under-shot {
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-    justify-content: center; padding: 26px 0 0;
-  }
-
-  /* ---------- figures ---------- */
-  .figures {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 1px; background: var(--line); border: 1px solid var(--line);
-    border-radius: 10px; overflow: hidden; margin: 56px 0 0;
-  }
-  .fig { background: var(--panel); padding: 18px 20px; }
-  .fig b {
-    display: block; font-size: 25px; font-weight: 700; letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums; margin-bottom: 4px;
-  }
-  .fig span { display: block; font-size: 13px; color: var(--muted); line-height: 1.4; }
-
-  /* ---------- sections ---------- */
-  section { padding: 62px 0 0; }
-  h2 {
-    font-size: clamp(21px, 2.6vw, 27px); letter-spacing: -0.015em;
-    margin: 0 0 8px; text-wrap: balance;
-  }
-  .dek { color: var(--muted); max-width: 64ch; margin: 0 0 26px; }
-
-  .moments { display: grid; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); gap: 16px; }
-  .moment {
-    background: var(--panel); border: 1px solid var(--line);
-    border-left: 3px solid var(--accent); border-radius: 8px; padding: 18px 20px;
-  }
-  .moment.equity { border-left-color: #8b6bd6; }
-  .moment.season { border-left-color: var(--warn); }
-  .moment.durable { border-left-color: var(--good); }
-  .moment h3 { margin: 0 0 7px; font-size: 16px; }
-  .moment p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
-  .moment .num {
-    font-family: var(--mono); font-size: 13px; color: var(--text);
-    display: block; margin-top: 9px;
-  }
-
-  .callout {
-    margin: 34px 0 0; padding: 20px 24px; border-radius: 10px;
-    background: var(--panel); border: 1px solid var(--line);
-    font-size: 15px; color: var(--muted); max-width: 74ch;
-  }
-  .callout b { color: var(--text); }
-  .callout p { margin: 0 0 0.8em; }
-  .callout p:last-child { margin-bottom: 0; }
-
-  footer {
-    margin-top: 72px; border-top: 1px solid var(--line);
-    padding: 26px 0 60px; font-size: 13.5px; color: var(--dim);
-  }
-  footer a { color: var(--muted); }
-
-  @media (max-width: 620px) {
-    header.hero { padding-top: 40px; }
-    .nav-inner { padding: 10px 16px; }
-    .wrap { padding: 0 16px; }
-    .brand span { display: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    * { transition-duration: 0.01ms !important; }
-  }
-</style>
 </head>
 <body>
-
-<nav>
-  <div class="nav-inner">
-    <div class="brand">
-      <b>Health Supply Chain Network Design</b>
-      <span>Papua New Guinea</span>
-    </div>
-    <div class="nav-links">
-      <a class="btn" href="./board/">Build status</a>
-      <a class="btn" href="https://github.com/ulrichmonthe/Supply-chain">Source</a>
-      <a class="btn primary" href="./app/">Open the tool <span class="arrow" aria-hidden="true">→</span></a>
-    </div>
-  </div>
-</nav>
-
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
-
-  <header class="hero">
-    <h1>A living map of a national health supply chain</h1>
-    <p class="standfirst">
-      Models sea, air and seasonal road access as first-class realities, scores every
-      scenario on cost <em>and</em> equity, and stays with the government after the
-      consultant leaves.
-    </p>
-    <div class="hero-actions">
-      <a class="btn primary big" href="./app/">Open the tool <span class="arrow" aria-hidden="true">→</span></a>
-      <a class="btn big" href="#what">What am I looking at?</a>
+  <nav class="nav" aria-label="Site">
+    <a class="brand" href="index.html"><b>Health Supply Chain Network Design</b><span>A design engine that shows its working</span></a>
+    <div class="nav-links"><a href="index.html" aria-current="page">Home</a><a href="data.html">Bring your data</a><a href="ask.html">Ask a question</a><a href="trust.html">Trust the answer</a><a href="decide.html">Decide</a><a href="keep.html">Keep it</a><a href="compare.html">Compare</a></div>
+    <div class="nav-right">
+      <a class="btn ghost" href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+      <a class="btn primary" href="app/">Open the tool <span aria-hidden="true">→</span></a>
     </div>
-    <p class="hero-note">Runs in your browser, and a guided tour starts on its own to explain the screen.
-      Nothing to install, nothing to sign into.</p>
+  </nav>
+  <main id="main">
 
-    <div class="shot">
-      <img src="./02-network.png" width="2700" height="1575"
-           alt="The tool showing 134 facilities across Papua New Guinea, with road, sea, air and river lanes drawn between them, a scenario list on the left and a scorecard on the right." />
-    </div>
-
-    <div class="under-shot">
-      <a class="btn primary big" href="./app/">Open the tool <span class="arrow" aria-hidden="true">→</span></a>
-    </div>
-
-    <div class="figures">
-      <div class="fig"><b>134</b><span>health facilities</span></div>
-      <div class="fig"><b>39</b><span>timetabled boat and air services</span></div>
-      <div class="fig"><b>4.9M</b><span>people in the catchment</span></div>
-      <div class="fig"><b>7</b><span>scenarios, solved for every month</span></div>
-    </div>
-  </header>
-
-  <section id="what">
-    <h2>What to try first</h2>
-    <p class="dek">
-      Four things this tool does that a spreadsheet and a generic network optimiser
-      cannot. Every figure below is real solver output you can reproduce in the demo.
-    </p>
-    <div class="moments">
-      <div class="moment">
-        <h3>See the whole network</h3>
-        <p>
-          Every clinic, store and lane on one map — road, sea, air and river — with
-          each facility coloured by how well it is actually supplied.
-        </p>
-        <span class="num">11.24M PGK/yr · everyone reached</span>
+    <section class="hero flush">
+      <div>
+        <p class="eyebrow">For ministries of health, the consultancies that design their networks, and the funders who pay for it</p>
+        <h1>The supply chain design engine that shows its working</h1>
+        <p class="lede">Every clinic, store and lane of a national health network on one map, solved by a real optimiser, scored on cost <em>and</em> on who gets left out. It runs on a laptop in a provincial health office, and every number it prints can be traced back to who typed it and how sure they were.</p>
+        <div class="actions">
+          <a class="btn primary big" href="app/">Open the tool <span aria-hidden="true">→</span></a>
+          <a class="btn big" href="#playground">Move a lever below</a>
+          <a class="btn big ghost" href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Read the master class</a>
+        </div>
+        <p class="small-note">The map below is not a picture. It is the demo network being re-optimised in your browser by the same HiGHS solver the tool runs, every time you move a control.</p>
       </div>
-      <div class="moment equity">
-        <h3>Find out who pays for a saving</h3>
-        <p>
-          Ask for the cheapest network and the tool names the people it stopped
-          reaching, rather than reporting a percentage and moving on.
-        </p>
-        <span class="num">−19.5% cost · 217,480 people cut off</span>
+    </section>
+
+    <div class="playground" id="playground" aria-label="Live network solver">
+      <div class="pg-map">
+        <svg role="img" aria-label="The Papua New Guinea demo network: stores, facilities coloured by how well they are supplied, and the lanes the current plan uses"></svg>
+        <div class="pg-legend" aria-hidden="true">
+          <span><i style="background:var(--road)"></i>road</span><span><i style="background:var(--sea)"></i>sea</span><span><i style="background:var(--air)"></i>air</span><span><i style="background:var(--river)"></i>river</span>
+          <span><i class="dot" style="background:#3fb984"></i>fully supplied</span><span><i class="dot" style="background:#ef6b6b"></i>not reached</span>
+        </div>
+        <div class="pg-status" role="status" aria-live="polite">Loading the network…</div>
       </div>
-      <div class="moment season">
-        <h3>Hold February for a year</h3>
-        <p>
-          Click a month on the strip at the bottom. The monsoon closes highland roads
-          and the southeast trades cut sea capacity, and the whole plan re-prices.
-        </p>
-        <span class="num">+35.8% cost · 19 facilities unreachable</span>
-      </div>
-      <div class="moment durable">
-        <h3>Take the model with you</h3>
-        <p>
-          Open the Data tab and export the network. The file that comes out is the
-          same shape as the file that goes in, so the work survives this tool.
-        </p>
-        <span class="num">4 sheets · 70 columns · round trip</span>
+      <div class="pg-side">
+        <div class="pg-label">What the plan costs, and who carries it</div>
+        <div class="kpis">
+          <div class="kpi"><label>Annual cost</label><b id="k-cost">—</b><span class="delta flat" id="k-cost-delta"></span></div>
+          <div class="kpi"><label>Demand met</label><b id="k-fill">—</b><span class="delta flat" id="k-fill-delta"></span></div>
+          <div class="kpi"><label>Worst band supplied</label><b id="k-worst">—</b><span class="delta flat" id="k-worst-delta"></span></div>
+          <div class="kpi"><label>People not fully supplied</label><b id="k-people">—</b><span class="delta flat" id="k-people-delta"></span></div>
+          <div class="kpi"><label>Stores open</label><b id="k-hubs">—</b><span class="delta flat" id="k-hubs-delta"></span></div>
+          <div class="kpi"><label>Solve time</label><b id="k-time">—</b><span class="delta flat">on this machine, HiGHS in WebAssembly</span></div>
+        </div>
+        <div class="verdict" id="pg-verdict" role="status">Loading…</div>
+        <div class="pg-label">Levers</div>
+        <div class="control">
+          <div class="control-head"><label for="pg-equity">How much the hardest-to-reach count</label><output id="pg-equity-out" for="pg-equity">0.50</output></div>
+          <input type="range" id="pg-equity" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="pg-service">Value of a cubic metre delivered</label><output id="pg-service-out" for="pg-service">1.00</output></div>
+          <input type="range" id="pg-service" min="0" max="1" step="0.05" value="1">
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="pg-minfill">Minimum demand met, network-wide</label><output id="pg-minfill-out" for="pg-minfill">off</output></div>
+          <input type="range" id="pg-minfill" min="0" max="1" step="0.05" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="pg-growth">Demand growth</label><output id="pg-growth-out" for="pg-growth">+0.0%</output></div>
+          <input type="range" id="pg-growth" min="-0.3" max="0.6" step="0.05" value="0">
+        </div>
+        <label class="checkbox"><input type="checkbox" id="pg-optimize"> Let the solver choose which stores to run</label>
+        <div class="chips" role="group" aria-label="Modes allowed">
+          <button type="button" class="chip pg-mode" data-mode="road" aria-pressed="true">road</button>
+          <button type="button" class="chip pg-mode" data-mode="sea" aria-pressed="true">sea</button>
+          <button type="button" class="chip pg-mode" data-mode="air" aria-pressed="true">air</button>
+          <button type="button" class="chip pg-mode" data-mode="river" aria-pressed="true">river</button>
+        </div>
+        <div class="pg-label">Try a question</div>
+        <div class="chips" role="group" aria-label="Preset questions">
+          <button type="button" class="chip" data-preset="today">Today</button>
+          <button type="button" class="chip" data-preset="cheapest">The cheapest network</button>
+          <button type="button" class="chip" data-preset="fair">Cheapest with a 95% floor</button>
+          <button type="button" class="chip" data-preset="roads">Roads only</button>
+          <button type="button" class="chip" data-preset="growth">Demand up 30%</button>
+        </div>
       </div>
     </div>
 
-    <div class="callout">
-      <p>
-        <b>What is real here, and what is not.</b> The facility locations, the
-        provinces, the transport modes and the shape of the network are real. Demand,
-        storage capacity, costs and the vessel and aircraft timetables are
-        <b>illustrative</b> — they stand in for the ministry's own figures until those
-        are loaded. The tool says so on its own front page, and every distance carries
-        the method that produced it and a confidence score.
-      </p>
-      <p>
-        <b>This page is a demo.</b> The real tool runs a solver on a server. Here,
-        every scenario has been solved ahead of time for all twelve months and the
-        results shipped alongside the interface, which is otherwise the exact build
-        you would run yourself. So the map, the scorecard, the equity panel, the
-        month-by-month re-solve and the exports are genuine. Anything that would
-        change the model — uploading a workbook, connecting to DHIS2 or mSupply,
-        moving a lever nobody pre-solved — will politely tell you it needs the real
-        thing.
-      </p>
-    </div>
-  </section>
+    <section>
+      <h2>Who this is for</h2>
+      <p class="sub">Three chairs, one model. Each gets the screen it needs from the same data and the same solve.</p>
+      <div class="roles">
+        <a class="role" href="decide.html"><span class="who">Ministry of health</span><h3>A page one a director can act on</h3><p>The recommendation in a sentence, the stores on a map, three numbers against today, who carries it, and how sure the answer is. Printed to PDF from any browser, no licence to renew.</p><span class="go">See the decision page →</span></a>
+        <a class="role" href="ask.html"><span class="who">Design consultancy</span><h3>Run the whole engagement in one tool</h3><p>Data in through a mapper or a connector, estimates for the blanks, studies with presets, a diff map, greenfield sites, twelve-month runs, and a session saved for the next review.</p><span class="go">See the workflow →</span></a>
+        <a class="role" href="trust.html"><span class="who">Funder and reviewer</span><h3>Every figure traceable, every answer tested</h3><p>A ledger with a name on every value, a confidence budget re-solved at ±30% on every run, and an assumptions annex written from the record, not from memory.</p><span class="go">See what makes it defensible →</span></a>
+      </div>
+    </section>
 
-  <section>
-    <h2>Run it yourself</h2>
-    <p class="dek">
-      Two commands, and it needs neither Node nor a recent Python. The interface is
-      committed already built, because requiring a toolchain to see a map in a
-      provincial health office would contradict the point.
-    </p>
-    <div class="callout" style="font-family: var(--mono); font-size: 13.5px; color: var(--text);">
-      git clone https://github.com/ulrichmonthe/Supply-chain.git<br />
-      cd Supply-chain &amp;&amp; make install &amp;&amp; make run
-    </div>
-    <div class="under-shot" style="justify-content: flex-start;">
-      <a class="btn" href="https://github.com/ulrichmonthe/Supply-chain">Read the source and the docs</a>
-      <a class="btn" href="./board/">See what is built and what is not</a>
-    </div>
-  </section>
+    <section>
+      <h2>How an engagement runs</h2>
+      <p class="sub">The site follows the arc of a real project, because that is how the tool is built.</p>
+      <div class="arc">
+        <a href="data.html"><span class="n">01</span><h3>Bring your data</h3><p>Template, CSV mapper, DHIS2 and mSupply, and estimates for the blanks.</p></a>
+        <a href="ask.html"><span class="n">02</span><h3>Ask a question</h3><p>Studies with presets, data changes, a diff map, greenfield, twelve months.</p></a>
+        <a href="trust.html"><span class="n">03</span><h3>Trust the answer</h3><p>The ledger, the confidence budget, the assumptions annex.</p></a>
+        <a href="decide.html"><span class="n">04</span><h3>Decide</h3><p>The decision page, the Decision view, the report.</p></a>
+        <a href="keep.html"><span class="n">05</span><h3>Keep it</h3><p>Sessions, the spreadsheet round trip, runs offline.</p></a>
+        <a href="compare.html"><span class="n">06</span><h3>Compare</h3><p>Against a spreadsheet and against Coupa, in one honest table.</p></a>
+      </div>
+    </section>
 
+    <section>
+      <h2>Figures you can reproduce</h2>
+      <p class="sub">Every number here is solver output from the demo workspace, regenerated whenever the model changes. Open the tool and get the same answers.</p>
+      <div class="stats">
+        <div class="stat"><b>134</b><span>health facilities across 22 provinces</span><small>8 stores · 188 lanes · 39 timetabled services</small></div>
+        <div class="stat"><b>19.5%</b><span>cheaper, the cost-optimised network</span><small>and 217,500 people move from supplied to not supplied</small></div>
+        <div class="stat"><b>+18.5%</b><span>cost if March held all year</span><small>every facility still reached, by air; 36 facilities above 20% stockout risk, against 31 today</small></div>
+        <div class="stat"><b>56 ms</b><span>to solve the network, then twice more at ±30%</span><small>on every run, so the scorecard can say whether an answer holds</small></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Demonstrations, not claims</h2>
+      <p class="sub">An AI-forward site should do something a brochure cannot. Two of these run on this page today; two need a small server and will light up when it is hosted.</p>
+      <div class="features">
+        <div class="feature demo"><span class="tag">Live on this page</span><h3>The page solves</h3><p>The map above is the tool's own allocation model, exported as data and re-optimised in your browser by HiGHS compiled to WebAssembly. Move a lever; watch the network re-plan. Nothing was pre-solved.</p><span class="fig">134 facilities · 180 lanes · about 56 ms a solve</span></div>
+        <div class="feature demo"><span class="tag">Live on this page</span><h3>Your data, before you sign anything</h3><p>Drop a facility list on the <a href="data.html#mapper">Bring your data</a> page. Its headers are read, its columns mapped, and your facilities appear on a map. Nothing leaves your browser, which is the data-sovereignty story proven rather than promised.</p></div>
+        <div class="feature soon"><span class="tag">Needs hosting</span><h3>Ask the network <span class="soon-pill">coming</span></h3><p>"Which facilities lose supply if the Alotau sailing goes monthly?" A question box that answers from the demo's results and confidence budget and shows the query it ran. Needs a small server with an API key.</p></div>
+        <div class="feature demo"><span class="tag">Live on this page</span><h3>Page one, generated for you</h3><p>Pick a scenario on the <a href="decide.html">Decide</a> page and its decision page renders live: the recommendation, the stores, three numbers against today, and whether the answer holds.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="callout honest">
+        <p class="callout-title">What is real here, and what is not</p>
+        The facility locations, provinces, transport modes and the shape of the Papua New Guinea network are real. Demand, storage, costs and the vessel and aircraft timetables are illustrative placeholders until a ministry's own figures are loaded, and the tool says so on its own front page. Every distance carries the method that produced it and a confidence score. The tool is country-agnostic: a new country starts from the template, the CSV mapper or a connector.
+      </div>
+    </section>
+
+  </main>
   <footer>
-    Built with Claude Code. The dataset is a Papua New Guinea reference workspace;
-    the model is country-agnostic.
-    <a href="https://github.com/ulrichmonthe/Supply-chain">github.com/ulrichmonthe/Supply-chain</a>
+    <span>Health Supply Chain Network Design Tool</span>
+    <a href="app/">Live demo</a>
+    <a href="https://claude.ai/artifact/MuPy3PmRsWRXc7EPHVfkN6">Master class</a>
+    <a href="board/">Build board</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain">Source and docs</a>
+    <a href="https://github.com/ulrichmonthe/Supply-chain#readme">README</a>
+    <span>Figures are model output on an illustrative Papua New Guinea workspace, not measurements.</span>
+    <span>Built with Claude Code.</span>
   </footer>
-
 </div>
+
+<script src="site/vendor/highs.js"></script>
+<script src="site/solver.js"></script>
+<script src="site/playground.js"></script>
+
 </body>
 </html>
