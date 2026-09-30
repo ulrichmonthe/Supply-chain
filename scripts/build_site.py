@@ -456,23 +456,6 @@ def keep_page(n: dict) -> str:
       {shot("23-sessions", "The Sessions shelf with a comparison open", "<b>A save file that cannot lie.</b> Every row, scenario and result under a name. Open one and the working state becomes exactly that, with the work you were doing kept as a draft first. Compare reads the difference in sentences.", "narrow")}
     </section>
     <section>
-      <h2>Run it yourself</h2>
-      <p class="sub">Two commands. The interface is committed already built, because requiring a toolchain to see a map in a provincial health office would contradict the point.</p>
-<pre>git clone {REPO}.git
-cd Supply-chain &amp;&amp; make install &amp;&amp; make run
-# then open http://localhost:8000</pre>
-      <div class="tablewrap" role="region" aria-label="Where it runs" tabindex="0">
-        <table>
-          <thead><tr><th>Where</th><th>What</th></tr></thead>
-          <tbody>
-            <tr><td class="k">A laptop</td><td>Everything. Python, a bundled solver, a local database that upgrades itself in place. No internet needed once installed; the map has an offline land mask.</td></tr>
-            <tr><td class="k">This site's demo</td><td>The illustrative workspace with every scenario pre-solved for every month. Read-only; anything that needs the solver or writes says so.</td></tr>
-            <tr><td class="k">The spreadsheet</td><td>The whole model in the template's columns. The way out that never needs the application.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-    <section>
       <div class="callout honest"><p class="callout-title">Licence, pricing, support</p>To be published. The source is open to read at <a href="{REPO}">GitHub</a>; the licence position and the engagement model are being settled and will appear here.</div>
     </section>
 """
