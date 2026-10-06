@@ -31,6 +31,12 @@ curl -sf "$API/countries/1/export/network.xlsx" -o "$OUT/api/files/network.xlsx"
 for sid in $(curl -sf "$API/countries/1/scenarios" | python3 -c \
       'import json,sys; print(" ".join(str(s["id"]) for s in json.load(sys.stdin) if s.get("latest_result_id")))'); do
   curl -sf "$API/scenarios/$sid/export/results.xlsx" -o "$OUT/api/files/results-$sid.xlsx" || true
+  # The report is a plain link the interface opens in a new tab, so it has to exist as a file.
+  curl -sf "$API/scenarios/$sid/report.html" -o "$OUT/api/files/report-$sid.html" || true
+done
+for study in $(curl -sf "$API/countries/1/studies" | python3 -c \
+      'import json,sys; print(" ".join(str(s["id"]) for s in json.load(sys.stdin)))'); do
+  curl -sf "$API/studies/$study/report.html" -o "$OUT/api/files/study-report-$study.html" || true
 done
 
 echo "==> building the interface with relative asset paths"

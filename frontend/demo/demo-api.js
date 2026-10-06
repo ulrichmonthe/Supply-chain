@@ -159,6 +159,8 @@
     [/^\/api\/template\.xlsx$/, 'files/template.xlsx'],
     [/^\/api\/countries\/\d+\/export\/network\.xlsx$/, 'files/network.xlsx'],
     [/^\/api\/scenarios\/(\d+)\/export\/results\.xlsx$/, 'files/results-$1.xlsx'],
+    [/^\/api\/scenarios\/(\d+)\/report\.html$/, 'files/report-$1.html'],
+    [/^\/api\/studies\/(\d+)\/report\.html$/, 'files/study-report-$1.html'],
   ]
   document.addEventListener('click', function (event) {
     var a = event.target && event.target.closest && event.target.closest('a[href^="/api/"]')
@@ -167,7 +169,10 @@
       var hit = a.getAttribute('href').match(EXPORTS[i][0])
       if (hit) {
         event.preventDefault()
-        window.location.href = ROOT + EXPORTS[i][1].replace('$1', hit[1])
+        var target = ROOT + EXPORTS[i][1].replace('$1', hit[1])
+        // A report opens beside the tool, as the interface intends; a download replaces nothing.
+        if (a.getAttribute('target') === '_blank') window.open(target, '_blank', 'noopener')
+        else window.location.href = target
         return
       }
     }

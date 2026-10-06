@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Integrated programme supply chain — Papua New Guinea</title>
+<style>
+  :root {
+    --ink: #17202a; --muted: #55626f; --faint: #7d8792;
+    --rule: #d9dee3; --rule-soft: #eaedf0;
+    --accent: #0e5f70; --accent-soft: #e6f0f2;
+    --good: #2e7355; --bad: #9e4038; --warn-bg: #fdf3e2; --warn-line: #e6ce9f;
+    --paper: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f2f4f5; color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .sheet {
+    max-width: 900px; margin: 0 auto; background: var(--paper);
+    padding: 54px 58px 70px; min-height: 100vh;
+  }
+  header.doc { border-bottom: 2px solid var(--ink); padding-bottom: 18px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px;
+  }
+  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .subtitle { color: var(--muted); margin: 0; font-size: 15.5px; }
+  .meta {
+    margin-top: 14px; font-size: 12.5px; color: var(--faint);
+    display: flex; flex-wrap: wrap; gap: 18px;
+  }
+
+  .verdict {
+    margin: 26px 0 0; padding: 20px 24px; border-radius: 6px;
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    font-size: 18px; line-height: 1.45;
+  }
+  .verdict.warn { background: var(--warn-bg); border-left-color: #b0620f; }
+  .verdict.good { background: #e9f2ec; border-left-color: var(--good); }
+
+  .figures {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    margin: 28px 0 0; border-radius: 4px; overflow: hidden;
+  }
+  .fig { background: var(--paper); padding: 15px 17px; }
+  .fig-label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; line-height: 1.35; }
+  .fig b { display: block; font-size: 22px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .delta { display: block; font-size: 12px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .delta.good { color: var(--good); }
+  .delta.bad { color: var(--bad); }
+  .delta.flat { color: var(--faint); }
+
+  section { margin-top: 42px; }
+  h2 { font-size: 19px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 16px; max-width: 66ch; }
+  .note { color: var(--faint); font-size: 13px; margin: 10px 0 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--faint); border-bottom: 1px solid var(--ink); padding: 8px 10px; font-weight: 700;
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td .sub { display: block; color: var(--faint); font-size: 12px; margin-top: 2px; }
+  .table-wrap { overflow-x: auto; }
+
+  .phases { display: grid; gap: 14px; }
+  .phase { border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 4px; padding: 14px 18px; }
+  .phase h3 { margin: 0 0 4px; font-size: 15px; }
+  .phase ul { margin: 10px 0 0; padding-left: 18px; }
+  .phase li { margin-bottom: 10px; }
+  .phase li .sub { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+
+  .changes { margin: 12px 0 14px; padding-left: 20px; color: var(--muted); }
+  .changes li { margin-bottom: 6px; }
+  section .verdict { font-size: 16px; margin-top: 6px; }
+  .page-one { margin-top: 24px; }
+  .page-one .question { font-size: 24px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .page-one .map { display: block; width: 100%; height: auto; margin: 22px 0 6px; border: 1px solid var(--rule); border-radius: 6px; }
+  .page-one h3 { font-size: 15px; margin: 18px 0 8px; }
+  .figures.three { grid-template-columns: repeat(3, 1fr); margin-top: 20px; }
+  .fig { text-decoration: none; color: inherit; }
+  .fig:hover { background: #f6f8f9; }
+  .line { margin: 14px 0 0; font-size: 15px; line-height: 1.55; }
+  .line a { color: var(--accent); text-decoration: none; }
+  .line.good b { color: var(--good); } .line.warn b { color: #b0620f; }
+  .tag { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-left: 6px; }
+  .page-break { break-before: page; }
+  .caveats { background: #fafbfb; border: 1px solid var(--rule); border-radius: 6px; padding: 18px 24px; }
+  .caveats ul { margin: 0; padding-left: 18px; }
+  .caveats li { margin-bottom: 8px; color: var(--muted); }
+  .caveats li:last-child { margin-bottom: 0; }
+
+  footer.doc {
+    margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule);
+    font-size: 12px; color: var(--faint);
+  }
+
+  @media print {
+    body { background: var(--paper); }
+    .sheet { max-width: none; padding: 0; min-height: 0; }
+    section { break-inside: avoid; }
+    .verdict, .figures, .phase { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="doc">
+    <p class="eyebrow">Network design · Papua New Guinea</p>
+    <h1>Integrated programme supply chain</h1>
+    <p class="subtitle">Consolidate programme-specific stores (EPI, malaria, TB/HIV) into the shared network. The largest structural saving available, and the hardest politically.</p>
+    <div class="meta">
+      <span>Compared against: Baseline — network as it operates today</span>
+      <span>Conditions: Annualised</span>
+      <span>Generated 06 October 2026</span>
+    </div>
+  </header>
+
+  <section class="page-one" id="decision">
+    
+    <div class="verdict good">This option cuts the cost of the network by 11.1% without reducing supply to the most vulnerable fifth.</div>
+    <svg class="map" viewBox="0 0 760 420" width="760" height="420" role="img" aria-label="Map of the plan: facilities coloured by how well they are supplied, stores named"><rect width="760" height="420" fill="#eef3f6"/><polygon points="41.3,65.0 56.2,67.1 87.8,80.0 103.6,84.8 132.9,95.3 161.3,100.2 187.1,109.9 206.0,116.3 224.1,130.0 242.1,144.6 260.2,168.0 270.6,174.5 290.9,183.8 322.5,196.3 338.3,201.9 355.0,214.8 353.1,228.6 331.5,232.6 311.6,231.0 317.0,243.9 340.5,273.8 369.8,285.9 382.0,319.0 419.5,327.1 451.1,356.2 472.3,371.5 490.3,373.1 469.1,378.8 444.3,378.0 403.7,369.9 367.6,366.7 349.5,363.4 321.6,342.4 292.2,316.6 258.4,281.9 223.2,281.1 178.0,275.4 160.0,287.5 146.4,307.7 128.4,315.8 78.7,307.7 42.6,328.3 42.6,201.9" fill="#dfe7de" stroke="#b9c7b8" stroke-width="0.8"/><polygon points="377.5,179.7 417.2,178.5 448.8,160.7 462.4,173.7 494.0,163.6 521.0,143.4 548.1,125.2 559.4,132.5 554.9,143.4 534.6,167.6 521.0,191.8 507.5,203.9 484.9,210.0 457.9,218.1 421.7,212.0 390.2,197.9" fill="#dfe7de" stroke="#b9c7b8" stroke-width="0.8"/><polygon points="654.2,169.6 674.5,183.8 692.5,201.9 710.6,222.1 721.9,236.2 708.3,244.3 690.3,232.2 672.2,210.0 656.4,185.8" fill="#dfe7de" stroke="#b9c7b8" stroke-width="0.8"/><line x1="322.9" y1="341.3" x2="324.7" y2="304.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.4"/><line x1="322.9" y1="341.3" x2="241.2" y2="278.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="322.9" y1="341.3" x2="189.3" y2="259.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="322.9" y1="341.3" x2="214.9" y2="262.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="322.9" y1="341.3" x2="269.8" y2="261.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.3"/><line x1="322.9" y1="341.3" x2="142.3" y2="326.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="322.9" y1="341.3" x2="55.8" y2="206.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="322.9" y1="341.3" x2="52.8" y2="172.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="322.9" y1="341.3" x2="129.9" y2="284.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="322.9" y1="341.3" x2="78.0" y2="284.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.2"/><line x1="322.9" y1="341.3" x2="71.2" y2="311.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.2"/><line x1="322.9" y1="341.3" x2="65.2" y2="242.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.2"/><line x1="322.9" y1="341.3" x2="469.1" y2="376.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.6"/><line x1="322.9" y1="341.3" x2="441.3" y2="362.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="322.9" y1="341.3" x2="497.6" y2="303.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="322.9" y1="341.3" x2="572.9" y2="391.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="322.9" y1="341.3" x2="484.9" y2="359.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="322.9" y1="341.3" x2="478.9" y2="388.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="322.9" y1="341.3" x2="460.1" y2="337.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="313.0" y1="231.2" x2="369.1" y2="313.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.8"/><line x1="313.0" y1="231.2" x2="346.6" y2="318.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="313.0" y1="231.2" x2="418.0" y2="326.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.4"/><line x1="313.0" y1="231.2" x2="411.2" y2="336.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.3"/><line x1="313.0" y1="231.2" x2="354.0" y2="315.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="313.0" y1="231.2" x2="376.6" y2="331.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.3"/><line x1="313.0" y1="231.2" x2="351.8" y2="226.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="313.0" y1="231.2" x2="321.7" y2="200.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="313.0" y1="231.2" x2="322.5" y2="209.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="258.8" y1="170.4" x2="289.4" y2="186.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="258.8" y1="170.4" x2="266.8" y2="147.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="258.8" y1="170.4" x2="224.7" y2="151.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.4"/><line x1="258.8" y1="170.4" x2="202.1" y2="173.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="258.8" y1="170.4" x2="163.1" y2="103.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="258.8" y1="170.4" x2="135.2" y2="106.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.4"/><line x1="258.8" y1="170.4" x2="181.0" y2="123.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="258.8" y1="170.4" x2="147.2" y2="110.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="258.8" y1="170.4" x2="137.4" y2="117.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="258.8" y1="170.4" x2="56.2" y2="68.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="258.8" y1="170.4" x2="103.5" y2="86.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="258.8" y1="170.4" x2="89.3" y2="100.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="258.8" y1="170.4" x2="109.6" y2="107.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="258.8" y1="170.4" x2="126.1" y2="130.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="258.8" y1="170.4" x2="157.0" y2="128.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="258.8" y1="170.4" x2="71.2" y2="166.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="258.8" y1="170.4" x2="52.4" y2="104.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.4"/><line x1="258.8" y1="170.4" x2="97.5" y2="171.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.3"/><line x1="188.9" y1="195.9" x2="109.6" y2="177.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="188.9" y1="195.9" x2="206.6" y2="184.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="188.9" y1="195.9" x2="214.9" y2="221.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="313.0" y1="231.2" x2="263.8" y2="233.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.4"/><line x1="313.0" y1="231.2" x2="260.8" y2="241.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.3"/><line x1="258.8" y1="170.4" x2="325.7" y2="41.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="258.8" y1="170.4" x2="330.0" y2="41.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.2"/><line x1="258.8" y1="170.4" x2="281.8" y2="29.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.1"/><line x1="258.8" y1="170.4" x2="351.0" y2="53.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.1"/><line x1="258.8" y1="170.4" x2="326.2" y2="63.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.0"/><line x1="550.8" y1="135.1" x2="484.8" y2="63.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.5"/><line x1="550.8" y1="135.1" x2="558.6" y2="107.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="550.8" y1="135.1" x2="567.7" y2="82.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="550.8" y1="135.1" x2="526.3" y2="87.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="550.8" y1="135.1" x2="540.6" y2="74.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.2"/><line x1="550.8" y1="135.1" x2="457.9" y2="63.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="550.8" y1="135.1" x2="512.0" y2="197.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="550.8" y1="135.1" x2="517.3" y2="183.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="550.8" y1="135.1" x2="455.6" y2="183.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.9"/><line x1="550.8" y1="135.1" x2="449.6" y2="173.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="550.8" y1="135.1" x2="463.9" y2="213.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="550.8" y1="135.1" x2="494.0" y2="174.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="550.8" y1="135.1" x2="428.5" y2="210.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="550.8" y1="135.1" x2="659.7" y2="178.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.7"/><line x1="550.8" y1="135.1" x2="700.1" y2="210.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.4"/><line x1="550.8" y1="135.1" x2="707.6" y2="235.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="550.8" y1="135.1" x2="683.5" y2="196.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="550.8" y1="135.1" x2="639.9" y2="141.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.1"/><line x1="550.8" y1="135.1" x2="661.7" y2="183.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="322.9" y1="341.3" x2="322.1" y2="342.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="322.9" y1="341.3" x2="319.9" y2="338.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="322.9" y1="341.3" x2="323.4" y2="341.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.6"/><line x1="322.9" y1="341.3" x2="321.3" y2="341.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.5"/><line x1="322.9" y1="341.3" x2="323.8" y2="338.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="322.9" y1="341.3" x2="346.5" y2="356.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="322.9" y1="341.3" x2="290.9" y2="308.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="322.9" y1="341.3" x2="312.7" y2="296.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.6"/><line x1="322.9" y1="341.3" x2="366.8" y2="366.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="322.9" y1="341.3" x2="297.6" y2="319.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.5"/><line x1="322.9" y1="341.3" x2="258.3" y2="281.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.5"/><line x1="322.9" y1="341.3" x2="275.8" y2="286.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="313.0" y1="231.2" x2="313.2" y2="231.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="313.0" y1="231.2" x2="297.6" y2="250.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.5"/><line x1="313.0" y1="231.2" x2="300.6" y2="255.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="313.0" y1="231.2" x2="269.1" y2="250.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="313.0" y1="231.2" x2="293.9" y2="243.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="258.8" y1="170.4" x2="259.2" y2="170.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="258.8" y1="170.4" x2="221.7" y2="131.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="258.8" y1="170.4" x2="257.0" y2="197.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="188.9" y1="195.9" x2="165.4" y2="181.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.8"/><line x1="188.9" y1="195.9" x2="172.8" y2="187.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="188.9" y1="195.9" x2="155.5" y2="178.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="188.9" y1="195.9" x2="138.9" y2="180.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="188.9" y1="195.9" x2="173.5" y2="176.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="188.9" y1="195.9" x2="156.2" y2="195.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="188.9" y1="195.9" x2="130.6" y2="195.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="188.9" y1="195.9" x2="120.9" y2="189.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="188.9" y1="195.9" x2="126.1" y2="203.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="188.9" y1="195.9" x2="141.9" y2="201.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="188.9" y1="195.9" x2="162.6" y2="207.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.9"/><line x1="188.9" y1="195.9" x2="177.3" y2="213.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="188.9" y1="195.9" x2="171.3" y2="217.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="188.9" y1="195.9" x2="152.5" y2="208.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="188.9" y1="195.9" x2="173.5" y2="226.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="188.9" y1="195.9" x2="181.8" y2="215.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="188.9" y1="195.9" x2="188.4" y2="196.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="188.9" y1="195.9" x2="175.8" y2="197.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="188.9" y1="195.9" x2="184.8" y2="183.1" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="188.9" y1="195.9" x2="182.5" y2="191.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><line x1="188.9" y1="195.9" x2="189.3" y2="189.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="188.9" y1="195.9" x2="208.1" y2="197.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.5"/><line x1="188.9" y1="195.9" x2="205.9" y2="193.8" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.2"/><line x1="188.9" y1="195.9" x2="204.4" y2="196.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="188.9" y1="195.9" x2="211.9" y2="196.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="188.9" y1="195.9" x2="221.7" y2="202.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.8"/><line x1="188.9" y1="195.9" x2="214.1" y2="201.2" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.3"/><line x1="188.9" y1="195.9" x2="214.9" y2="212.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="188.9" y1="195.9" x2="228.4" y2="207.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="188.9" y1="195.9" x2="224.7" y2="195.9" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.8"/><line x1="313.0" y1="231.2" x2="240.5" y2="205.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="313.0" y1="231.2" x2="262.3" y2="213.4" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.6"/><line x1="313.0" y1="231.2" x2="251.0" y2="211.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="313.0" y1="231.2" x2="232.2" y2="214.7" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.0"/><line x1="313.0" y1="231.2" x2="246.5" y2="223.5" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.9"/><line x1="550.8" y1="135.1" x2="545.9" y2="128.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="3.0"/><line x1="550.8" y1="135.1" x2="551.1" y2="135.3" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.6"/><line x1="550.8" y1="135.1" x2="540.6" y2="134.6" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="2.1"/><line x1="550.8" y1="135.1" x2="551.9" y2="140.0" stroke="#7f95ab" stroke-opacity="0.55" stroke-width="1.7"/><circle cx="162.7" cy="103.7" r="4" fill="none" stroke="#9aa9b8" stroke-width="1" stroke-dasharray="2 1.5"/><circle cx="469.4" cy="376.2" r="4" fill="none" stroke="#9aa9b8" stroke-width="1" stroke-dasharray="2 1.5"/><circle cx="659.6" cy="178.7" r="4" fill="none" stroke="#9aa9b8" stroke-width="1" stroke-dasharray="2 1.5"/><circle cx="322.1" cy="342.2" r="4.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="319.9" cy="338.8" r="4.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="323.4" cy="341.2" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="321.3" cy="341.0" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="323.8" cy="338.4" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="346.5" cy="356.7" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="290.9" cy="308.9" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="312.7" cy="296.8" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="366.8" cy="366.1" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="324.7" cy="304.9" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="297.6" cy="319.0" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="258.3" cy="281.2" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="241.2" cy="278.0" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="189.3" cy="259.3" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="214.9" cy="262.5" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="275.8" cy="286.0" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="269.8" cy="261.1" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="142.3" cy="326.1" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="55.8" cy="206.8" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="52.8" cy="172.3" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="129.9" cy="284.7" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="71.2" cy="311.6" r="2.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="65.2" cy="242.3" r="2.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="78.0" cy="284.7" r="2.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="469.1" cy="376.2" r="3.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="497.6" cy="303.1" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="572.9" cy="391.0" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="484.9" cy="359.4" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="478.9" cy="388.3" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="441.3" cy="362.8" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="460.1" cy="337.2" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="369.1" cy="313.6" r="3.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="346.6" cy="318.1" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="418.0" cy="326.4" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="376.6" cy="331.1" r="2.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="411.2" cy="336.5" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="354.0" cy="315.0" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="313.2" cy="231.4" r="4.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="297.6" cy="250.4" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="300.6" cy="255.8" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="351.8" cy="226.2" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="269.1" cy="250.4" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="322.5" cy="209.3" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="321.7" cy="200.6" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="293.9" cy="243.6" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="259.2" cy="170.6" r="4.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="221.7" cy="131.9" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="289.4" cy="186.4" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="266.8" cy="147.4" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="257.0" cy="197.9" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="224.7" cy="151.4" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="202.1" cy="173.0" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="163.1" cy="103.7" r="4.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="135.2" cy="106.4" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="181.0" cy="123.9" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="126.1" cy="130.6" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="147.2" cy="110.4" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="137.4" cy="117.1" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="157.0" cy="128.6" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="56.2" cy="68.0" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="103.5" cy="86.3" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="89.3" cy="100.3" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="109.6" cy="107.7" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="71.2" cy="166.3" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="52.4" cy="104.3" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="97.5" cy="171.0" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="165.4" cy="181.3" r="3.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="172.8" cy="187.1" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="155.5" cy="178.4" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="138.9" cy="180.4" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="173.5" cy="176.4" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="156.2" cy="195.2" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="130.6" cy="195.9" r="4.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="120.9" cy="189.1" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="126.1" cy="203.3" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="141.9" cy="201.2" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="109.6" cy="177.0" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="162.6" cy="207.9" r="4.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="177.3" cy="213.4" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="171.3" cy="217.4" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="152.5" cy="208.7" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="173.5" cy="226.2" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="181.8" cy="215.4" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="188.4" cy="196.2" r="4.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="175.8" cy="197.2" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="184.8" cy="183.1" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="182.5" cy="191.2" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="189.3" cy="189.8" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="208.1" cy="197.2" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="205.9" cy="193.8" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="204.4" cy="196.5" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="211.9" cy="196.5" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="206.6" cy="184.4" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="221.7" cy="202.6" r="3.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="214.1" cy="201.2" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="214.9" cy="212.0" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="214.9" cy="221.4" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="228.4" cy="207.3" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="224.7" cy="195.9" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="240.5" cy="205.3" r="4.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="262.3" cy="213.4" r="3.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="251.0" cy="211.3" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="232.2" cy="214.7" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="246.5" cy="223.5" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="263.8" cy="233.6" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="260.8" cy="241.0" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="325.7" cy="41.3" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="330.0" cy="41.7" r="2.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="281.8" cy="29.0" r="2.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="351.0" cy="53.2" r="2.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="326.2" cy="63.3" r="2.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="484.8" cy="63.6" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="558.6" cy="107.7" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="567.7" cy="82.8" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="526.3" cy="87.5" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="540.6" cy="74.7" r="2.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="457.9" cy="63.3" r="2.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="545.9" cy="128.6" r="4.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="551.1" cy="135.3" r="3.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="540.6" cy="134.6" r="3.4" fill="#2e7355" fill-opacity="0.9"/><circle cx="551.9" cy="140.0" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="512.0" cy="197.9" r="3.1" fill="#2e7355" fill-opacity="0.9"/><circle cx="517.3" cy="183.1" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="455.6" cy="183.8" r="3.9" fill="#2e7355" fill-opacity="0.9"/><circle cx="449.6" cy="173.0" r="3.3" fill="#2e7355" fill-opacity="0.9"/><circle cx="463.9" cy="213.4" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="494.0" cy="174.3" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="428.5" cy="210.7" r="3.2" fill="#2e7355" fill-opacity="0.9"/><circle cx="659.7" cy="178.6" r="3.8" fill="#2e7355" fill-opacity="0.9"/><circle cx="700.1" cy="210.7" r="3.6" fill="#2e7355" fill-opacity="0.9"/><circle cx="707.6" cy="235.6" r="3.5" fill="#2e7355" fill-opacity="0.9"/><circle cx="683.5" cy="196.5" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="639.9" cy="141.4" r="2.7" fill="#2e7355" fill-opacity="0.9"/><circle cx="661.7" cy="183.8" r="3.0" fill="#2e7355" fill-opacity="0.9"/><circle cx="321.2" cy="342.6" r="6.5" fill="#111111" stroke="#ffffff" stroke-width="1.6"/><text x="330.2" y="346.6" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Badili National Medical Store</text><circle cx="322.9" cy="341.3" r="6.5" fill="#0e5f70" stroke="#ffffff" stroke-width="1.6"/><text x="331.9" y="345.3" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Port Moresby Area Medical Store</text><circle cx="313.0" cy="231.2" r="6.5" fill="#0e5f70" stroke="#ffffff" stroke-width="1.6"/><text x="322.0" y="235.2" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Lae Area Medical Store</text><circle cx="258.8" cy="170.4" r="6.5" fill="#0e5f70" stroke="#ffffff" stroke-width="1.6"/><text x="267.8" y="174.4" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Madang Area Medical Store</text><circle cx="188.9" cy="195.9" r="6.5" fill="#0e5f70" stroke="#ffffff" stroke-width="1.6"/><text x="197.9" y="199.9" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Mount Hagen Area Medical Store</text><circle cx="550.8" cy="135.1" r="6.5" fill="#0e5f70" stroke="#ffffff" stroke-width="1.6"/><text x="559.8" y="139.1" font-size="11" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" fill="#17202a" text-anchor="start" stroke="#ffffff" stroke-width="3" paint-order="stroke">Kokopo Area Medical Store</text></svg>
+    <h3>Stores under this plan</h3>
+    <div class="table-wrap"><table><thead><tr><th>Store</th><th class="n">Dry m³</th><th class="n">+2–8°C m³</th><th class="n">Facilities served</th><th class="n">m³ a year</th></tr></thead><tbody><tr><td>Port Moresby Area Medical Store<span class="sub">National Capital District</span></td><td class="n">2,600</td><td class="n">90</td><td class="n">31</td><td class="n">3,990</td></tr><tr><td>Lae Area Medical Store<span class="sub">Morobe</span></td><td class="n">2,900</td><td class="n">105</td><td class="n">21</td><td class="n">2,933</td></tr><tr><td>Madang Area Medical Store<span class="sub">Madang</span></td><td class="n">1,700</td><td class="n">62</td><td class="n">26</td><td class="n">2,646</td></tr><tr><td>Mount Hagen Area Medical Store<span class="sub">Western Highlands</span></td><td class="n">2,100</td><td class="n">78</td><td class="n">33</td><td class="n">4,732</td></tr><tr><td>Kokopo Area Medical Store<span class="sub">East New Britain</span></td><td class="n">1,500</td><td class="n">55</td><td class="n">23</td><td class="n">2,835</td></tr></tbody></table></div>
+    <div class="figures three"><a class="fig" href="#figures"><span class="fig-label">Annual cost</span><b>9.99M PGK</b><span class="delta good">-11.1% vs today</span></a><a class="fig" href="#facilities"><span class="fig-label">Demand met</span><b>100.0%</b><span class="delta good">+0.0%</span></a><a class="fig" href="#facilities"><span class="fig-label">everyone supplied today is supplied here</span><b>no change</b><span class="delta flat"></span></a></div>
+    <p class="line"><a href="#equity"><b>Who carries it.</b></a> The most vulnerable fifth, 973,500 people at 44 facilities, gets 100.0% of its demand (today: 100.0%); the gap between the best and worst bands is 0.0%.</p>
+    <p class="line good"><a href="#confidence"><b>How sure this is.</b></a> 100% of the demand this rests on is estimated. The answer holds with every estimated figure 30% lower or higher: the same 5 stores stay open, and it stays cheaper than today at both ends.</p>
+  </section>
+
+  
+
+  <section class="page-break" id="figures">
+    <h2>The figures</h2>
+    <p class="lede">Page one in numbers. Everything below is the evidence for it.</p>
+    <div class="figures"><div class="fig">
+              <span class="fig-label">Total annual cost</span>
+              <b>9.99M PGK</b>
+              <span class="delta good">-11.1% vs today</span>
+            </div><div class="fig">
+              <span class="fig-label">Demand met, by volume</span>
+              <b>100.0%</b>
+              <span class="delta flat">+0.0%</span>
+            </div><div class="fig">
+              <span class="fig-label">Supply to the most vulnerable fifth</span>
+              <b>100.0%</b>
+              <span class="delta flat">+0.0%</span>
+            </div><div class="fig">
+              <span class="fig-label">Cost per person reached</span>
+              <b>2.04 PGK</b>
+              <span class="delta good">-11.3% vs today</span>
+            </div></div>
+  </section>
+
+  <section id="confidence"><h2>How sure this is</h2><p class="lede">100% of the demand this plan was solved on is an estimate from a rule rather than a recorded figure, at 134 of 134 facilities. So the plan was solved again with every estimated figure 30% lower, and again with every one 30% higher.</p><div class="verdict good">100% of the demand this rests on is estimated. The answer holds with every estimated figure 30% lower or higher: the same 5 stores stay open, and it stays cheaper than today at both ends.</div><div class="table-wrap"><table><thead><tr><th>Figure</th><th class="n">Estimates 30% lower</th><th class="n">As modelled</th><th class="n">Estimates 30% higher</th></tr></thead><tbody><tr><td>Total annual cost</td><td class="n">8.23M PGK</td><td class="n">9.99M PGK</td><td class="n">11.66M PGK</td></tr><tr><td>Demand met, by volume</td><td class="n">100.0%</td><td class="n">100.0%</td><td class="n">98.6%</td></tr><tr><td>Supply to the most vulnerable fifth</td><td class="n">100.0%</td><td class="n">100.0%</td><td class="n">97.0%</td></tr><tr><td>Mean stockout risk</td><td class="n">10.5%</td><td class="n">13.4%</td><td class="n">23.1%</td></tr><tr><td>Stores open</td><td class="n">5</td><td class="n">5</td><td class="n">5</td></tr></tbody></table></div></section>
+
+  <section id="equity">
+    <h2>Who carries this plan</h2>
+    <p class="lede">
+      Every facility is ranked by how hard it is to reach, then grouped into five bands of
+      roughly equal population. Reading cost and the bottom band together is the point: a
+      plan that saves money while the bottom band falls has moved the cost onto the
+      hardest-to-reach, rather than removed it.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Group</th><th class="n">Facilities</th><th class="n">People</th>
+          <th class="n">Demand met</th><th class="n">Cost per person</th>
+        </tr></thead>
+        <tbody><tr>
+              <td>Q1 least vulnerable</td>
+              <td class="n">14</td>
+              <td class="n">1,034,000</td>
+              <td class="n">100.0%</td>
+              <td class="n">1.22</td>
+            </tr><tr>
+              <td>Q2</td>
+              <td class="n">19</td>
+              <td class="n">925,000</td>
+              <td class="n">100.0%</td>
+              <td class="n">1.57</td>
+            </tr><tr>
+              <td>Q3</td>
+              <td class="n">27</td>
+              <td class="n">996,000</td>
+              <td class="n">100.0%</td>
+              <td class="n">1.59</td>
+            </tr><tr>
+              <td>Q4</td>
+              <td class="n">30</td>
+              <td class="n">967,500</td>
+              <td class="n">100.0%</td>
+              <td class="n">1.87</td>
+            </tr><tr>
+              <td>Q5 most vulnerable</td>
+              <td class="n">44</td>
+              <td class="n">973,500</td>
+              <td class="n">100.0%</td>
+              <td class="n">4.00</td>
+            </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="facilities">
+    <h2>Facilities that would not be fully supplied</h2>
+    <p class="lede">
+      Named, because a percentage is not a decision. Ordered by how badly they are served,
+      then by how many people they cover.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Facility</th><th class="n">People</th><th class="n">Demand met</th>
+          <th class="n">Stockout risk</th><th>Supplied by</th>
+        </tr></thead>
+        <tbody><tr><td colspan="5">Every facility is fully supplied under this plan.</td></tr></tbody>
+      </table>
+    </div>
+    
+  </section>
+
+  <section><h2>What it would take to get there</h2>
+            <p class="lede">Phased against how the network runs today. One-off costs are shown
+            separately from the yearly running costs above, so the plan cannot look cheaper
+            than it is.</p>
+            <div class="phases"><div class="phase">
+                  <h3>Phase 1 — Policy and planning</h3>
+                  <p class="note">0–6 months
+                     · 45k PGK one-off</p>
+                  <ul><li><b>Move to a integrated programme supply chain</b><span class='sub'>Consolidate programme-specific storage and distribution (EPI, malaria, TB/HIV) into the shared network. Modelled as a reduction in duplicated hub operating cost.</span><span class='sub'>45k PGK one-off · NDoH executive + programme managers + funding partners</span></li></ul>
+                </div><div class="phase">
+                  <h3>Phase 2 — Operational redesign</h3>
+                  <p class="note">6–18 months
+                     · 18k PGK one-off</p>
+                  <ul><li><b>Increase third-party transport share to 35%</b><span class='sub'>Tender and contract commercial road transport for the affected lanes. Retain in-house capacity for lanes no commercial operator will serve.</span><span class='sub'>18k PGK one-off · NDoH procurement</span></li></ul>
+                </div></div></section>
+
+  <section>
+    <h2>What this rests on</h2>
+    <p class="lede">
+      Stated up front rather than in an appendix, because a reviewer will look for it and
+      a decision-maker deserves it.
+    </p>
+    <div class="caveats"><ul><li>150 of 188 routes have an estimated distance rather than a measured or routed one. Every distance in the model carries the method that produced it and a confidence score; the weighted average is 0.63.</li><li>Seasonal access is drawn from typical conditions, not from records of routes actually closing. Worth checking with provincial staff before this is published.</li></ul></div>
+  </section>
+
+  <section id="annex">
+    <h2>Assumptions annex</h2>
+    <p class="lede">Every value in this model entered it one of these ways, and the ledger holds each one with
+    who put it there and why. Counts first; then the most recent assumptions, corrections and estimates
+    (5 of 7 entries; the full ledger is in the tool). Claimed by: anonymous.</p>
+    <div class="table-wrap"><table><thead><tr><th>How it entered</th><th class="n">Entries</th></tr></thead><tbody><tr><td>Assumptions and scenario settings</td><td class='n'>5</td></tr><tr><td>Seeded illustrative data</td><td class='n'>2</td></tr></tbody></table></div>
+    <div class="table-wrap" style="margin-top:14px"><table>
+      <thead><tr><th>What</th><th>Field</th><th>Change</th><th>S/I/U</th><th>Who</th><th>Why</th></tr></thead>
+      <tbody><tr><td>global<span class='sub'></span></td><td>vessel_cost_allocation</td><td>blank → hold apportioned by demand share</td><td>I</td><td>anonymous<span class='sub'>06 Oct 2026</span></td><td>A vessel&#x27;s hold is shared across every facility on its run. Capacity is apportioned by demand share and the trip cost is expressed as a freight rate per cubic metre computed over the whole loop, so no facility is charged for a return journey the boat did not make on its behalf.</td></tr><tr><td>global<span class='sub'></span></td><td>primary_network</td><td>blank → no POM road link</td><td>S</td><td>anonymous<span class='sub'>06 Oct 2026</span></td><td>Port Moresby has no road connection to Lae, Madang or the Highlands. Primary distribution to every hub other than Port Moresby is modelled as maritime, with the Highlands supplied by road from Lae along the Highlands Highway.</td></tr><tr><td>global<span class='sub'></span></td><td>timetables</td><td>blank → assumed frequencies</td><td>U</td><td>anonymous<span class='sub'>06 Oct 2026</span></td><td>Every sailing and flight frequency, hold capacity and reliability figure is assumed. Confirming whether digitised maritime and air schedules exist for medical distribution is a Sprint 0 task, and the answer determines whether the scheduled-service model has any data behind it.</td></tr><tr><td>global<span class='sub'></span></td><td>storage_capacity</td><td>blank → days-of-cover assumption</td><td>U</td><td>anonymous<span class='sub'>06 Oct 2026</span></td><td>Facility storage is assumed as days of cover by terrain class: 60 mainland, 45 highlands, 40 coastal, 30 riverine, 26 air-only, 24 island, multiplied by facility type. Replace with the national cold chain inventory and a storage assessment.</td></tr><tr><td>global<span class='sub'></span></td><td>demand_method</td><td>blank → population proxy</td><td>I</td><td>anonymous<span class='sub'>06 Oct 2026</span></td><td>Demand is derived from catchment population and a per-1000 consumption rate per product. Replace with mSupply issues data. This is the same proxy-indicator strategy SCANIT uses, and it is a good one — but it must be labelled.</td></tr></tbody></table></div>
+  </section>
+
+  <footer class="doc">
+    134 facilities ·
+    46 timetabled services ·
+    solved in 163 ms.
+    Figures are model output, not measurements. The full dataset, the assumption log and
+    every distance with its method and confidence are in the spreadsheet export.
+  </footer>
+
+</div>
+</body>
+</html>
