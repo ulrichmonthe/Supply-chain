@@ -1,6 +1,8 @@
 import { useId, useState } from 'react'
 import { api } from '../api'
 import type { CsvInspection, ValidationReport } from '../types'
+import { Help } from './Help'
+import { HELP } from '../help'
 
 /**
  * The column mapper: any CSV, mapped once to our columns, into the same hallway.
@@ -83,7 +85,10 @@ export function CsvImport({
 
   return (
     <div className="section csv-import">
-      <h3>Import a CSV from another system</h3>
+      <h3>
+        Import a CSV from another system
+        <Help text={HELP.csvImport} label="CSV import" />
+      </h3>
       <p className="lever-note" style={{ marginBottom: 8 }}>
         A facility register, a consumption extract, a product catalogue. Map its columns to ours once; the
         mapping is kept for next time. One sheet per file, merged into what is loaded, never a wipe.

@@ -1,0 +1,9 @@
+﻿sku,name,temperature_band,volume_per_unit_cm3,unit_cost,shelf_life_days
+ESSMED-KIT,Essential medicines kit (Area Medical Store kit),ambient,62000,1850,730
+MEDSUP-BOX,Medical and surgical consumables box,ambient,28000,640,1095
+ARVTB-KIT,ARV and TB treatment kit,ambient,15000,980,730
+MAL-KIT,Malaria RDT and ACT kit,ambient,9000,410,730
+VAC-EPI,Routine EPI vaccine carton,+2-8,1200,520,365
+VAC-MEAS,Measles-rubella vaccine carton,+2-8,900,380,365
+OXY-AMP,Oxytocin ampoule carton,+2-8,450,145,545
+VAC-ULT,Ultra-cold chain vaccine carton,-70,2500,1240,180

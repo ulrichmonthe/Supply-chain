@@ -240,7 +240,9 @@ def overview(country_id: int, session: Session = Depends(get_session)):
         "country": CountryOut.model_validate(country).model_dump(),
         "counts": {
             "nodes": len(nodes),
-            "facilities": len(facilities),
+            # Level 2 and below, with or without demand yet: a facility added a minute ago
+            # with no consumption rows is still a facility, and the header should say so.
+            "facilities": sum(1 for n in nodes if n.level >= 2),
             "hubs": len(hubs),
             "hubs_operational": sum(1 for h in hubs if h.operating_status == "operational"),
             "edges": len(edges),

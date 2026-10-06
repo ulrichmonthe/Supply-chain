@@ -930,3 +930,27 @@ tr.shortfall td { background: rgba(239, 107, 107, 0.06); }
 .warn-text { color: var(--warn); }
 .grid tr.blocking th, .grid tr.blocking td { color: var(--bad); }
 .callout.good { border-color: #24513f; }
+
+
+/* --- "what is this for?" ------------------------------------------------------------- */
+.help { position: relative; display: inline-flex; align-items: center; margin-left: 6px; vertical-align: middle; }
+.help.inline { margin-left: 4px; }
+.help-btn {
+  appearance: none; font-family: inherit; width: 18px; height: 18px; min-height: 18px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--dim); font-size: 11px; font-weight: 700; line-height: 1;
+  cursor: help; display: inline-grid; place-items: center;
+}
+.help-btn:hover, .help-btn:focus-visible, .help-btn[aria-expanded='true'] { color: var(--text); border-color: var(--accent); background: var(--accent-dim); }
+.help-pop {
+  position: absolute; z-index: var(--z-tooltip); top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: 280px; padding: 8px 10px; border-radius: 8px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: var(--fs-small); font-weight: 400; line-height: 1.45; letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
+}
+.section > h3 .help { margin-left: 5px; }
+.topbar .help-pop, .tabs .help-pop { left: auto; right: 0; transform: none; }
+.tabs .help { align-self: center; margin-left: auto; padding-right: 6px; }
+
+.tabs-wrap { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+.tabs-wrap .tabs { border-bottom: 0; flex: 1; min-width: 0; }
+.lever-head > span:first-child { display: inline-flex; align-items: center; }

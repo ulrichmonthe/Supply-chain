@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { api } from '../api'
 import type { ConfidenceMarker, TableName } from '../types'
 import { MarkerPicker } from './FacilityEditor'
+import { Help } from './Help'
+import { HELP } from '../help'
 
 /**
  * The table editor: every model table as a grid.
@@ -332,7 +334,10 @@ export function TableEditor({
 
   return (
     <div className="section table-editor" data-tour="tables">
-      <h3>Edit the tables</h3>
+      <h3>
+        Edit the tables
+        <Help text={HELP.tables} label="the table editor" />
+      </h3>
       <div className="session-actions" style={{ marginBottom: 8 }}>
         <label htmlFor={`${ids}-table`} className="visually-hidden">
           Table
@@ -343,6 +348,7 @@ export function TableEditor({
           style={{ maxWidth: 200 }}
           value={table}
           onChange={(e) => setTable(e.target.value as TableName)}
+          title="Which table the grid shows"
         >
           {(Object.keys(TABLE_LABELS) as TableName[]).map((name) => (
             <option key={name} value={name}>
@@ -350,6 +356,14 @@ export function TableEditor({
             </option>
           ))}
         </select>
+        <a
+          className="btn small ghost"
+          href={api.tableCsvUrl(countryId, table)}
+          download
+          title="This table as a CSV file, in the template's columns, importable back on its own"
+        >
+          Download .csv
+        </a>
         <label htmlFor={`${ids}-q`} className="visually-hidden">
           Filter rows
         </label>

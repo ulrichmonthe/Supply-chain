@@ -3,6 +3,8 @@ import type React from 'react'
 import type { EdgeRow, NodeRow, Scenario, ServiceSummary } from '../types'
 import { ScenarioItems } from './ScenarioItems'
 import { FREQUENCIES, frequencyLabel, money, pct } from '../format'
+import { Help } from './Help'
+import { HELP } from '../help'
 
 type Props = {
   /** The Sessions shelf, rendered above the scenarios. */
@@ -156,7 +158,10 @@ export function ScenarioPanel(props: Props) {
     <div className="sidebar">
       {props.shelf}
       <div className="section" data-tour="scenarios">
-        <h3>Scenarios</h3>
+        <h3>
+          Scenarios
+          <Help text={HELP.scenarios} label="scenarios" />
+        </h3>
 
         {props.scenarios.length > 1 && (
           <div className="scenario-filter">
@@ -397,8 +402,12 @@ function LeverEditor({
   return (
     <>
       <div className="section" data-tour="levers">
-        <h3>Objective</h3>
+        <h3>
+          Objective
+          <Help text={HELP.objective} label="the objective" />
+        </h3>
         <Slider
+          help={HELP.weightCost}
           label="Cost"
           value={weights.cost ?? 1}
           min={0}
@@ -408,6 +417,7 @@ function LeverEditor({
           onChange={(v) => setWeight({ cost: v })}
         />
         <Slider
+          help={HELP.weightService}
           label="Service"
           value={weights.service ?? 1}
           min={0}
@@ -417,6 +427,7 @@ function LeverEditor({
           onChange={(v) => setWeight({ service: v })}
         />
         <Slider
+          help={HELP.weightEquity}
           label="Equity"
           value={weights.equity ?? 0}
           min={0}
@@ -429,14 +440,19 @@ function LeverEditor({
       </div>
 
       <div className="section">
-        <h3>Constraints</h3>
+        <h3>
+          Constraints
+          <Help text={HELP.constraints} label="constraints" />
+        </h3>
         <OptionalSlider
+          help={HELP.minFill}
           label="Minimum fill rate"
           value={constraints.min_fill_rate ?? null}
           onChange={(v) => setConstraint({ min_fill_rate: v })}
           note="Network-wide floor on the share of demand delivered."
         />
         <OptionalSlider
+          help={HELP.equityFloor}
           label="Equity floor"
           value={constraints.equity_floor ?? null}
           onChange={(v) => setConstraint({ equity_floor: v })}
@@ -449,16 +465,21 @@ function LeverEditor({
             onChange={(event) => setConstraint({ respect_capacity: event.target.checked })}
           />
           Respect vessel holds and hub throughput
+          <Help inline text={HELP.respectCapacity} label="respecting capacity" />
         </label>
       </div>
 
       <div className="section">
-        <h3>Network levers</h3>
+        <h3>
+          Network levers
+          <Help text={HELP.levers} label="network levers" />
+        </h3>
 
         <div className="lever">
           <div className="lever-head">
             <span className="lever-label" id={`${panelId}-modes`}>
               Modes allowed
+              <Help inline text={HELP.modes} label="modes allowed" />
             </span>
           </div>
           <div className="chips" role="group" aria-labelledby={`${panelId}-modes`}>
@@ -494,6 +515,7 @@ function LeverEditor({
         <div className="lever">
           <div className="lever-head">
             <label htmlFor={`${panelId}-integration`}>Programme integration</label>
+            <Help inline text={HELP.integration} label="programme integration" />
           </div>
           <select
             id={`${panelId}-integration`}
@@ -565,7 +587,8 @@ function LeverEditor({
 
       <div className="section">
         <h3>
-          Timetables{' '}
+          Timetables
+          <Help inline text={HELP.services} label="timetables" />{' '}
           <button
             className="btn small ghost"
             style={{ float: 'right', marginTop: -3 }}
@@ -628,9 +651,11 @@ function Slider({
   step,
   format,
   note,
+  help,
   onChange,
 }: {
   label: string
+  help?: string
   value: number
   min: number
   max: number
@@ -643,7 +668,10 @@ function Slider({
   return (
     <div className="lever">
       <div className="lever-head">
-        <label htmlFor={id}>{label}</label>
+        <span>
+          <label htmlFor={id}>{label}</label>
+          {help && <Help inline text={help} label={label} />}
+        </span>
         {/* The number is typeable as well as slideable: "0.6" is a value somebody
             defends in a meeting, and dragging until it reads 0.6 is not how they type it. */}
         <TypedValue
@@ -759,11 +787,13 @@ function OptionalSlider({
   label,
   value,
   note,
+  help,
   onChange,
 }: {
   label: string
   value: number | null
   note?: string
+  help?: string
   onChange: (value: number | null) => void
 }) {
   return (
@@ -776,6 +806,8 @@ function OptionalSlider({
             onChange={(event) => onChange(event.target.checked ? 0.9 : null)}
           />
           {label}
+
+          {help && <Help inline text={help} label={label} />}
         </label>
         {value === null || value === undefined ? (
           <b>off</b>

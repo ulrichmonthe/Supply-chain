@@ -3,7 +3,7 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic — by road, boat and plane, month by month — and who gets left out when money is saved."
   },
-  "updated": "2026-09-30T00:00:00Z",
+  "updated": "2026-10-06T00:00:00Z",
   "deploys": [],
   "features": [
     {
@@ -945,6 +945,13 @@
           "state": "idea",
           "env": null,
           "note": "Needs a small hosted function with an API key. Described on the site as coming, not faked."
+        },
+        {
+          "id": "f12s8",
+          "title": "Open a report from the demo",
+          "state": "done",
+          "env": null,
+          "note": "Reports are captured as files and the Report button's link points at them, however the link is opened."
         }
       ]
     },
@@ -1051,6 +1058,49 @@
           "state": "idea",
           "env": null,
           "note": "Where the country pack allows it. The connectors exist; the schedule does not."
+        }
+      ]
+    },
+    {
+      "id": "f14",
+      "name": "Polish from first use",
+      "oneLiner": "What people hit first: no explanation of what a feature is for, a demo that refused to let them add anything, and no CSV way out.",
+      "needsYou": null,
+      "stories": [
+        {
+          "id": "f14s1",
+          "title": "Ask any feature what it is for",
+          "state": "done",
+          "env": null,
+          "note": "A ? beside every heading, slider and the tabs; tooltips on tabs and KPI tiles. Hover, focus, pin with Enter, dismiss with Escape; read aloud by screen readers."
+        },
+        {
+          "id": "f14s2",
+          "title": "Take the model out as CSV",
+          "state": "done",
+          "env": null,
+          "note": "One zip with a CSV per table, or one table at a time, built by the same row builder as the workbook. Goes back in through the mapper unchanged."
+        },
+        {
+          "id": "f14s3",
+          "title": "Open a country, add a facility and import a facility CSV in the demo",
+          "state": "done",
+          "env": null,
+          "note": "A sandbox in the browser's session storage: the three things every visitor tries first work without a server. Other changes still say they need one."
+        },
+        {
+          "id": "f14s4",
+          "title": "See a facility counted the moment it is added",
+          "state": "done",
+          "env": null,
+          "note": "The header counted only facilities with demand, so a new one read as nothing. It counts facilities now."
+        },
+        {
+          "id": "f14s5",
+          "title": "See the map frame a new country",
+          "state": "done",
+          "env": null,
+          "note": "The map kept the previous country's frame when switching. It re-frames per country, with a sane zoom for a single facility."
         }
       ]
     }

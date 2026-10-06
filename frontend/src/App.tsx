@@ -22,6 +22,8 @@ import { StudiesPanel } from './components/StudiesPanel'
 import { DecisionView } from './components/DecisionView'
 import { Tour } from './components/Tour'
 import { TOUR_STORAGE_KEY, buildTour } from './tour'
+import { Help } from './components/Help'
+import { HELP, TAB_HELP } from './help'
 import type {
   AuditRow,
   ProductRow,
@@ -54,6 +56,13 @@ const TABS = [
 type Tab = (typeof TABS)[number]
 
 const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+const KPI_HELP: Record<string, string> = {
+  total_cost: HELP.kpiCost,
+  fill_rate: HELP.kpiFill,
+  worst_stratum_fill_rate: HELP.kpiWorst,
+  mean_stockout_risk: HELP.kpiRisk,
+}
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -562,6 +571,7 @@ export default function App() {
             <select
               className="country-picker"
               aria-label="Country workspace"
+              title={HELP.countryPicker}
               value={countryId ?? ''}
               onChange={(event) => setCountryId(Number(event.target.value))}
             >
@@ -578,19 +588,19 @@ export default function App() {
 
         {overview && (
           <div className="topbar-stats">
-            <div className="stat">
+            <div className="stat" title={HELP.statFacilities}>
               <b className="num">{overview.counts.facilities}</b>
               <span>facilities</span>
             </div>
-            <div className="stat">
+            <div className="stat" title={HELP.statStores}>
               <b className="num">{overview.counts.hubs_operational}</b>
               <span>stores open</span>
             </div>
-            <div className="stat">
+            <div className="stat" title={HELP.statTimetables}>
               <b className="num">{overview.counts.scheduled_services}</b>
               <span>timetables</span>
             </div>
-            <div className="stat">
+            <div className="stat" title={HELP.statPeople}>
               <b className="num">{exact(overview.totals.population)}</b>
               <span>people</span>
             </div>
@@ -604,6 +614,7 @@ export default function App() {
               className={`btn small${view === 'expert' ? ' on' : ' ghost'}`}
               aria-pressed={view === 'expert'}
               onClick={() => setView('expert')}
+              title={HELP.view}
             >
               Expert
             </button>
@@ -634,10 +645,10 @@ export default function App() {
               'Sign your work'
             )}
           </button>
-          <button className="btn small ghost" onClick={() => setTourOpen(true)}>
+          <button className="btn small ghost" onClick={() => setTourOpen(true)} title={HELP.guide}>
             Guide
           </button>
-          <button className="btn small ghost" onClick={() => setNewCountry(true)}>
+          <button className="btn small ghost" onClick={() => setNewCountry(true)} title={HELP.newCountry}>
             New country
           </button>
           {result?.status === 'ok' && (
@@ -657,7 +668,12 @@ export default function App() {
             </a>
           )}
           {selected && !selected.is_baseline && selected.latest_result_id && (
-            <a className="btn small" href={api.resultsExportUrl(selected.id)} download>
+            <a
+              className="btn small"
+              href={api.resultsExportUrl(selected.id)}
+              download
+              title={HELP.spreadsheet}
+            >
               Spreadsheet
             </a>
           )}
@@ -764,6 +780,7 @@ export default function App() {
 
         <div className="centre">
           <MapView
+            key={countryId ?? 'none'}
             countryId={countryId ?? 0}
             nodes={nodes}
             edges={edges}
@@ -799,7 +816,12 @@ export default function App() {
                 'CONDITIONS'
               )}
             </div>
-            <div className="months" role="group" aria-label="Conditions to hold for a year">
+            <div
+              className="months"
+              role="group"
+              aria-label="Conditions to hold for a year"
+              title={HELP.conditions}
+            >
               <button
                 type="button"
                 className={`month-cell annual${month === null ? ' on' : ''}`}
@@ -865,7 +887,7 @@ export default function App() {
             {headlineKpis.length > 0 && (
               <div className="kpi-grid">
                 {headlineKpis.map((kpi) => (
-                  <div className="kpi" key={kpi.key}>
+                  <div className="kpi" key={kpi.key} title={KPI_HELP[kpi.key]}>
                     <span className="kpi-label">{kpi.label}</span>
                     <b>{formatKpi(kpi.value, kpi.unit, kpi.key === 'total_cost' ? currency : '')}</b>
                     {kpi.comparison &&
@@ -890,22 +912,26 @@ export default function App() {
             {/* A tablist is one tab stop, not eight: Tab reaches the selected tab,
               arrows move between them. That is the APG pattern and it is what a
               screen reader user expects when the role says tablist. */}
-            <div className="tabs" role="tablist" aria-label="Result views" onKeyDown={onTabKeyDown}>
-              {TABS.map((name) => (
-                <button
-                  type="button"
-                  key={name}
-                  id={`tab-${slug(name)}`}
-                  role="tab"
-                  aria-selected={tab === name}
-                  aria-controls="tab-body"
-                  tabIndex={tab === name ? 0 : -1}
-                  className={`tab${tab === name ? ' on' : ''}`}
-                  onClick={() => setTab(name)}
-                >
-                  {name}
-                </button>
-              ))}
+            <div className="tabs-wrap">
+              <div className="tabs" role="tablist" aria-label="Result views" onKeyDown={onTabKeyDown}>
+                {TABS.map((name) => (
+                  <button
+                    type="button"
+                    key={name}
+                    id={`tab-${slug(name)}`}
+                    role="tab"
+                    aria-selected={tab === name}
+                    aria-controls="tab-body"
+                    tabIndex={tab === name ? 0 : -1}
+                    className={`tab${tab === name ? ' on' : ''}`}
+                    onClick={() => setTab(name)}
+                    title={TAB_HELP[name]}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <Help text={TAB_HELP[tab]} label={`the ${tab} tab`} />
             </div>
 
             <div

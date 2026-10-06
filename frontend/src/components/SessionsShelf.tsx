@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
+import { Help } from './Help'
+import { HELP } from '../help'
 import type { SessionDiff, SessionShelf, WorkSession } from '../types'
 
 /**
@@ -133,7 +135,10 @@ export function SessionsShelf({
 
   return (
     <div className="section sessions" data-tour="sessions">
-      <h3>Sessions</h3>
+      <h3>
+        Sessions
+        <Help text={HELP.sessions} label="sessions" />
+      </h3>
 
       <div className="session-current" role="status">
         {current ? (

@@ -1,0 +1,144 @@
+﻿code,name,level,type,lat,lon,geocode_source,geocode_confidence,admin1,admin2,terrain_class,catchment_population,operating_status,dry_m3,cold_2_8_m3,cold_minus20_m3,cold_minus70_m3,hub_capable,hub_fixed_cost,hub_open_capex,hub_throughput_m3,dhis2_uid,msupply_id,openlmis_code,mfl_code
+NMS-BADILI,Badili National Medical Store,0,national_store,-9.483,147.173,town_centroid,0.85,National Capital District,,mainland_road,0,operational,9800,220,22,8.8,FALSE,2450000,0,60000,,,,NMS-BADILI
+AMS-ALO,Alotau Area Medical Store (proposed),1,area_store,-10.315,150.455,town_centroid,0.85,Milne Bay,,mainland_road,0,planned,900,38,3.8,1.52,TRUE,640000,1250000,3800,,,,AMS-ALO
+AMS-BUK,Buka Area Medical Store (proposed),1,area_store,-5.425,154.67,town_centroid,0.85,Bougainville,,mainland_road,0,planned,850,36,3.6,1.44,TRUE,610000,1400000,3400,,,,AMS-BUK
+AMS-HGN,Mount Hagen Area Medical Store,1,area_store,-5.85,144.24,town_centroid,0.85,Western Highlands,,mainland_road,0,operational,2100,78,7.8,3.12,TRUE,1060000,0,9400,,,,AMS-HGN
+AMS-KOK,Kokopo Area Medical Store,1,area_store,-4.345,152.26,town_centroid,0.85,East New Britain,,mainland_road,0,operational,1500,55,5.5,2.2,TRUE,880000,0,6300,,,,AMS-KOK
+AMS-LAE,Lae Area Medical Store,1,area_store,-6.725,146.99,town_centroid,0.85,Morobe,,mainland_road,0,operational,2900,105,10.5,4.2,TRUE,1240000,0,13500,,,,AMS-LAE
+AMS-MAD,Madang Area Medical Store,1,area_store,-5.22,145.79,town_centroid,0.85,Madang,,mainland_road,0,operational,1700,62,6.2,2.48,TRUE,940000,0,7200,,,,AMS-MAD
+AMS-POM,Port Moresby Area Medical Store,1,area_store,-9.452,147.21,town_centroid,0.85,National Capital District,,mainland_road,0,operational,2600,90,9,3.6,TRUE,1180000,0,11000,,,,AMS-POM
+AMS-WWK,Wewak Area Medical Store (proposed),1,area_store,-3.567,143.66,town_centroid,0.85,East Sepik,,mainland_road,0,planned,1200,48,4.8,1.92,TRUE,790000,1850000,5200,,,,AMS-WWK
+PNG-BOU-001,Buka General Hospital,3,provincial_hospital,-5.4225,154.6725,town_centroid,0.7,Bougainville,North Bougainville,island,67000,operational,27.75,2.778,0,0.308,FALSE,0,0,0,,,,PNG-BOU-001
+PNG-BOU-002,Arawa District Hospital,3,district_hospital,-6.2167,155.5667,town_centroid,0.7,Bougainville,Central Bougainville,island,52000,operational,15.08,1.509,0,0.168,FALSE,0,0,0,,,,PNG-BOU-002
+PNG-BOU-003,Buin District Hospital,3,district_hospital,-6.8333,155.7333,town_centroid,0.7,Bougainville,South Bougainville,island,44000,operational,12.76,1.277,0,0.142,FALSE,0,0,0,,,,PNG-BOU-003
+PNG-BOU-004,Wakunai Health Centre,3,health_centre,-5.8667,155.2,town_centroid,0.7,Bougainville,Central Bougainville,island,18000,operational,3.73,0.373,0,0.041,FALSE,0,0,0,,,,PNG-BOU-004
+PNG-BOU-005,Nissan Island Health Centre,3,health_centre,-4.5,154.2333,town_centroid,0.7,Bougainville,North Bougainville,island,7000,operational,1.45,0.145,0,0.016,FALSE,0,0,0,,,,PNG-BOU-005
+PNG-BOU-006,Tinputz Health Centre,3,health_centre,-5.55,154.7167,town_centroid,0.7,Bougainville,North Bougainville,island,16000,operational,3.31,0.332,0,0.037,FALSE,0,0,0,,,,PNG-BOU-006
+PNG-CEN-001,Kwikila Health Centre,3,district_hospital,-9.8322,147.7331,town_centroid,0.7,Central,Rigo,coastal_road,47000,operational,22.71,2.274,0,0.252,FALSE,0,0,0,,,,PNG-CEN-001
+PNG-CEN-002,Bereina Health Centre,3,district_hospital,-8.65,146.5,town_centroid,0.7,Central,Kairuku,coastal_road,42000,operational,20.3,2.032,0,0.226,FALSE,0,0,0,,,,PNG-CEN-002
+PNG-CEN-003,Tapini Health Centre,3,health_centre,-8.35,146.9833,town_centroid,0.7,Central,Goilala,highlands_road,19000,operational,7.38,0.739,0,0.082,FALSE,0,0,0,,,,PNG-CEN-003
+PNG-CEN-004,Kupiano Health Centre,3,district_hospital,-10.0667,148.1833,town_centroid,0.7,Central,Abau,coastal_road,38000,operational,18.36,1.838,0,0.204,FALSE,0,0,0,,,,PNG-CEN-004
+PNG-CEN-005,Woitape Health Centre,3,health_centre,-8.55,147.25,town_centroid,0.7,Central,Goilala,remote_air_only,12000,operational,2.69,0.27,0,0.03,FALSE,0,0,0,,,,PNG-CEN-005
+PNG-CEN-006,Hisiu Health Centre,3,health_centre,-8.9,146.65,town_centroid,0.7,Central,Kairuku,coastal_road,16000,operational,5.52,0.553,0,0.061,FALSE,0,0,0,,,,PNG-CEN-006
+PNG-CHM-001,Kundiawa General Hospital,3,provincial_hospital,-6.0167,144.9667,town_centroid,0.7,Chimbu,Kundiawa-Gembogl,highlands_road,74000,operational,57.48,5.753,0,0.639,FALSE,0,0,0,,,,PNG-CHM-001
+PNG-CHM-002,Kerowagi Health Centre,3,district_hospital,-5.9833,144.8,town_centroid,0.7,Chimbu,Kerowagi,highlands_road,46000,operational,25.01,2.503,0,0.278,FALSE,0,0,0,,,,PNG-CHM-002
+PNG-CHM-003,Gumine Health Centre,3,health_centre,-6.25,144.8167,town_centroid,0.7,Chimbu,Gumine,highlands_road,33000,operational,12.82,1.283,0,0.142,FALSE,0,0,0,,,,PNG-CHM-003
+PNG-CHM-004,Karimui Health Centre,3,health_centre,-6.4833,144.8167,town_centroid,0.7,Chimbu,Karimui-Nomane,remote_air_only,21000,operational,4.71,0.472,0,0.052,FALSE,0,0,0,,,,PNG-CHM-004
+PNG-CHM-005,Chuave Health Centre,3,health_centre,-6.1333,145.1167,town_centroid,0.7,Chimbu,Chuave,highlands_road,29000,operational,11.26,1.127,0,0.125,FALSE,0,0,0,,,,PNG-CHM-005
+PNG-CHM-006,Gembogl Health Centre,3,health_centre,-5.85,145.0333,town_centroid,0.7,Chimbu,Kundiawa-Gembogl,highlands_road,25000,operational,9.71,0.972,0,0.108,FALSE,0,0,0,,,,PNG-CHM-006
+PNG-EHP-001,Goroka Provincial Hospital,3,provincial_hospital,-6.0833,145.3833,town_centroid,0.7,Eastern Highlands,Goroka,highlands_road,108000,operational,83.88,8.396,0,0.932,FALSE,0,0,0,,,,PNG-EHP-001
+PNG-EHP-002,Kainantu District Hospital,3,district_hospital,-6.2833,145.8667,town_centroid,0.7,Eastern Highlands,Kainantu,highlands_road,62000,operational,33.71,3.374,0,0.375,FALSE,0,0,0,,,,PNG-EHP-002
+PNG-EHP-003,Henganofi Health Centre,3,health_centre,-6.2333,145.6167,town_centroid,0.7,Eastern Highlands,Henganofi,highlands_road,34000,operational,13.2,1.322,0,0.147,FALSE,0,0,0,,,,PNG-EHP-003
+PNG-EHP-004,Lufa Health Centre,3,health_centre,-6.3167,145.2,town_centroid,0.7,Eastern Highlands,Lufa,highlands_road,31000,operational,12.04,1.205,0,0.134,FALSE,0,0,0,,,,PNG-EHP-004
+PNG-EHP-005,Okapa Health Centre,3,health_centre,-6.5333,145.5167,town_centroid,0.7,Eastern Highlands,Okapa,highlands_road,28000,operational,10.87,1.088,0,0.121,FALSE,0,0,0,,,,PNG-EHP-005
+PNG-EHP-006,Wonenara Health Centre,3,health_centre,-6.7833,145.9,town_centroid,0.7,Eastern Highlands,Obura-Wonenara,remote_air_only,13000,operational,2.92,0.292,0,0.032,FALSE,0,0,0,,,,PNG-EHP-006
+PNG-EHP-007,Marawaka Health Centre,3,health_centre,-6.9667,145.8333,town_centroid,0.7,Eastern Highlands,Obura-Wonenara,remote_air_only,11000,operational,2.47,0.247,0,0.027,FALSE,0,0,0,,,,PNG-EHP-007
+PNG-ENB-001,Nonga Base Hospital,3,provincial_hospital,-4.1833,152.15,town_centroid,0.7,East New Britain,Rabaul,coastal_road,92000,operational,63.52,6.358,0,0.706,FALSE,0,0,0,,,,PNG-ENB-001
+PNG-ENB-002,Kokopo Health Centre,3,district_hospital,-4.35,152.2667,town_centroid,0.7,East New Britain,Kokopo,coastal_road,61000,operational,29.48,2.951,0,0.328,FALSE,0,0,0,,,,PNG-ENB-002
+PNG-ENB-003,Kerevat Health Centre,3,health_centre,-4.3333,152.0333,town_centroid,0.7,East New Britain,Gazelle,coastal_road,38000,operational,13.12,1.313,0,0.146,FALSE,0,0,0,,,,PNG-ENB-003
+PNG-ENB-004,Sikut Health Centre,3,health_centre,-4.4667,152.2833,town_centroid,0.7,East New Britain,Gazelle,coastal_road,21000,operational,7.25,0.726,0,0.081,FALSE,0,0,0,,,,PNG-ENB-004
+PNG-ENB-005,Palmalmal Health Centre,3,health_centre,-5.9,151.4,town_centroid,0.7,East New Britain,Pomio,coastal_road,23000,operational,7.94,0.795,0,0.088,FALSE,0,0,0,,,,PNG-ENB-005
+PNG-ENB-006,Pomio Health Centre,3,health_centre,-5.5333,151.5167,town_centroid,0.7,East New Britain,Pomio,coastal_road,18000,operational,6.21,0.622,0,0.069,FALSE,0,0,0,,,,PNG-ENB-006
+PNG-ENG-001,Wabag General Hospital,3,provincial_hospital,-5.49,143.72,town_centroid,0.7,Enga,Wabag,highlands_road,72000,operational,55.92,5.598,0,0.621,FALSE,0,0,0,,,,PNG-ENG-001
+PNG-ENG-002,Wapenamanda Health Centre,3,district_hospital,-5.6333,143.8833,town_centroid,0.7,Enga,Wapenamanda,highlands_road,48000,operational,26.1,2.612,0,0.29,FALSE,0,0,0,,,,PNG-ENG-002
+PNG-ENG-003,Laiagam Health Centre,3,health_centre,-5.4167,143.5,town_centroid,0.7,Enga,Lagaip-Porgera,highlands_road,38000,operational,14.76,1.477,0,0.164,FALSE,0,0,0,,,,PNG-ENG-003
+PNG-ENG-004,Paiam Hospital,3,district_hospital,-5.4667,143.1333,town_centroid,0.7,Enga,Lagaip-Porgera,highlands_road,41000,operational,22.29,2.231,0,0.248,FALSE,0,0,0,,,,PNG-ENG-004
+PNG-ENG-005,Kompiam District Hospital,3,district_hospital,-5.3667,143.9,town_centroid,0.7,Enga,Kompiam-Ambum,highlands_road,29000,operational,15.77,1.578,0,0.175,FALSE,0,0,0,,,,PNG-ENG-005
+PNG-ENG-006,Kandep Health Centre,3,health_centre,-5.8333,143.5167,town_centroid,0.7,Enga,Kandep,highlands_road,32000,operational,12.43,1.244,0,0.138,FALSE,0,0,0,,,,PNG-ENG-006
+PNG-ESP-001,Boram General Hospital,3,provincial_hospital,-3.567,143.67,town_centroid,0.7,East Sepik,Wewak,coastal_road,88000,operational,60.76,6.081,0,0.675,FALSE,0,0,0,,,,PNG-ESP-001
+PNG-ESP-002,Maprik District Hospital,3,district_hospital,-3.6333,143.05,town_centroid,0.7,East Sepik,Maprik,mainland_road,52000,operational,37.7,3.773,0,0.419,FALSE,0,0,0,,,,PNG-ESP-002
+PNG-ESP-003,Angoram Health Centre,3,district_hospital,-4.0667,144.0667,town_centroid,0.7,East Sepik,Angoram,riverine,44000,operational,15.95,1.596,0,0.177,FALSE,0,0,0,,,,PNG-ESP-003
+PNG-ESP-004,Ambunti Health Centre,3,health_centre,-4.2333,142.85,town_centroid,0.7,East Sepik,Ambunti-Drekikier,riverine,24000,operational,6.21,0.622,0,0.069,FALSE,0,0,0,,,,PNG-ESP-004
+PNG-ESP-005,Yangoru Health Centre,3,health_centre,-3.7333,143.3167,town_centroid,0.7,East Sepik,Yangoru-Saussia,mainland_road,33000,operational,17.09,1.71,0,0.19,FALSE,0,0,0,,,,PNG-ESP-005
+PNG-ESP-006,Kunjingini Health Centre,3,health_centre,-3.9,143.1,town_centroid,0.7,East Sepik,Wosera-Gawi,mainland_road,27000,operational,13.98,1.399,0,0.155,FALSE,0,0,0,,,,PNG-ESP-006
+PNG-ESP-007,Timbunke Health Centre,3,health_centre,-4.1833,143.5333,town_centroid,0.7,East Sepik,Angoram,riverine,15000,operational,3.88,0.389,0,0.043,FALSE,0,0,0,,,,PNG-ESP-007
+PNG-GUL-001,Kerema General Hospital,3,provincial_hospital,-7.9633,145.7783,town_centroid,0.7,Gulf,Kerema,coastal_road,58000,operational,40.04,4.008,0,0.445,FALSE,0,0,0,,,,PNG-GUL-001
+PNG-GUL-002,Ihu Health Centre,3,health_centre,-7.8833,145.4,town_centroid,0.7,Gulf,Kikori,riverine,21000,operational,5.44,0.544,0,0.06,FALSE,0,0,0,,,,PNG-GUL-002
+PNG-GUL-003,Kikori Health Centre,3,district_hospital,-7.42,144.25,town_centroid,0.7,Gulf,Kikori,riverine,32000,operational,11.6,1.161,0,0.129,FALSE,0,0,0,,,,PNG-GUL-003
+PNG-GUL-004,Baimuru Health Centre,3,health_centre,-7.5,144.8167,town_centroid,0.7,Gulf,Kikori,riverine,18000,operational,4.66,0.466,0,0.052,FALSE,0,0,0,,,,PNG-GUL-004
+PNG-GUL-005,Malalaua Health Centre,3,health_centre,-8.0833,146.1667,town_centroid,0.7,Gulf,Kerema,coastal_road,24000,operational,8.28,0.829,0,0.092,FALSE,0,0,0,,,,PNG-GUL-005
+PNG-GUL-006,Kaintiba Health Centre,3,health_centre,-7.4667,146.0333,town_centroid,0.7,Gulf,Kerema,remote_air_only,11000,operational,2.47,0.247,0,0.027,FALSE,0,0,0,,,,PNG-GUL-006
+PNG-HEL-001,Tari Hospital,3,provincial_hospital,-5.85,142.95,town_centroid,0.7,Hela,Tari-Pori,highlands_road,84000,operational,65.24,6.531,0,0.725,FALSE,0,0,0,,,,PNG-HEL-001
+PNG-HEL-002,Koroba Health Centre,3,district_hospital,-5.6833,142.7333,town_centroid,0.7,Hela,Koroba-Lake Kopiago,highlands_road,43000,operational,23.38,2.34,0,0.26,FALSE,0,0,0,,,,PNG-HEL-002
+PNG-HEL-003,Komo Health Centre,3,health_centre,-6.0333,142.85,town_centroid,0.7,Hela,Komo-Magarima,highlands_road,31000,operational,12.04,1.205,0,0.134,FALSE,0,0,0,,,,PNG-HEL-003
+PNG-HEL-004,Margarima Health Centre,3,health_centre,-5.9833,143.2,town_centroid,0.7,Hela,Komo-Magarima,highlands_road,27000,operational,10.49,1.05,0,0.117,FALSE,0,0,0,,,,PNG-HEL-004
+PNG-HEL-005,Lake Kopiago Health Centre,3,health_centre,-5.3833,142.4833,town_centroid,0.7,Hela,Koroba-Lake Kopiago,remote_air_only,16000,operational,3.59,0.359,0,0.04,FALSE,0,0,0,,,,PNG-HEL-005
+PNG-JIW-001,Minj District Hospital,3,district_hospital,-5.8833,144.6667,town_centroid,0.7,Jiwaka,Anglimp-South Waghi,highlands_road,58000,operational,31.53,3.156,0,0.35,FALSE,0,0,0,,,,PNG-JIW-001
+PNG-JIW-002,Banz Health Centre,3,health_centre,-5.8,144.6167,town_centroid,0.7,Jiwaka,Anglimp-South Waghi,highlands_road,41000,operational,15.92,1.594,0,0.177,FALSE,0,0,0,,,,PNG-JIW-002
+PNG-JIW-003,Kudjip Nazarene Hospital,3,district_hospital,-5.8667,144.5833,town_centroid,0.7,Jiwaka,Jimi,highlands_road,47000,operational,25.55,2.558,0,0.284,FALSE,0,0,0,,,,PNG-JIW-003
+PNG-JIW-004,Nondugl Health Centre,3,health_centre,-5.8667,144.75,town_centroid,0.7,Jiwaka,Anglimp-South Waghi,highlands_road,24000,operational,9.32,0.933,0,0.104,FALSE,0,0,0,,,,PNG-JIW-004
+PNG-JIW-005,Tabibuga Health Centre,3,health_centre,-5.5667,144.6333,town_centroid,0.7,Jiwaka,Jimi,remote_air_only,19000,operational,4.26,0.427,0,0.047,FALSE,0,0,0,,,,PNG-JIW-005
+PNG-MAD-001,Modilon General Hospital,3,provincial_hospital,-5.2246,145.7981,town_centroid,0.7,Madang,Madang,mainland_road,96000,operational,99.42,9.951,0,1.105,FALSE,0,0,0,,,,PNG-MAD-001
+PNG-MAD-002,Bogia Health Centre,3,district_hospital,-4.2667,144.9667,town_centroid,0.7,Madang,Bogia,coastal_road,41000,operational,19.81,1.983,0,0.22,FALSE,0,0,0,,,,PNG-MAD-002
+PNG-MAD-003,Saidor Health Centre,3,health_centre,-5.6167,146.4667,town_centroid,0.7,Madang,Rai Coast,coastal_road,26000,operational,8.98,0.898,0,0.1,FALSE,0,0,0,,,,PNG-MAD-003
+PNG-MAD-004,Kinim Health Centre,3,health_centre,-4.65,145.9667,town_centroid,0.7,Madang,Sumkar,island,22000,operational,4.56,0.456,0,0.051,FALSE,0,0,0,,,,PNG-MAD-004
+PNG-MAD-005,Usino Health Centre,3,health_centre,-5.9,145.75,town_centroid,0.7,Madang,Usino-Bundi,highlands_road,28000,operational,10.87,1.088,0,0.121,FALSE,0,0,0,,,,PNG-MAD-005
+PNG-MAD-006,Josephstaal Health Centre,3,health_centre,-4.75,145.0333,town_centroid,0.7,Madang,Middle Ramu,remote_air_only,12000,operational,2.69,0.27,0,0.03,FALSE,0,0,0,,,,PNG-MAD-006
+PNG-MAD-007,Simbai Health Centre,3,health_centre,-5.2833,144.5333,town_centroid,0.7,Madang,Middle Ramu,remote_air_only,14000,operational,3.14,0.314,0,0.035,FALSE,0,0,0,,,,PNG-MAD-007
+PNG-MAN-001,Lorengau General Hospital,3,provincial_hospital,-2.0226,147.2712,town_centroid,0.7,Manus,Manus,island,34000,operational,14.08,1.41,0,0.156,FALSE,0,0,0,,,,PNG-MAN-001
+PNG-MAN-002,Lombrum Health Centre,3,health_centre,-2.0333,147.3667,town_centroid,0.7,Manus,Manus,island,9000,operational,1.86,0.187,0,0.021,FALSE,0,0,0,,,,PNG-MAN-002
+PNG-MAN-003,Bipi Island Health Centre,3,health_centre,-1.7167,146.3,town_centroid,0.7,Manus,Manus,island,6500,operational,1.35,0.135,0,0.015,FALSE,0,0,0,,,,PNG-MAN-003
+PNG-MAN-004,Rambutyo Health Centre,3,health_centre,-2.3167,147.8333,town_centroid,0.7,Manus,Manus,island,5500,operational,1.14,0.114,0,0.013,FALSE,0,0,0,,,,PNG-MAN-004
+PNG-MAN-005,Baluan Health Centre,3,health_centre,-2.5667,147.2833,town_centroid,0.7,Manus,Manus,island,5000,operational,1.04,0.104,0,0.012,FALSE,0,0,0,,,,PNG-MAN-005
+PNG-MBP-001,Alotau Provincial Hospital,3,provincial_hospital,-10.3167,150.45,town_centroid,0.7,Milne Bay,Alotau,coastal_road,62000,operational,42.81,4.285,0,0.476,FALSE,0,0,0,,,,PNG-MBP-001
+PNG-MBP-002,Losuia Health Centre,3,district_hospital,-8.505,151.08,town_centroid,0.7,Milne Bay,Kiriwina-Goodenough,island,29000,operational,8.41,0.842,0,0.093,FALSE,0,0,0,,,,PNG-MBP-002
+PNG-MBP-003,Bwagaoia Health Centre,3,district_hospital,-10.6833,152.75,town_centroid,0.7,Milne Bay,Samarai-Murua,island,21000,operational,6.09,0.61,0,0.068,FALSE,0,0,0,,,,PNG-MBP-003
+PNG-MBP-004,Esa'ala Health Centre,3,health_centre,-9.9,150.8,town_centroid,0.7,Milne Bay,Esa'ala,island,24000,operational,4.97,0.498,0,0.055,FALSE,0,0,0,,,,PNG-MBP-004
+PNG-MBP-005,Samarai Health Centre,3,health_centre,-10.6167,150.6667,town_centroid,0.7,Milne Bay,Samarai-Murua,island,14000,operational,2.9,0.29,0,0.032,FALSE,0,0,0,,,,PNG-MBP-005
+PNG-MBP-006,Rabaraba Health Centre,3,health_centre,-9.9833,149.8333,town_centroid,0.7,Milne Bay,Alotau,coastal_road,17000,operational,5.87,0.587,0,0.065,FALSE,0,0,0,,,,PNG-MBP-006
+PNG-MBP-007,Bolubolu Health Centre,3,health_centre,-9.35,150.25,town_centroid,0.7,Milne Bay,Kiriwina-Goodenough,island,15000,operational,3.11,0.311,0,0.035,FALSE,0,0,0,,,,PNG-MBP-007
+PNG-MOR-001,Angau Memorial Hospital,3,provincial_hospital,-6.73,146.995,town_centroid,0.7,Morobe,Lae,mainland_road,188000,operational,194.7,19.488,0,2.163,FALSE,0,0,0,,,,PNG-MOR-001
+PNG-MOR-002,Bulolo District Hospital,3,district_hospital,-7.2,146.65,town_centroid,0.7,Morobe,Bulolo,highlands_road,54000,operational,29.36,2.939,0,0.326,FALSE,0,0,0,,,,PNG-MOR-002
+PNG-MOR-003,Wau Health Centre,3,health_centre,-7.3333,146.7167,town_centroid,0.7,Morobe,Bulolo,highlands_road,31000,operational,12.04,1.205,0,0.134,FALSE,0,0,0,,,,PNG-MOR-003
+PNG-MOR-004,Braun Memorial Hospital,3,district_hospital,-6.6,147.85,town_centroid,0.7,Morobe,Finschhafen,coastal_road,42000,operational,20.3,2.032,0,0.226,FALSE,0,0,0,,,,PNG-MOR-004
+PNG-MOR-005,Menyamya Health Centre,3,health_centre,-7.2,146.0167,town_centroid,0.7,Morobe,Menyamya,highlands_road,36000,operational,13.98,1.399,0,0.155,FALSE,0,0,0,,,,PNG-MOR-005
+PNG-MOR-006,Kabwum Health Centre,3,health_centre,-6.1833,147.2,town_centroid,0.7,Morobe,Kabwum,remote_air_only,19000,operational,4.26,0.427,0,0.047,FALSE,0,0,0,,,,PNG-MOR-006
+PNG-MOR-007,Wasu Health Centre,3,health_centre,-5.9667,147.1833,town_centroid,0.7,Morobe,Kabwum,coastal_road,17000,operational,5.87,0.587,0,0.065,FALSE,0,0,0,,,,PNG-MOR-007
+PNG-MOR-008,Mumeng Health Centre,3,health_centre,-7.0333,146.5667,town_centroid,0.7,Morobe,Bulolo,highlands_road,23000,operational,8.93,0.894,0,0.099,FALSE,0,0,0,,,,PNG-MOR-008
+PNG-NCD-001,Port Moresby General Hospital,3,provincial_hospital,-9.4747,147.1925,town_centroid,0.7,National Capital District,Moresby North East,mainland_road,168000,operational,173.98,17.415,0,1.933,FALSE,0,0,0,,,,PNG-NCD-001
+PNG-NCD-002,Gerehu District Hospital,3,district_hospital,-9.3892,147.1444,town_centroid,0.7,National Capital District,Moresby North West,mainland_road,132000,operational,95.69,9.578,0,1.063,FALSE,0,0,0,,,,PNG-NCD-002
+PNG-NCD-003,Six Mile Clinic,3,health_centre,-9.45,147.22,town_centroid,0.7,National Capital District,Moresby North East,mainland_road,61000,operational,31.59,3.162,0,0.351,FALSE,0,0,0,,,,PNG-NCD-003
+PNG-NCD-004,Hohola Urban Clinic,3,health_centre,-9.445,147.175,town_centroid,0.7,National Capital District,Moresby North West,mainland_road,54000,operational,27.96,2.799,0,0.311,FALSE,0,0,0,,,,PNG-NCD-004
+PNG-NCD-005,Bomana Health Centre,3,health_centre,-9.38,147.23,town_centroid,0.7,National Capital District,Moresby North West,mainland_road,38000,operational,19.68,1.97,0,0.219,FALSE,0,0,0,,,,PNG-NCD-005
+PNG-NIP-001,Kavieng General Hospital,3,provincial_hospital,-2.5744,150.7967,town_centroid,0.7,New Ireland,Kavieng,island,58000,operational,24.03,2.405,0,0.267,FALSE,0,0,0,,,,PNG-NIP-001
+PNG-NIP-002,Namatanai District Hospital,3,district_hospital,-3.6667,152.4333,town_centroid,0.7,New Ireland,Namatanai,island,46000,operational,13.34,1.335,0,0.148,FALSE,0,0,0,,,,PNG-NIP-002
+PNG-NIP-003,Londolovit Health Centre,3,health_centre,-3.05,152.6333,town_centroid,0.7,New Ireland,Namatanai,island,19000,operational,3.94,0.394,0,0.044,FALSE,0,0,0,,,,PNG-NIP-003
+PNG-NIP-004,Konos Health Centre,3,health_centre,-3.1667,151.7167,town_centroid,0.7,New Ireland,Namatanai,island,17000,operational,3.52,0.352,0,0.039,FALSE,0,0,0,,,,PNG-NIP-004
+PNG-NIP-005,Tabar Health Centre,3,health_centre,-2.85,152.0333,town_centroid,0.7,New Ireland,Namatanai,island,8000,operational,1.66,0.166,0,0.018,FALSE,0,0,0,,,,PNG-NIP-005
+PNG-NIP-006,Lavongai Health Centre,3,health_centre,-2.5667,150.2,town_centroid,0.7,New Ireland,Kavieng,island,14000,operational,2.9,0.29,0,0.032,FALSE,0,0,0,,,,PNG-NIP-006
+PNG-ORO-001,Popondetta General Hospital,3,provincial_hospital,-8.7656,148.2333,town_centroid,0.7,Oro,Ijivitari,coastal_road,71000,operational,49.02,4.907,0,0.545,FALSE,0,0,0,,,,PNG-ORO-001
+PNG-ORO-002,Kokoda Health Centre,3,health_centre,-8.8783,147.735,town_centroid,0.7,Oro,Sohe,highlands_road,22000,operational,8.54,0.855,0,0.095,FALSE,0,0,0,,,,PNG-ORO-002
+PNG-ORO-003,Tufi Health Centre,3,health_centre,-9.0833,149.3167,town_centroid,0.7,Oro,Ijivitari,coastal_road,13000,operational,4.49,0.449,0,0.05,FALSE,0,0,0,,,,PNG-ORO-003
+PNG-ORO-004,Afore Health Centre,3,health_centre,-9.2,148.4,town_centroid,0.7,Oro,Ijivitari,remote_air_only,10000,operational,2.24,0.225,0,0.025,FALSE,0,0,0,,,,PNG-ORO-004
+PNG-ORO-005,Wanigela Health Centre,3,health_centre,-9.3333,149.1667,town_centroid,0.7,Oro,Ijivitari,coastal_road,11000,operational,3.8,0.38,0,0.042,FALSE,0,0,0,,,,PNG-ORO-005
+PNG-ORO-006,Saiho Health Centre,3,health_centre,-8.8,147.9,town_centroid,0.7,Oro,Sohe,highlands_road,14000,operational,5.44,0.544,0,0.06,FALSE,0,0,0,,,,PNG-ORO-006
+PNG-SAN-001,Vanimo General Hospital,3,provincial_hospital,-2.6833,141.3,town_centroid,0.7,Sandaun,Vanimo-Green,coastal_road,47000,operational,32.45,3.248,0,0.361,FALSE,0,0,0,,,,PNG-SAN-001
+PNG-SAN-002,Aitape District Hospital,3,district_hospital,-3.1372,142.3486,town_centroid,0.7,Sandaun,Aitape-Lumi,coastal_road,39000,operational,18.85,1.887,0,0.209,FALSE,0,0,0,,,,PNG-SAN-002
+PNG-SAN-003,Lumi Health Centre,3,health_centre,-3.4833,142.0333,town_centroid,0.7,Sandaun,Aitape-Lumi,highlands_road,24000,operational,9.32,0.933,0,0.104,FALSE,0,0,0,,,,PNG-SAN-003
+PNG-SAN-004,Nuku Health Centre,3,health_centre,-3.6667,142.4833,town_centroid,0.7,Sandaun,Nuku,highlands_road,22000,operational,8.54,0.855,0,0.095,FALSE,0,0,0,,,,PNG-SAN-004
+PNG-SAN-005,Telefomin Health Centre,3,health_centre,-5.1167,141.6333,town_centroid,0.7,Sandaun,Telefomin,remote_air_only,18000,operational,4.04,0.404,0,0.045,FALSE,0,0,0,,,,PNG-SAN-005
+PNG-SAN-006,Amanab Health Centre,3,health_centre,-3.5833,141.2167,town_centroid,0.7,Sandaun,Vanimo-Green,remote_air_only,13000,operational,2.92,0.292,0,0.032,FALSE,0,0,0,,,,PNG-SAN-006
+PNG-SAN-007,Oksapmin Health Centre,3,health_centre,-5.2333,142.2167,town_centroid,0.7,Sandaun,Telefomin,remote_air_only,11000,operational,2.47,0.247,0,0.027,FALSE,0,0,0,,,,PNG-SAN-007
+PNG-SHP-001,Mendi General Hospital,3,provincial_hospital,-6.1478,143.6572,town_centroid,0.7,Southern Highlands,Mendi-Munihu,highlands_road,79000,operational,61.36,6.142,0,0.682,FALSE,0,0,0,,,,PNG-SHP-001
+PNG-SHP-002,Ialibu District Hospital,3,district_hospital,-6.2833,143.9833,town_centroid,0.7,Southern Highlands,Imbonggu,highlands_road,44000,operational,23.92,2.395,0,0.266,FALSE,0,0,0,,,,PNG-SHP-002
+PNG-SHP-003,Kagua Health Centre,3,health_centre,-6.3833,143.85,town_centroid,0.7,Southern Highlands,Kagua-Erave,highlands_road,36000,operational,13.98,1.399,0,0.155,FALSE,0,0,0,,,,PNG-SHP-003
+PNG-SHP-004,Nipa Health Centre,3,district_hospital,-6.1667,143.4333,town_centroid,0.7,Southern Highlands,Nipa-Kutubu,highlands_road,39000,operational,21.2,2.122,0,0.236,FALSE,0,0,0,,,,PNG-SHP-004
+PNG-SHP-005,Erave Health Centre,3,health_centre,-6.6,143.9,town_centroid,0.7,Southern Highlands,Kagua-Erave,highlands_road,23000,operational,8.93,0.894,0,0.099,FALSE,0,0,0,,,,PNG-SHP-005
+PNG-SHP-006,Pangia Health Centre,3,health_centre,-6.3333,144.0833,town_centroid,0.7,Southern Highlands,Ialibu-Pangia,highlands_road,28000,operational,10.87,1.088,0,0.121,FALSE,0,0,0,,,,PNG-SHP-006
+PNG-WES-001,Daru General Hospital,3,provincial_hospital,-9.0763,143.2092,town_centroid,0.7,Western,South Fly,island,44000,operational,18.23,1.824,0,0.203,FALSE,0,0,0,,,,PNG-WES-001
+PNG-WES-002,Kiunga District Hospital,3,district_hospital,-6.1219,141.2917,town_centroid,0.7,Western,Middle Fly,riverine,39000,operational,14.14,1.415,0,0.157,FALSE,0,0,0,,,,PNG-WES-002
+PNG-WES-003,Tabubil Hospital,3,district_hospital,-5.2667,141.2258,town_centroid,0.7,Western,North Fly,riverine,28000,operational,10.15,1.016,0,0.113,FALSE,0,0,0,,,,PNG-WES-003
+PNG-WES-004,Balimo District Hospital,3,district_hospital,-8.05,142.9333,town_centroid,0.7,Western,Middle Fly,riverine,31000,operational,11.24,1.125,0,0.125,FALSE,0,0,0,,,,PNG-WES-004
+PNG-WES-005,Morehead Health Centre,3,health_centre,-8.7167,141.6333,town_centroid,0.7,Western,South Fly,remote_air_only,9000,operational,2.02,0.202,0,0.022,FALSE,0,0,0,,,,PNG-WES-005
+PNG-WES-006,Lake Murray Health Centre,3,health_centre,-7,141.5,town_centroid,0.7,Western,Middle Fly,remote_air_only,8500,operational,1.91,0.191,0,0.021,FALSE,0,0,0,,,,PNG-WES-006
+PNG-WES-007,Suki Health Centre,3,health_centre,-8.05,141.7833,town_centroid,0.7,Western,South Fly,riverine,7500,operational,1.94,0.194,0,0.022,FALSE,0,0,0,,,,PNG-WES-007
+PNG-WHP-001,Mount Hagen Provincial Hospital,3,provincial_hospital,-5.8575,144.23,town_centroid,0.7,Western Highlands,Mount Hagen,highlands_road,112000,operational,86.99,8.707,0,0.967,FALSE,0,0,0,,,,PNG-WHP-001
+PNG-WHP-002,Tambul Health Centre,3,health_centre,-5.8833,143.95,town_centroid,0.7,Western Highlands,Tambul-Nebilyer,highlands_road,34000,operational,13.2,1.322,0,0.147,FALSE,0,0,0,,,,PNG-WHP-002
+PNG-WHP-003,Baiyer River Health Centre,3,health_centre,-5.5333,144.15,town_centroid,0.7,Western Highlands,Mul-Baiyer,highlands_road,31000,operational,12.04,1.205,0,0.134,FALSE,0,0,0,,,,PNG-WHP-003
+PNG-WHP-004,Kotna Health Centre,3,health_centre,-5.7333,144.1,town_centroid,0.7,Western Highlands,Mul-Baiyer,highlands_road,22000,operational,8.54,0.855,0,0.095,FALSE,0,0,0,,,,PNG-WHP-004
+PNG-WHP-005,Dei Health Centre,3,health_centre,-5.7,144.25,town_centroid,0.7,Western Highlands,Dei,highlands_road,26000,operational,10.1,1.011,0,0.112,FALSE,0,0,0,,,,PNG-WHP-005
+PNG-WNB-001,Kimbe Provincial Hospital,3,provincial_hospital,-5.55,150.15,town_centroid,0.7,West New Britain,Talasea,coastal_road,78000,operational,53.85,5.39,0,0.598,FALSE,0,0,0,,,,PNG-WNB-001
+PNG-WNB-002,Talasea Health Centre,3,health_centre,-5.2833,150.0167,town_centroid,0.7,West New Britain,Talasea,coastal_road,32000,operational,11.05,1.106,0,0.123,FALSE,0,0,0,,,,PNG-WNB-002
+PNG-WNB-003,Gasmata Health Centre,3,health_centre,-6.2833,150.3333,town_centroid,0.7,West New Britain,Kandrian-Gloucester,coastal_road,16000,operational,5.52,0.553,0,0.061,FALSE,0,0,0,,,,PNG-WNB-003
+PNG-WNB-004,Bialla Health Centre,3,district_hospital,-5.3167,151,town_centroid,0.7,West New Britain,Talasea,coastal_road,41000,operational,19.81,1.983,0,0.22,FALSE,0,0,0,,,,PNG-WNB-004
+PNG-WNB-005,Kandrian Health Centre,3,health_centre,-6.2167,149.55,town_centroid,0.7,West New Britain,Kandrian-Gloucester,coastal_road,24000,operational,8.28,0.829,0,0.092,FALSE,0,0,0,,,,PNG-WNB-005

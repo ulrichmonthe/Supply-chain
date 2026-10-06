@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import { api } from '../api'
+import { Help } from './Help'
+import { HELP } from '../help'
 import type { DiffMap, Greenfield, Scenario, Study, StudyCompare, StudyPreset } from '../types'
 import { exact, formatKpi, money, pct, signedPct } from '../format'
 
@@ -193,7 +195,10 @@ export function StudiesPanel({
   return (
     <div className="studies">
       <div className="section" data-tour="studies">
-        <h3>Studies</h3>
+        <h3>
+          Studies
+          <Help text={HELP.studies} label="studies" />
+        </h3>
         <p className="lever-note" style={{ marginBottom: 8 }}>
           A study is a question and the scenarios that answer it, the baseline always first. Compare shows
           what differs between them and what that did; the diff map draws two answers as one network.
@@ -761,7 +766,10 @@ function GreenfieldSection({
 
   return (
     <div className="section" data-tour="greenfield">
-      <h3>Where would new stores go?</h3>
+      <h3>
+        Where would new stores go?
+        <Help text={HELP.greenfield} label="greenfield" />
+      </h3>
       <p className="lever-note" style={{ marginBottom: 8 }}>
         From the demand itself: the places that minimise how far every cubic metre travels, snapped to a real
         facility. Adopt the proposal and it becomes a scenario of candidate stores the solver may open or

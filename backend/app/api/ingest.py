@@ -19,7 +19,7 @@ from ..config import settings
 from ..db import get_session
 from .deps import author_claim, new_batch_id
 from ..engine import seasonality
-from ..io import excel_in, excel_out, mapper
+from ..io import csv_out, excel_in, excel_out, mapper
 from ..io.apply import CONFLICT_POLICIES, apply_payload
 from ..io.diff import compute_changes
 from ..io.validation import validate_dataset
@@ -61,6 +61,41 @@ def export_network(country_id: int, session: Session = Depends(get_session)):
         content=payload,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{country.code}-network.xlsx"'},
+    )
+
+
+def _loaded(session: Session, country_id: int):
+    nodes = list(session.scalars(select(Node).where(Node.country_id == country_id).order_by(Node.level, Node.code)))
+    edges = list(session.scalars(select(Edge).where(Edge.country_id == country_id).order_by(Edge.code)))
+    products = list(session.scalars(select(Product).where(Product.country_id == country_id)))
+    demand = list(session.scalars(select(Demand).where(Demand.country_id == country_id)))
+    return nodes, edges, products, demand
+
+
+@router.get("/countries/{country_id}/export/csv.zip")
+def export_csv_dump(country_id: int, session: Session = Depends(get_session)):
+    """The whole model as one CSV per table, zipped: the way out for every system that is
+    not a spreadsheet."""
+    country = _country_or_404(session, country_id)
+    payload = csv_out.dump(country, *_loaded(session, country_id))
+    return Response(
+        content=payload,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{country.code}-network-csv.zip"'},
+    )
+
+
+@router.get("/countries/{country_id}/export/{table}.csv")
+def export_table_csv(country_id: int, table: str, session: Session = Depends(get_session)):
+    """One table as CSV, in the template's columns, importable back on its own."""
+    country = _country_or_404(session, country_id)
+    if table not in csv_out.TABLES:
+        raise HTTPException(404, f"No table called {table}. Choose from {', '.join(csv_out.TABLES)}.")
+    payload = csv_out.one_table(table, *_loaded(session, country_id))
+    return Response(
+        content=payload,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{country.code}-{table}.csv"'},
     )
 
 

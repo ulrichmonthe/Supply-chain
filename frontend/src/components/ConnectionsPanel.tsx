@@ -1,4 +1,6 @@
 import { useEffect, useId, useState } from 'react'
+import { Help } from './Help'
+import { HELP } from '../help'
 import { api, connectorApi } from '../api'
 import type { Connection, ConnectorSpec, SyncPreview } from '../types'
 import { exact } from '../format'
@@ -11,13 +13,7 @@ import { exact } from '../format'
  * list, and the apply button stays disabled until somebody has looked at what would
  * change.
  */
-export function ConnectionsPanel({
-  countryId,
-  onApplied,
-}: {
-  countryId: number
-  onApplied: () => void
-}) {
+export function ConnectionsPanel({ countryId, onApplied }: { countryId: number; onApplied: () => void }) {
   const [systems, setSystems] = useState<ConnectorSpec[]>([])
   const [note, setNote] = useState('')
   const [connections, setConnections] = useState<Connection[]>([])
@@ -103,6 +99,7 @@ export function ConnectionsPanel({
       <div className="section">
         <h3>
           Connections
+          <Help inline text={HELP.connections} label="connections" />
           <button
             className="btn small ghost"
             style={{ float: 'right', marginTop: -3 }}
@@ -114,8 +111,8 @@ export function ConnectionsPanel({
 
         {connections.length === 0 && !adding && (
           <div className="lever-note">
-            None configured. Until one is, this country’s data comes in through the Excel
-            importer, which is a first-class path rather than a fallback.
+            None configured. Until one is, this country’s data comes in through the Excel importer, which is a
+            first-class path rather than a fallback.
           </div>
         )}
 
@@ -223,8 +220,8 @@ export function ConnectionsPanel({
           <div className="section">
             <h3>Last connection test</h3>
             <div className="lever-note">
-              Reported step by step. “Connection failed” cannot be acted on; “authenticated,
-              but this account cannot read organisation units” can.
+              Reported step by step. “Connection failed” cannot be acted on; “authenticated, but this account
+              cannot read organisation units” can.
             </div>
           </div>
           {selected.last_test_detail.checks.map((check) => (
@@ -257,16 +254,14 @@ export function ConnectionsPanel({
       {spec && !spec.verified_against_live_instance && (
         <div className="callout">
           <h4>Not yet confirmed against a live {spec.label} server</h4>
-          The endpoints follow the published API and are tested against recorded response
-          shapes, but nobody has run this against a ministry’s own instance. Point it at the
-          real server early — every setting on this connection is editable, so a version
-          difference is a form field rather than a release.{' '}
+          The endpoints follow the published API and are tested against recorded response shapes, but nobody
+          has run this against a ministry’s own instance. Point it at the real server early — every setting on
+          this connection is editable, so a version difference is a form field rather than a release.{' '}
           <a href={spec.docs_url} target="_blank" rel="noreferrer">
             API documentation
           </a>
         </div>
       )}
-
     </div>
   )
 }
@@ -425,8 +420,8 @@ function PreviewReport({
             <div className="callout">
               <h4>In the model but not in this pull</h4>
               <div className="tiny dim">
-                Not necessarily closed — a filter on the connection, or a facility this account
-                cannot see, looks the same from here. Nothing is deleted either way.
+                Not necessarily closed — a filter on the connection, or a facility this account cannot see,
+                looks the same from here. Nothing is deleted either way.
               </div>
               <div className="tiny" style={{ marginTop: 6 }}>
                 {preview.reconciliation.absent
@@ -508,8 +503,8 @@ function ConfigEditor({
 
       {!open && (
         <div className="lever-note">
-          Endpoints, field selectors and the product mapping. Every one is editable, so a
-          version difference is a form field rather than a release.
+          Endpoints, field selectors and the product mapping. Every one is editable, so a version difference
+          is a form field rather than a release.
         </div>
       )}
 
@@ -642,8 +637,8 @@ function NewConnectionForm({
         placeholder="DHIS2_TOKEN"
       />
       <div className="lever-note" style={{ marginTop: -6, marginBottom: 10 }}>
-        Preferred: the credential stays in the process environment and never reaches the
-        database or a backup of it. Leave blank only for a laptop during a workshop.
+        Preferred: the credential stays in the process environment and never reaches the database or a backup
+        of it. Leave blank only for a laptop during a workshop.
       </div>
       {!secretEnv && (
         <Field label="Credential (stored)" value={secret} onChange={setSecret} type="password" />

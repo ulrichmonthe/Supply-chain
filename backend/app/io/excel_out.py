@@ -118,18 +118,19 @@ def build_template() -> bytes:
     return stream.getvalue()
 
 
-def export_network(country, nodes, edges, products, demand) -> bytes:
-    """Everything currently loaded, in upload-ready form."""
-    workbook = Workbook()
-    workbook.remove(workbook.active)
+def network_rows(nodes, edges, products, demand) -> dict:
+    """Every loaded row in the template's columns: ``{sheet: (headers, rows)}``.
 
-    node_sheet = workbook.create_sheet("Nodes")
-    _write_header(node_sheet, [name for name, _ in NODE_COLUMNS])
-    for row_index, node in enumerate(nodes, start=2):
+    One builder for the workbook and the CSV dump, so the two exports are the same
+    table in two file formats and a column added to one cannot go missing from the
+    other.
+    """
+    node_rows = []
+    for node in nodes:
         capacity = node.capacity or {}
         cold = capacity.get("cold_by_band", {}) or {}
         external = node.external_ids or {}
-        values = [
+        node_rows.append([
             node.code, node.name, node.level, node.type, node.lat, node.lon,
             node.geocode_source, node.geocode_confidence, node.admin1, node.admin2,
             node.terrain_class, node.catchment_population, node.operating_status,
@@ -137,16 +138,11 @@ def export_network(country, nodes, edges, products, demand) -> bytes:
             cold.get("-70", 0.0), node.hub_capable, node.hub_fixed_cost, node.hub_open_capex,
             node.hub_throughput_m3, external.get("dhis2_uid"), external.get("msupply_id"),
             external.get("openlmis_code"), external.get("mfl_code"),
-        ]
-        for column_index, value in enumerate(values, start=1):
-            node_sheet.cell(row=row_index, column=column_index, value=value)
-    _autosize(node_sheet)
-
-    edge_sheet = workbook.create_sheet("Edges")
-    _write_header(edge_sheet, [name for name, _ in EDGE_COLUMNS])
-    for row_index, edge in enumerate(edges, start=2):
+        ])
+    edge_rows = []
+    for edge in edges:
         access = edge.monthly_access or [1.0] * 12
-        values = [
+        edge_rows.append([
             edge.code, edge.from_node.code, edge.to_node.code, edge.mode, edge.service_name,
             edge.service_frequency,
             ",".join(edge.service_days) if edge.service_days else None,
@@ -155,34 +151,36 @@ def export_network(country, nodes, edges, products, demand) -> bytes:
             edge.base_travel_time_hr, edge.distance_method, edge.distance_confidence,
             edge.distance_note, None, *access, edge.reliability, edge.lead_time_sd_days,
             edge.active,
-        ]
-        for column_index, value in enumerate(values, start=1):
-            edge_sheet.cell(row=row_index, column=column_index, value=value)
-    _autosize(edge_sheet)
-
-    product_sheet = workbook.create_sheet("Products")
-    _write_header(product_sheet, [name for name, _ in PRODUCT_COLUMNS])
-    for row_index, product in enumerate(products, start=2):
-        values = [
-            product.sku, product.name, product.temperature_band,
-            product.volume_per_unit_cm3, product.unit_cost, product.shelf_life_days,
-        ]
-        for column_index, value in enumerate(values, start=1):
-            product_sheet.cell(row=row_index, column=column_index, value=value)
-    _autosize(product_sheet)
-
+        ])
+    product_rows = [
+        [product.sku, product.name, product.temperature_band, product.volume_per_unit_cm3, product.unit_cost, product.shelf_life_days]
+        for product in products
+    ]
     node_codes = {n.id: n.code for n in nodes}
     product_codes = {p.id: p.sku for p in products}
-    demand_sheet = workbook.create_sheet("Demand")
-    _write_header(demand_sheet, [name for name, _ in DEMAND_COLUMNS])
-    for row_index, row in enumerate(demand, start=2):
-        values = [
-            node_codes.get(row.node_id), product_codes.get(row.product_id),
-            row.period, row.quantity, row.source, row.confidence,
-        ]
-        for column_index, value in enumerate(values, start=1):
-            demand_sheet.cell(row=row_index, column=column_index, value=value)
-    _autosize(demand_sheet)
+    demand_rows = [
+        [node_codes.get(row.node_id), product_codes.get(row.product_id), row.period, row.quantity, row.source, row.confidence]
+        for row in demand
+    ]
+    return {
+        "Nodes": ([name for name, _ in NODE_COLUMNS], node_rows),
+        "Edges": ([name for name, _ in EDGE_COLUMNS], edge_rows),
+        "Products": ([name for name, _ in PRODUCT_COLUMNS], product_rows),
+        "Demand": ([name for name, _ in DEMAND_COLUMNS], demand_rows),
+    }
+
+
+def export_network(country, nodes, edges, products, demand) -> bytes:
+    """Everything currently loaded, in upload-ready form."""
+    workbook = Workbook()
+    workbook.remove(workbook.active)
+    for sheet_name, (headers, rows) in network_rows(nodes, edges, products, demand).items():
+        sheet = workbook.create_sheet(sheet_name)
+        _write_header(sheet, headers)
+        for row_index, values in enumerate(rows, start=2):
+            for column_index, value in enumerate(values, start=1):
+                sheet.cell(row=row_index, column=column_index, value=value)
+        _autosize(sheet)
 
     _readme(
         workbook,

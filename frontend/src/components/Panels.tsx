@@ -21,6 +21,8 @@ import { api } from '../api'
 import { MarkerPicker } from './FacilityEditor'
 import { CsvImport } from './CsvImport'
 import { TableEditor } from './TableEditor'
+import { Help } from './Help'
+import { HELP } from '../help'
 import { exact, fillColour, frequencyLabel, money, pct, riskColour } from '../format'
 
 /* ------------------------------------------------------------------ facilities */
@@ -761,10 +763,21 @@ export function DataPanel({
   return (
     <div>
       <div className="section">
-        <h3>Take the model with you</h3>
+        <h3>
+          Take the model with you
+          <Help text={HELP.takeModel} label="exporting the model" />
+        </h3>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <a className="btn small" href={api.networkExportUrl(countryId)} download>
             Export network (.xlsx)
+          </a>
+          <a
+            className="btn small"
+            href={api.csvExportUrl(countryId)}
+            download
+            title="One CSV per table, zipped, in the template's columns. For databases, scripts and other tools."
+          >
+            Export CSV (.zip)
           </a>
           <a className="btn small" href={api.templateUrl()} download>
             Blank template
@@ -810,7 +823,7 @@ export function DataPanel({
         ) : (
           <>
             Drop a workbook here, or click to choose one
-            <div className="tiny dim" style={{ marginTop: 4 }}>
+            <div className="tiny dim" style={{ marginTop: 4 }} title={HELP.workbook}>
               It is validated first. Nothing is written until you say so.
             </div>
           </>
@@ -1273,7 +1286,10 @@ function AddFacility({
   return (
     <div className="section">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <h3 style={{ margin: 0 }}>Add a facility</h3>
+        <h3 style={{ margin: 0 }}>
+          Add a facility
+          <Help text={HELP.addFacility} label="adding a facility" />
+        </h3>
         <button type="button" className="btn small" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
           {open ? 'Close' : 'New facility…'}
         </button>
@@ -1459,7 +1475,10 @@ function Estimates({
 
   return (
     <div className="section">
-      <h3>Estimates</h3>
+      <h3>
+        Estimates
+        <Help text={HELP.estimates} label="estimates" />
+      </h3>
       <div className="estimate-summary">
         <b>{Math.round(info.demand.share * 100)}%</b> of demand rows ({info.demand.estimated} of{' '}
         {info.demand.rows}) are estimates from a rule. They follow their inputs — a population, a cover —
@@ -1687,7 +1706,10 @@ export function ProvenancePanel({
       )}
 
       <div className="section">
-        <h3>Assumption log</h3>
+        <h3>
+          Assumption log
+          <Help text={HELP.provenance} label="the assumption log" />
+        </h3>
         <div className="lever-note">
           Every assumption that entered the model, and who put it there. When a reviewer asks where a number
           came from, the answer is a row here rather than a memory.

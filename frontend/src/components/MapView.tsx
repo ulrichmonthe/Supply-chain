@@ -4,6 +4,8 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { EdgeRow, NodeRow, Result, SeasonView, DiffMap } from '../types'
 import { exact, fillColour, frequencyLabel, modeColour, pct, riskColour } from '../format'
+import { Help } from './Help'
+import { HELP } from '../help'
 
 export type ColourBy = 'fill' | 'risk' | 'vulnerability' | 'mode'
 
@@ -400,7 +402,12 @@ export function MapView(props: Props) {
       [props.nodes[0].lon, props.nodes[0].lat],
     )
     for (const node of props.nodes) bounds.extend([node.lon, node.lat])
-    map.current.fitBounds(bounds, { padding: { top: 70, bottom: 60, left: 60, right: 60 }, duration: 0 })
+    // maxZoom keeps a one-facility country readable instead of a street-level nothing.
+    map.current.fitBounds(bounds, {
+      padding: { top: 70, bottom: 60, left: 60, right: 60 },
+      duration: 0,
+      maxZoom: 9,
+    })
     framed.current = true
   }, [ready, props.nodes])
 
@@ -620,6 +627,7 @@ export function MapView(props: Props) {
 
       <div className="map-overlay map-mode">
         <label htmlFor={`${mapId}-colour-by`}>Colour facilities by</label>
+        <Help inline text={HELP.colourBy} label="colouring facilities" />
         <select
           id={`${mapId}-colour-by`}
           value={props.colourBy}
@@ -648,6 +656,7 @@ export function MapView(props: Props) {
             onChange={(event) => setOnline(event.target.checked)}
           />
           Online tiles
+          <Help inline text={HELP.onlineTiles} label="online tiles" />
         </label>
         <div className="tiny dim" style={{ maxWidth: 150, lineHeight: 1.3 }}>
           {tilesUnavailable

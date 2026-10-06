@@ -618,6 +618,23 @@ the build if a target is missed. The agent must beat this baseline to ship.
 
 ### Excel round trip
 
+The same four tables also leave as a **CSV dump**: `GET /countries/{id}/export/csv.zip`
+is one CSV per table plus a note, and `GET /countries/{id}/export/{table}.csv` is one
+table on its own. Both are built by the row builder the workbook uses, so a column added
+to one cannot go missing from the other, and a table CSV goes back in through the column
+mapper with nothing to confirm. The Data tab has the buttons; the table editor downloads
+the table it is showing.
+
+Every tab, lever, section and KPI tile carries a "what is this for?" explanation: the tab
+and tile tooltips, and the small `?` buttons beside headings and sliders (`help.ts` holds
+the words). Hover or focus shows the text, Enter pins it, Escape dismisses it, and the
+button is described by the text for screen readers.
+
+The static demo keeps a **sandbox** in the browser's session storage, so a visitor can open
+a country, add facilities and bring a facility CSV through the mapper without a server;
+everything else that would change the model still says plainly that it needs one.
+
+
 The export and the blank template have identical columns, so whatever comes out can go
 back in. A test round-trips the entire seeded network through the exporter and the
 importer and asserts that the result still passes validation.

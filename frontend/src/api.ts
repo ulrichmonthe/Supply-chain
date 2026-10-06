@@ -393,6 +393,8 @@ export const api = {
 
   templateUrl: () => `${BASE}/template.xlsx`,
   reportUrl: (scenarioId: number) => `${BASE}/scenarios/${scenarioId}/report.html`,
+  csvExportUrl: (countryId: number) => `${BASE}/countries/${countryId}/export/csv.zip`,
+  tableCsvUrl: (countryId: number, table: string) => `${BASE}/countries/${countryId}/export/${table}.csv`,
   // Onboarding, under plain names the panel reads well with.
   onboardingPack: (countryId: number) => onboardingApi.pack(countryId),
   createOnboardingPack: (countryId: number, payload: { pack: Record<string, unknown>; note: string }) =>
