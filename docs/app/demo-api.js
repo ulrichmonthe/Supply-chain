@@ -153,28 +153,60 @@
     return refuse('This is a read-only demo. Download the tool to change anything.')
   }
 
-  // Export links are plain hrefs the interface builds as /api/..., so point them
-  // at the files captured beside this page.
+  // Export and report links are plain hrefs the interface builds as /api/..., so point
+  // them at the files captured beside this page. The href itself is rewritten, not just
+  // the click: a middle-click, a right-click "open in new tab" or a copied link all have
+  // to land on the file, and a root-absolute /api/... on GitHub Pages lands on nothing.
   var EXPORTS = [
     [/^\/api\/template\.xlsx$/, 'files/template.xlsx'],
     [/^\/api\/countries\/\d+\/export\/network\.xlsx$/, 'files/network.xlsx'],
     [/^\/api\/scenarios\/(\d+)\/export\/results\.xlsx$/, 'files/results-$1.xlsx'],
     [/^\/api\/scenarios\/(\d+)\/report\.html$/, 'files/report-$1.html'],
     [/^\/api\/studies\/(\d+)\/report\.html$/, 'files/study-report-$1.html'],
+    [/^\/api\/countries\/\d+\/crosswalk\.csv$/, 'files/crosswalk.csv'],
+    [/^\/api\/onboarding\/runs\/\d+\/export\.xlsx$/, null],
   ]
+  var captured = function (href) {
+    for (var i = 0; i < EXPORTS.length; i++) {
+      var hit = href.match(EXPORTS[i][0])
+      if (hit) return EXPORTS[i][1] ? ROOT + EXPORTS[i][1].replace('$1', hit[1]) : null
+    }
+    return undefined
+  }
+  var rewrite = function (root) {
+    // The added node is often the anchor itself, which querySelectorAll never returns.
+    var links = root.matches && root.matches('a[href^="/api/"]') ? [root] : []
+    if (root.querySelectorAll) links = links.concat(Array.prototype.slice.call(root.querySelectorAll('a[href^="/api/"]')))
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i]
+      var target = captured(a.getAttribute('href'))
+      if (target) {
+        a.setAttribute('data-demo-api', a.getAttribute('href'))
+        a.setAttribute('href', target)
+      } else if (target === null) {
+        a.setAttribute('aria-disabled', 'true')
+        a.setAttribute('title', 'Not part of this read-only demo. Download the tool to export it.')
+        a.addEventListener('click', function (event) { event.preventDefault() })
+      }
+    }
+  }
+  rewrite(document)
+  new MutationObserver(function (records) {
+    for (var i = 0; i < records.length; i++) {
+      var added = records[i].addedNodes
+      for (var j = 0; j < added.length; j++) if (added[j].nodeType === 1) rewrite(added[j])
+      if (records[i].type === 'attributes' && records[i].target.matches && records[i].target.matches('a[href^="/api/"]')) rewrite(records[i].target.parentNode || document)
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] })
+  // And the click, for a link rendered between two observer ticks.
   document.addEventListener('click', function (event) {
     var a = event.target && event.target.closest && event.target.closest('a[href^="/api/"]')
     if (!a) return
-    for (var i = 0; i < EXPORTS.length; i++) {
-      var hit = a.getAttribute('href').match(EXPORTS[i][0])
-      if (hit) {
-        event.preventDefault()
-        var target = ROOT + EXPORTS[i][1].replace('$1', hit[1])
-        // A report opens beside the tool, as the interface intends; a download replaces nothing.
-        if (a.getAttribute('target') === '_blank') window.open(target, '_blank', 'noopener')
-        else window.location.href = target
-        return
-      }
-    }
+    var target = captured(a.getAttribute('href'))
+    if (target === undefined) return
+    event.preventDefault()
+    if (!target) return
+    if (a.getAttribute('target') === '_blank') window.open(target, '_blank', 'noopener')
+    else window.location.href = target
   }, true)
 })()

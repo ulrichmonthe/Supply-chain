@@ -28,6 +28,7 @@ echo "==> capturing the spreadsheet exports"
 mkdir -p "$OUT/api/files"
 curl -sf "$API/template.xlsx" -o "$OUT/api/files/template.xlsx"
 curl -sf "$API/countries/1/export/network.xlsx" -o "$OUT/api/files/network.xlsx"
+curl -sf "$API/countries/1/crosswalk.csv" -o "$OUT/api/files/crosswalk.csv" || true
 for sid in $(curl -sf "$API/countries/1/scenarios" | python3 -c \
       'import json,sys; print(" ".join(str(s["id"]) for s in json.load(sys.stdin) if s.get("latest_result_id")))'); do
   curl -sf "$API/scenarios/$sid/export/results.xlsx" -o "$OUT/api/files/results-$sid.xlsx" || true
