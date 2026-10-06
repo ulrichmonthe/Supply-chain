@@ -281,11 +281,14 @@ export default function App() {
   useEffect(() => {
     if (countryId === null) return
     // Clear the previous country's answers first, so nothing from it is briefly shown
-    // against the new one's name.
+    // against the new one's name -- including its facilities and lanes, which the map
+    // would otherwise frame once and then refuse to leave when the real ones arrive.
     setResult(null)
     setScorecard(null)
     setRoadmap(null)
     setError(null)
+    setNodes([])
+    setEdges([])
     Promise.all([loadNetwork(countryId), loadScenarios(countryId)]).catch((e) => setError(String(e)))
   }, [countryId, loadNetwork, loadScenarios])
 

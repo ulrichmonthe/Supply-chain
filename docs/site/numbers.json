@@ -22,7 +22,7 @@
   "estimated_share": 1.0,
   "base_holds": true,
   "all_hold": true,
-  "runtime_ms": 51,
+  "runtime_ms": 49,
   "lp_lanes": 180,
   "distance_confidence": 0.632
 }

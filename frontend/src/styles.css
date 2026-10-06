@@ -948,7 +948,10 @@ tr.shortfall td { background: rgba(239, 107, 107, 0.06); }
   font-size: var(--fs-small); font-weight: 400; line-height: 1.45; letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
 }
 .section > h3 .help { margin-left: 5px; }
-.topbar .help-pop, .tabs .help-pop { left: auto; right: 0; transform: none; }
+/* In the sidebar and the map overlays the button sits near an edge: anchor the text to
+   the button's left edge instead of centring it, so nothing is clipped. */
+.sidebar .help-pop, .map-overlay .help-pop, .help.inline .help-pop { left: 0; transform: none; }
+.topbar .help-pop, .tabs-wrap .help-pop, .inspector .help-pop { left: auto; right: 0; transform: none; }
 .tabs .help { align-self: center; margin-left: auto; padding-right: 6px; }
 
 .tabs-wrap { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
