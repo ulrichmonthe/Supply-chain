@@ -3,8 +3,92 @@
     "name": "Health Supply Chain Network Design",
     "summary": "A living map of a country's health supply chain that shows what it costs to reach every clinic — by road, boat and plane, month by month — and who gets left out when money is saved."
   },
-  "updated": "2026-10-06T00:00:00Z",
-  "deploys": [],
+  "updated": "2026-10-08T14:05:00Z",
+  "deploys": [
+    {
+      "at": "2026-10-08T13:56:00Z",
+      "env": "preview",
+      "what": "The site sends a mistyped address with /docs/ in it to the right page",
+      "storyIds": [
+        "f12s9"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-10-06T15:16:05Z",
+      "env": "preview",
+      "what": "Map frames a new country; help popovers stay on screen",
+      "storyIds": [
+        "f14s5",
+        "f14s1"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-10-06T15:10:18Z",
+      "env": "preview",
+      "what": "Help on every feature, CSV export, and a demo that lets you add a country, facilities and a facility CSV",
+      "storyIds": [
+        "f14s1",
+        "f14s2",
+        "f14s3",
+        "f14s4"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-10-06T14:20:36Z",
+      "env": "preview",
+      "what": "Report and spreadsheet links in the demo point at the captured files however they are opened",
+      "storyIds": [
+        "f12s8"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-10-06T14:17:15Z",
+      "env": "preview",
+      "what": "The Report button in the demo opens the captured report",
+      "storyIds": [
+        "f12s8"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-09-30T16:00:18Z",
+      "env": "preview",
+      "what": "Data onboarding tab visible in the demo (read-only there: the pipeline needs the server)",
+      "storyIds": [
+        "f13s1",
+        "f13s2",
+        "f13s3"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-09-30T10:15:57Z",
+      "env": "preview",
+      "what": "Keep-it page without the run-it-yourself section",
+      "storyIds": [
+        "f12s3"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    },
+    {
+      "at": "2026-09-30T10:08:26Z",
+      "env": "preview",
+      "what": "The public site: seven pages, a home page that solves in the browser, the CSV mapper demo, the generated decision page",
+      "storyIds": [
+        "f12s1",
+        "f12s2",
+        "f12s3",
+        "f12s4",
+        "f12s5",
+        "f12s6"
+      ],
+      "note": "The public demo site. Nobody runs the tool for real yet."
+    }
+  ],
   "features": [
     {
       "id": "f7",
@@ -895,49 +979,54 @@
       "id": "f12",
       "name": "The public site",
       "oneLiner": "A marketing site generated from the same repository, whose home page re-solves the demo network in the visitor's browser and whose every figure is solver output the demo can reproduce.",
-      "needsYou": "Still to decide: the licence and pricing position, a contact route, the organisation the site speaks as, any real engagement to name, a domain, and whether a small hosted function can carry the question box.",
       "stories": [
         {
           "id": "f12s1",
           "title": "Export the allocation model as data",
           "state": "done",
-          "env": null,
-          "note": "One call returns exactly what the solver is handed. A test proves solving the export reproduces the tool's own answer within 0.1%."
+          "env": "preview",
+          "note": "One call returns exactly what the solver is handed. A test proves solving the export reproduces the tool's own answer within 0.1%.",
+          "at": "2026-09-30T10:08:26Z"
         },
         {
           "id": "f12s2",
           "title": "Solve the network in the browser",
           "state": "done",
-          "env": null,
-          "note": "HiGHS compiled to WebAssembly, loaded from the site itself. Every lever on the home page re-optimises 134 facilities over 180 lanes in about fifty milliseconds; nothing is pre-solved."
+          "env": "preview",
+          "note": "HiGHS compiled to WebAssembly, loaded from the site itself. Every lever on the home page re-optimises 134 facilities over 180 lanes in about fifty milliseconds; nothing is pre-solved.",
+          "at": "2026-09-30T10:08:26Z"
         },
         {
           "id": "f12s3",
           "title": "Generate the pages from the demo captures",
           "state": "done",
-          "env": null,
-          "note": "Seven pages following the arc of an engagement: home, bring your data, ask a question, trust the answer, decide, keep it, compare. Every number computed from the captured results."
+          "env": "preview",
+          "note": "Seven pages following the arc of an engagement: home, bring your data, ask a question, trust the answer, decide, keep it, compare. Every number computed from the captured results.",
+          "at": "2026-09-30T10:15:57Z"
         },
         {
           "id": "f12s4",
           "title": "Map a visitor's own facility CSV without uploading it",
           "state": "done",
-          "env": null,
-          "note": "The mapper's synonym table in the browser: headers read, columns matched, facilities plotted. The file never leaves the page."
+          "env": "preview",
+          "note": "The mapper's synonym table in the browser: headers read, columns matched, facilities plotted. The file never leaves the page.",
+          "at": "2026-09-30T10:08:26Z"
         },
         {
           "id": "f12s5",
           "title": "Render a decision page live from stored results",
           "state": "done",
-          "env": null,
-          "note": "Pick a scenario and page one appears: the sentence, the stores, three figures against today, who carries it, whether it holds."
+          "env": "preview",
+          "note": "Pick a scenario and page one appears: the sentence, the stores, three figures against today, who carries it, whether it holds.",
+          "at": "2026-09-30T10:08:26Z"
         },
         {
           "id": "f12s6",
           "title": "Audit the site like the app",
           "state": "done",
-          "env": null,
-          "note": "axe on every page at desktop and phone width in both colour schemes, plus checks that the solver, the mapper and the decision page really work."
+          "env": "preview",
+          "note": "axe on every page at desktop and phone width in both colour schemes, plus checks that the solver, the mapper and the decision page really work.",
+          "at": "2026-09-30T10:08:26Z"
         },
         {
           "id": "f12s7",
@@ -950,8 +1039,33 @@
           "id": "f12s8",
           "title": "Open a report from the demo",
           "state": "done",
-          "env": null,
-          "note": "Reports are captured as files and the Report button's link points at them, however the link is opened."
+          "env": "preview",
+          "note": "Reports are captured as files and the Report button's link points at them, however the link is opened.",
+          "at": "2026-10-06T14:20:36Z"
+        },
+        {
+          "id": "f12s9",
+          "title": "Land on the right page after typing the folder path by habit",
+          "state": "done",
+          "env": "preview",
+          "note": "An address with /docs/ in it is corrected automatically; a page that really is missing lists the four that exist.",
+          "at": "2026-10-08T13:56:00Z"
+        }
+      ],
+      "unsure": [
+        "Still to decide: the licence and pricing position, a contact route, the organisation the site speaks as, any real engagement to name, a domain, and whether a small hosted function can carry the question box."
+      ],
+      "decisions": [
+        {
+          "at": "2026-09-30T09:00:00Z",
+          "what": "The site is built from the same repository as the tool, and every figure on it is solver output the demo can reproduce. Licence, pricing, contact, organisation, named engagements and a domain are left honest rather than invented."
+        }
+      ],
+      "activity": [
+        {
+          "at": "2026-10-08T14:05:00Z",
+          "kind": "live",
+          "what": "Mistyped /docs/ addresses now land on the right page"
         }
       ]
     },
@@ -959,28 +1073,30 @@
       "id": "f13",
       "name": "Data onboarding",
       "oneLiner": "Messy ministry files in, a validated, provenance-tagged dataset out: a country pack, a facility crosswalk the ministry owns, rules and named estimates, a triaged review queue, and a named approver before anything reaches the model.",
-      "needsYou": "To decide before a pilot: who in PNG is the facility arbiter and the approver, which sources exist per domain, and what PNG allows for external AI processing of government health data.",
       "stories": [
         {
           "id": "f13s1",
           "title": "Fill in a country pack before any data is ingested",
           "state": "done",
-          "env": null,
-          "note": "Source systems, facility authority, admin levels, transport ranges, units, currency, legal profile, roles, languages, thresholds. Versioned, approved by a second person; the PNG example ships marked as such."
+          "env": "preview",
+          "note": "Source systems, facility authority, admin levels, transport ranges, units, currency, legal profile, roles, languages, thresholds. Versioned, approved by a second person; the PNG example ships marked as such. Visible in the public demo; the pipeline itself needs the server.",
+          "at": "2026-09-30T16:00:18Z"
         },
         {
           "id": "f13s2",
           "title": "Take several files with their checksum, uploader and vintage",
           "state": "done",
-          "env": null,
-          "note": "Profiled: header found under a title line, domain and system guessed, units and periods read. DHIS2 and mSupply exports need no mapping."
+          "env": "preview",
+          "note": "Profiled: header found under a title line, domain and system guessed, units and periods read. DHIS2 and mSupply exports need no mapping. Visible in the public demo; the pipeline itself needs the server.",
+          "at": "2026-09-30T16:00:18Z"
         },
         {
           "id": "f13s3",
           "title": "Reconcile facilities into a crosswalk the ministry owns",
           "state": "done",
-          "env": null,
-          "note": "Name with aliases, admin unit, type, identifiers and coordinates scored together with reasons. Auto-accept only above the pack's threshold; the arbiter decides the rest. Exported as CSV with history."
+          "env": "preview",
+          "note": "Name with aliases, admin unit, type, identifiers and coordinates scored together with reasons. Auto-accept only above the pack's threshold; the arbiter decides the rest. Exported as CSV with history. Visible in the public demo; the pipeline itself needs the server.",
+          "at": "2026-09-30T16:00:18Z"
         },
         {
           "id": "f13s4",
@@ -1059,6 +1175,9 @@
           "env": null,
           "note": "Where the country pack allows it. The connectors exist; the schedule does not."
         }
+      ],
+      "unsure": [
+        "To decide before a pilot: who in PNG is the facility arbiter and the approver, which sources exist per domain, and what PNG allows for external AI processing of government health data."
       ]
     },
     {
@@ -1071,36 +1190,63 @@
           "id": "f14s1",
           "title": "Ask any feature what it is for",
           "state": "done",
-          "env": null,
-          "note": "A ? beside every heading, slider and the tabs; tooltips on tabs and KPI tiles. Hover, focus, pin with Enter, dismiss with Escape; read aloud by screen readers."
+          "env": "preview",
+          "note": "A ? beside every heading, slider and the tabs; tooltips on tabs and KPI tiles. Hover, focus, pin with Enter, dismiss with Escape; read aloud by screen readers.",
+          "at": "2026-10-06T15:16:05Z"
         },
         {
           "id": "f14s2",
           "title": "Take the model out as CSV",
           "state": "done",
-          "env": null,
-          "note": "One zip with a CSV per table, or one table at a time, built by the same row builder as the workbook. Goes back in through the mapper unchanged."
+          "env": "preview",
+          "note": "One zip with a CSV per table, or one table at a time, built by the same row builder as the workbook. Goes back in through the mapper unchanged.",
+          "at": "2026-10-06T15:10:18Z"
         },
         {
           "id": "f14s3",
           "title": "Open a country, add a facility and import a facility CSV in the demo",
           "state": "done",
-          "env": null,
-          "note": "A sandbox in the browser's session storage: the three things every visitor tries first work without a server. Other changes still say they need one."
+          "env": "preview",
+          "note": "A sandbox in the browser's session storage: the three things every visitor tries first work without a server. Other changes still say they need one.",
+          "at": "2026-10-06T15:10:18Z"
         },
         {
           "id": "f14s4",
           "title": "See a facility counted the moment it is added",
           "state": "done",
-          "env": null,
-          "note": "The header counted only facilities with demand, so a new one read as nothing. It counts facilities now."
+          "env": "preview",
+          "note": "The header counted only facilities with demand, so a new one read as nothing. It counts facilities now.",
+          "at": "2026-10-06T15:10:18Z"
         },
         {
           "id": "f14s5",
           "title": "See the map frame a new country",
           "state": "done",
-          "env": null,
-          "note": "The map kept the previous country's frame when switching. It re-frames per country, with a sane zoom for a single facility."
+          "env": "preview",
+          "note": "The map kept the previous country's frame when switching. It re-frames per country, with a sane zoom for a single facility.",
+          "at": "2026-10-06T15:16:05Z"
+        }
+      ],
+      "decisions": [
+        {
+          "at": "2026-10-08T14:05:00Z",
+          "what": "The board is updated as work happens from now on — a story moves to being written, being checked, finished — not written in finished at the end."
+        }
+      ],
+      "unsure": [
+        "The help wording has not been read by a ministry data officer yet; it is my best plain-language guess at what each feature is for.",
+        "The demo sandbox has been exercised in Chromium only."
+      ],
+      "activity": [
+        {
+          "at": "2026-10-08T14:05:00Z",
+          "kind": "ok",
+          "what": "Board brought up to date and the live cadence adopted"
+        },
+        {
+          "at": "2026-10-06T15:16:05Z",
+          "kind": "live",
+          "what": "Help, CSV export, the demo sandbox and the two map and header fixes reached the public demo"
         }
       ]
     }
